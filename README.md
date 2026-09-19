@@ -2,6 +2,8 @@
 
 > **Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh — media layanan bimbingan klasikal kelas X**
 
+🌐 **Aplikasi Online (Live Demo):** [https://nassrudin.github.io/petainteraktif/](https://nassrudin.github.io/petainteraktif/)
+
 Platform web interaktif gamifikasi untuk layanan bimbingan klasikal Bimbingan dan Konseling (BK) siswa kelas X. Mengembangkan pola pikir bertumbuh (*Growth Mindset*) serta mengikis keraguan diri (*self-doubt*) menjadi keberanian belajar melalui 8 pos petualangan bertahap.
 
 ---
