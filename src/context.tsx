@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ActiveStudent, StudentJourney, AdminCredentials, Gender, AppSettings, ClassConfig } from './types';
 import { INITIAL_STUDENTS, INITIAL_JOURNEYS, DEFAULT_ADMIN, DEFAULT_CLASS_CONFIGS } from './data';
+import { sanitizeTextInput } from './utils/security';
 
 // Define default drive folder URL here to avoid circular imports
 export const DEFAULT_DRIVE_FOLDER_URL =
@@ -125,8 +126,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Actions
   const startStudentJourney = (name: string, gender: Gender, studentClass: string, absentNumber: number) => {
-    const trimmedName = name.trim();
-    const trimmedClass = studentClass.trim();
+    // SECURITY FIX: Sanitize inputs to prevent XSS attacks
+    const sanitizedName = sanitizeTextInput(name);
+    const trimmedName = sanitizedName.trim();
+    
+    const sanitizedClass = sanitizeTextInput(studentClass);
+    const trimmedClass = sanitizedClass.trim();
+    
     if (!trimmedName || !trimmedClass || absentNumber < 1) return;
 
     // Look for existing student record or create new
@@ -182,8 +188,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const adminLogin = (user: string, pass: string): boolean => {
+    // SECURITY FIX: Sanitize username input (password is compared directly)
+    const sanitizedUser = sanitizeTextInput(user);
     if (
-      user.trim() === adminCredentials.username.trim() &&
+      sanitizedUser.trim() === adminCredentials.username.trim() &&
       pass.trim() === adminCredentials.password.trim()
     ) {
       setIsAdminLoggedIn(true);
@@ -204,16 +212,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (oldPass.trim() !== adminCredentials.password.trim()) {
       return { success: false, message: 'Password lama tidak cocok.' };
     }
-    if (!newUsername.trim()) {
+    
+    const sanitizedNewUsername = sanitizeTextInput(newUsername);
+    if (!sanitizedNewUsername.trim()) {
       return { success: false, message: 'Username baru tidak boleh kosong.' };
     }
-    if (!newPass.trim() || newPass.trim().length < 4) {
-      return { success: false, message: 'Password baru minimal 4 karakter.' };
+    if (!newPass.trim() || newPass.trim().length < 8) {
+      return { success: false, message: 'Password baru minimal 8 karakter.' };
+    }
+    
+    // SECURITY: Validate password strength
+    const hasUpperCase = /[A-Z]/.test(newPass);
+    const hasLowerCase = /[a-z]/.test(newPass);
+    const hasNumbers = /\d/.test(newPass);
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      return { 
+        success: false, 
+        message: 'Password harus mengandung huruf besar, kecil, dan angka.' 
+      };
     }
 
     setAdminCredentials({
       ...adminCredentials,
-      username: newUsername.trim(),
+      username: sanitizedNewUsername.trim(),
       password: newPass.trim(),
     });
 
@@ -225,6 +246,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!trimmed) {
       return { success: false, message: 'Link Google Drive tidak boleh kosong.' };
     }
+    
+    // SECURITY FIX: Validate URL format to prevent XSS/phishing
+    try {
+      const urlObj = new URL(trimmed);
+      const allowedHosts = ['drive.google.com', 'www.drive.google.com'];
+      if (!allowedHosts.some(host => urlObj.hostname === host)) {
+        return { 
+          success: false, 
+          message: 'Hanya link Google Drive yang diperbolehkan.' 
+        };
+      }
+      
+      // Only allow folder URLs, not file download links
+      if (!urlObj.pathname.includes('/folders/')) {
+        return { 
+          success: false, 
+          message: 'URL harus merupakan link ke folder Google Drive.' 
+        };
+      }
+    } catch (e) {
+      return { 
+        success: false, 
+        message: 'Format URL tidak valid. Gunakan link Google Drive sharing.' 
+      };
+    }
+    
     setDriveFolderUrlState(trimmed);
     return { success: true, message: 'Link folder Google Drive berhasil diperbarui!' };
   };

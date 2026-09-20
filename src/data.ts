@@ -1,5 +1,6 @@
 import { StageDefinition, ActiveStudent, StudentJourney, AdminCredentials, ClassConfig } from './types';
 import { DEFAULT_DRIVE_FOLDER_URL } from './context';
+import { sanitizeTextInput } from './utils/security';
 
 export const PEGANGAN_DI_SEPANJANG_JALAN =
   'Percaya diri bukan bakat yang dimiliki sejak lahir. Ia tumbuh setiap kali kamu berani mencoba sekali lagi.';
@@ -432,11 +433,16 @@ export const STAGES_DATA: StageDefinition[] = [
   },
 ];
 
+// ⚠️ SECURITY FIX: Password harus diubah segera setelah deploy pertama kali
+// Jangan gunakan password default ini di production!
 export const DEFAULT_ADMIN: AdminCredentials = {
-  username: 'admin',
-  password: 'admin123',
+  username: 'admin_bk_growth2026',
+  password: 'SecureBK$GrowthMindset2026!', // ← GANTI INI SETELAH DEPLOY PERTAMA!
   name: 'Guru Pembimbing BK',
 };
+
+// Hash placeholder untuk future bcrypt implementation
+export const ADMIN_PASSWORD_HASH = '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjAG.iHvQiM5ZlWCzVXm'; 
 
 export const INITIAL_STUDENTS: ActiveStudent[] = [];
 
