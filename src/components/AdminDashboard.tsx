@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context';
-import { STAGES_DATA, DEFAULT_DRIVE_FOLDER_URL } from '../data';
+import { STAGES_DATA, DEFAULT_ADMIN, DEFAULT_CLASS_CONFIGS } from '../data';
 import { ActiveStudent } from '../types';
 import { 
   Users, CheckCircle, Clock, Trophy, BarChart3, 
@@ -126,19 +126,12 @@ export const AdminDashboard: React.FC = () => {
   const handleDeleteStudent = (studentId: string) => {
     if (!confirm('Hapus semua jawaban dan reset progress siswa ini?')) return;
     
-    // Delete student journey
     setJourneys((prev) => {
       const { [studentId]: deleted, ...rest } = prev;
       return rest;
     });
     
-    // Remove student from allStudents too
     setAllStudents((prev) => prev.filter((s) => s.id !== studentId));
-  };
-
-  const handleDownloadStudentResult = (studentId: string, name: string, class: string) => {
-    // Trigger window.print which will print the result view in PPT format
-    alert(`Download fitur untuk ${name} akan segera tersedia.`);
   };
 
   const handleExportCSV = () => {
@@ -179,7 +172,7 @@ export const AdminDashboard: React.FC = () => {
               Dashboard Analitik & Refleksi Siswa
             </h1>
             <p className="text-xs sm:text-sm text-teal-100/80 mt-1 leading-relaxed">
-              Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh — media layanan bimbingan klasikal kelas X.
+              Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh, media layanan bimbingan klasikal kelas X.
             </p>
           </div>
 
