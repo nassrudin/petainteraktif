@@ -918,7 +918,7 @@ export const AdminDashboard: React.FC = () => {
                       <p className="text-sm text-slate-500 mb-2">Nama Siswa</p>
                       <p className="text-2xl font-bold text-slate-800">{currentPreviewStudent.name}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="grid grid-cols-2 gap-4 pt-4 max-w-md mx-auto">
                       <div>
                         <p className="text-xs text-slate-500 mb-1">Kelas</p>
                         <p className="font-bold text-slate-700">{currentPreviewStudent.class}</p>
@@ -947,19 +947,19 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                       <div className="space-y-2">
                         <p className="text-[10px] text-slate-500 font-bold">Di situasi apa saya merasa kurang percaya diri?</p>
-                        <p className="bg-emerald-50 p-2.5 rounded-xl text-emerald-900 font-medium italic border border-emerald-200 text-xs">
+                        <p className="bg-emerald-50 p-2.5 rounded-xl text-emerald-900 font-medium italic border border-emerald-200 text-xs min-h-[60px]">
                           "{getStageAnswerLocal(currentPreviewStudent.id, 1, 'situation') || 'Belum diisi'}"
                         </p>
                       </div>
                       <div className="space-y-2">
                         <p className="text-[10px] text-slate-500 font-bold">Saya berpikir:</p>
-                        <p className="bg-slate-50 p-2 rounded-xl text-slate-800 font-medium text-xs border border-slate-200">
+                        <p className="bg-slate-50 p-2 rounded-xl text-slate-800 font-medium text-xs border border-slate-200 min-h-[50px]">
                           "{getStageAnswerLocal(currentPreviewStudent.id, 1, 'thought') || '-'}"
                         </p>
                       </div>
                       <div className="space-y-2">
                         <p className="text-[10px] text-slate-500 font-bold">Saya merasa:</p>
-                        <p className="bg-slate-50 p-2 rounded-xl text-slate-800 font-medium text-xs border border-slate-200">
+                        <p className="bg-slate-50 p-2 rounded-xl text-slate-800 font-medium text-xs border border-slate-200 min-h-[50px]">
                           "{getStageAnswerLocal(currentPreviewStudent.id, 1, 'feeling') || '-'}"
                         </p>
                       </div>
@@ -975,7 +975,7 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                       <div className="space-y-2">
                         <p className="text-[10px] text-slate-500 font-bold">Satu tantangan yang paling ingin saya taklukkan:</p>
-                        <p className="bg-teal-50 p-2 rounded-xl text-teal-900 font-medium border border-teal-200 text-xs">
+                        <p className="bg-teal-50 p-2 rounded-xl text-teal-900 font-medium border border-teal-200 text-xs min-h-[60px]">
                           "{getStageAnswerLocal(currentPreviewStudent.id, 2, 'challenge_target') || 'Belum diisi'}"
                         </p>
                       </div>
@@ -998,7 +998,7 @@ export const AdminDashboard: React.FC = () => {
                         </h3>
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Hambatan dari dalam diri saya:</p>
-                      <p className="bg-sky-50 p-2 rounded-xl text-sky-900 font-medium text-xs border border-sky-200">
+                      <p className="bg-sky-50 p-2 rounded-xl text-sky-900 font-medium text-xs border border-sky-200 min-h-[60px]">
                         "{getStageAnswerLocal(currentPreviewStudent.id, 3, 'internal_obstacles') || 'Belum diisi'}"
                       </p>
                     </div>
@@ -1012,7 +1012,7 @@ export const AdminDashboard: React.FC = () => {
                         </h3>
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Langkah pertama (paling mudah):</p>
-                      <p className="bg-blue-50 p-2 rounded-xl text-blue-900 font-medium text-xs border border-blue-200">
+                      <p className="bg-blue-50 p-2 rounded-xl text-blue-900 font-medium text-xs border border-blue-200 min-h-[60px]">
                         "{getStageAnswerLocal(currentPreviewStudent.id, 4, 'step_1') || 'Belum diisi'}"
                       </p>
                     </div>
@@ -1034,7 +1034,7 @@ export const AdminDashboard: React.FC = () => {
                         </h3>
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Masukan yang pernah diterima:</p>
-                      <p className="bg-violet-50 p-2 rounded-xl text-violet-900 font-medium text-xs border border-violet-200">
+                      <p className="bg-violet-50 p-2 rounded-xl text-violet-900 font-medium text-xs border border-violet-200 min-h-[60px]">
                         "{getStageAnswerLocal(currentPreviewStudent.id, 5, 'feedback_received') || 'Belum diisi'}"
                       </p>
                     </div>
@@ -1048,7 +1048,7 @@ export const AdminDashboard: React.FC = () => {
                         </h3>
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Sosok yang dikagumi:</p>
-                      <p className="bg-purple-50 p-2 rounded-xl text-purple-900 font-medium text-xs border border-purple-200">
+                      <p className="bg-purple-50 p-2 rounded-xl text-purple-900 font-medium text-xs border border-purple-200 min-h-[60px]">
                         "{getStageAnswerLocal(currentPreviewStudent.id, 6, 'role_model') || 'Belum diisi'}"
                       </p>
                     </div>
@@ -1070,7 +1070,7 @@ export const AdminDashboard: React.FC = () => {
                         </h3>
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Berhasil setelah mencoba seminggu:</p>
-                      <p className="bg-green-50 p-2 rounded-xl text-green-900 font-medium text-xs border border-green-200">
+                      <p className="bg-green-50 p-2 rounded-xl text-green-900 font-medium text-xs border border-green-200 min-h-[60px]">
                         "{getStageAnswerLocal(currentPreviewStudent.id, 7, 'what_succeeded') || 'Belum diisi'}"
                       </p>
                     </div>
@@ -1084,14 +1084,14 @@ export const AdminDashboard: React.FC = () => {
                         </h3>
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Target satu minggu ke depan:</p>
-                      <p className="bg-orange-50 p-2 rounded-xl text-orange-900 font-medium text-xs border border-orange-200">
+                      <p className="bg-orange-50 p-2 rounded-xl text-orange-900 font-medium text-xs border border-orange-200 min-h-[60px]">
                         "{getStageAnswerLocal(currentPreviewStudent.id, 8, 'target_week_1') || 'Belum diisi'}"
                       </p>
                     </div>
                   </div>
 
                   {/* Certificate Section */}
-                  <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border-2 border-amber-400 mt-6">
+                  <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border-2 border-amber-400 mt-6 mx-6">
                     <div className="flex items-center justify-center gap-3 mb-3">
                       <Award className="w-10 h-10 text-amber-600" />
                       <h3 className="font-extrabold text-xl text-amber-900">SERTIFIKAT KEBERANIAN</h3>
@@ -1103,7 +1103,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Close Modal Buttons */}
+                {/* Close Modal Button */}
                 <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
                   <button
                     onClick={() => setShowResultModal(false)}
@@ -1112,7 +1112,7 @@ export const AdminDashboard: React.FC = () => {
                     Tutup
                   </button>
                   <button
-                    onClick={handlePrintPdf}
+                    onClick={window.print}
                     className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-all flex items-center gap-2"
                   >
                     <Printer className="w-4 h-4" />
