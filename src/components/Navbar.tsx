@@ -1,17 +1,21 @@
 import React from 'react';
 import { useApp } from '../context';
-import { Compass, Shield, LogOut, ArrowRightLeft } from 'lucide-react';
+import { Compass, Shield, LogOut, ArrowRightLeft, Moon, Sun } from 'lucide-react';
 
 interface NavbarProps {
   activeTab: 'map' | 'result' | 'admin';
   setActiveTab: (tab: 'map' | 'result' | 'admin') => void;
   onOpenAdminLogin: () => void;
+  isDarkMode?: boolean;
+  onToggleDarkMode?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   onOpenAdminLogin,
+  isDarkMode = false,
+  onToggleDarkMode,
 }) => {
   const {
     activeStudent,
@@ -26,35 +30,51 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isFinishedAll = completedCount === 8;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-xs">
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        
+        {/* Dark Mode Toggle - Always Visible */}
+        {onToggleDarkMode && (
+          <button
+            onClick={onToggleDarkMode}
+            className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDarkMode ? (
+              <Sun className="w-5 h-5 text-yellow-400" />
+            ) : (
+              <Moon className="w-5 h-5 text-slate-600" />
+            )}
+          </button>
+        )}
+
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-200 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-200 shrink-0">
             <Compass className="w-6 h-6 animate-spin-slow" />
           </div>
           <div>
-            <span className="font-extrabold text-base sm:text-lg text-slate-800 tracking-tight flex flex-wrap items-center gap-1.5">
-              Growth Mindset <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">Journey Map Percaya Diri</span>
+            <span className="font-extrabold text-base sm:text-lg text-slate-800 dark:text-slate-100 tracking-tight flex flex-wrap items-center gap-1.5">
+              Growth Mindset <span className="text-xs bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-semibold px-2 py-0.5 rounded-full">Journey Map Percaya Diri</span>
             </span>
-            <p className="text-[11px] text-slate-500 hidden md:block max-w-xl truncate">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden md:block max-w-xl truncate">
               Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh — media layanan bimbingan klasikal kelas X
             </p>
           </div>
         </div>
 
         {/* Center Nav tabs */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-xl">
           {isAdminLoggedIn ? (
             <button
               onClick={() => setActiveTab('admin')}
               className={`px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'admin'
-                  ? 'bg-white text-teal-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-600 text-teal-700 dark:text-teal-300 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Shield className="w-3.5 h-3.5 text-teal-600" />
+              <Shield className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
               <span>Dashboard Guru BK</span>
             </button>
           ) : activeStudent ? (
@@ -63,8 +83,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setActiveTab('map')}
                 className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
                   activeTab === 'map'
-                    ? 'bg-white text-emerald-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-600 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 Peta Petualangan
@@ -73,13 +93,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setActiveTab('result')}
                 className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'result'
-                    ? 'bg-white text-emerald-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-600 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <span>Cetak Hasil/Download</span>
                 {isFinishedAll && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-ping"></span>
                 )}
               </button>
             </>
@@ -90,17 +110,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2">
           {isAdminLoggedIn ? (
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-xl text-left">
-                <Shield className="w-4 h-4 text-teal-700" />
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 rounded-xl text-left">
+                <Shield className="w-4 h-4 text-teal-700 dark:text-teal-400" />
                 <div className="text-xs">
-                  <p className="font-bold text-teal-900">Guru Pembimbing</p>
-                  <p className="text-[10px] text-teal-700">Admin BK</p>
+                  <p className="font-bold text-teal-900 dark:text-teal-200">Guru Pembimbing</p>
+                  <p className="text-[10px] text-teal-700 dark:text-teal-400">Admin BK</p>
                 </div>
               </div>
               <button
                 onClick={adminLogout}
                 title="Keluar dari mode admin"
-                className="px-3 py-1.5 rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-700 bg-white dark:bg-slate-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Logout Admin</span>
@@ -108,15 +128,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           ) : activeStudent ? (
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-left">
-                <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 rounded-xl text-left">
+                <div className="w-7 h-7 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center">
                   {activeStudent.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-emerald-950 leading-tight">
+                  <p className="text-xs font-bold text-emerald-950 dark:text-emerald-100 leading-tight">
                     {activeStudent.name}
                   </p>
-                  <p className="text-[10px] text-emerald-700 font-semibold">
+                  <p className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold">
                     Kelas {activeStudent.class} • Absen {activeStudent.absentNumber}
                   </p>
                 </div>
@@ -124,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={clearActiveStudent}
                 title="Ganti Siswa"
-                className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+                className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
               >
                 <ArrowRightLeft className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Ganti Siswa</span>
@@ -132,7 +152,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={onOpenAdminLogin}
                 title="Login Guru / Admin"
-                className="p-1.5 rounded-xl border border-slate-200 text-slate-500 hover:text-teal-700 hover:bg-slate-100 transition-all cursor-pointer"
+                className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-600 transition-all cursor-pointer"
               >
                 <Shield className="w-4 h-4" />
               </button>
@@ -140,9 +160,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           ) : (
             <button
               onClick={onOpenAdminLogin}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 text-white hover:bg-slate-900 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-3 py-1.5 rounded-xl bg-slate-800 dark:bg-slate-700 text-white dark:text-white hover:bg-slate-900 dark:hover:bg-slate-600 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
-              <Shield className="w-3.5 h-3.5 text-teal-300" />
+              <Shield className="w-3.5 h-3.5 text-teal-300 dark:text-teal-400" />
               <span>Login Guru / Admin</span>
             </button>
           )}

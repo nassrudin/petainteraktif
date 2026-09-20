@@ -10,9 +10,13 @@ import {
 
 interface JourneyMapProps {
   onGoToResult: () => void;
+  isDarkMode?: boolean;
 }
 
-export const JourneyMap: React.FC<JourneyMapProps> = ({ onGoToResult }) => {
+export const JourneyMap: React.FC<JourneyMapProps> = ({ 
+  onGoToResult,
+  isDarkMode = false 
+}) => {
   const { activeStudent, getStudentJourney, resetStudentProgress } = useApp();
   
   if (!activeStudent) {
@@ -62,22 +66,22 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ onGoToResult }) => {
   return (
     <div className="space-y-6">
       {/* Top Banner: Student Details & Gamification Level */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
           {/* Student details */}
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white font-extrabold text-xl flex items-center justify-center border-2 border-emerald-500 shadow-md">
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-tr ${levelColor} text-white font-extrabold text-xl flex items-center justify-center border-2 border-white dark:border-slate-600 shadow-md`}>
                 {activeStudent.name.charAt(0).toUpperCase()}
               </div>
-              <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold border-2 border-white shadow-xs">
+              <div className={`absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-${levelColor.split('-')[1]}-600 text-white flex items-center justify-center text-xs font-bold border-2 border-white dark:border-slate-600 shadow-xs`}>
                 {completedCount}
               </div>
             </div>
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Petualang Kelas X</span>
-              <h1 className="text-xl font-black text-slate-800 leading-tight">{activeStudent.name}</h1>
-              <p className="text-xs text-slate-500 font-medium">Kelas: <span className="font-bold text-emerald-700">{activeStudent.class}</span></p>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Petualang Kelas X</span>
+              <h1 className="text-xl font-black text-slate-800 dark:text-slate-100 leading-tight">{activeStudent.name}</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Kelas: <span className="font-bold text-emerald-700 dark:text-emerald-400">{activeStudent.class}</span></p>
             </div>
           </div>
 
@@ -134,21 +138,21 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ onGoToResult }) => {
         </div>
       </div>
 
-      {/* Cara Mengisi Banner */}
-      <div className="bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-teal-500/10 rounded-2xl p-4 sm:p-5 border border-amber-300/80 shadow-xs flex items-start gap-3.5">
-        <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+       {/* Cara Mengisi Banner */}
+      <div className="bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-teal-500/10 dark:from-amber-400/20 dark:via-emerald-400/20 dark:to-teal-400/20 rounded-2xl p-4 sm:p-5 border border-amber-300/80 dark:border-amber-500/60 shadow-xs flex items-start gap-3.5">
+        <div className="w-9 h-9 rounded-xl bg-amber-500 dark:bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
           <Info className="w-5 h-5" />
         </div>
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-black uppercase text-amber-900 tracking-wider">
+            <span className="text-xs font-black uppercase text-amber-900 dark:text-amber-100 tracking-wider">
               Petunjuk Cara Mengisi
             </span>
-            <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded-full">
+            <span className="text-[10px] bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100 font-bold px-2 py-0.5 rounded-full">
               Penting
             </span>
           </div>
-          <p className="text-xs sm:text-sm font-medium text-slate-800 leading-relaxed">
+          <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
             Isi pos 1 sampai 4 pada pertemuan ini, lalu coba langkahmu selama satu minggu. Pos 5 sampai 8 diisi setelah kamu mencobanya. Tidak ada jawaban benar atau salah — tulis sejujurnya tentang dirimu.
           </p>
         </div>
@@ -157,36 +161,36 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ onGoToResult }) => {
       {/* Etape Navigation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Etape 1 Info */}
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50/50 p-4 rounded-2xl border border-emerald-200">
+        <div className="bg-gradient-to-br from-emerald-50 dark:from-emerald-900/30 to-teal-50/50 dark:to-teal-900/30 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-700">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider">
               Etape 1
             </span>
-            <span className="text-xs font-bold text-emerald-950">Mengenali diri dan menghadapi tantangan</span>
+            <span className="text-xs font-bold text-emerald-950 dark:text-emerald-100">Mengenali diri dan menghadapi tantangan</span>
           </div>
-          <p className="text-[11px] text-emerald-800/80 mt-1">
+          <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300 mt-1">
             Pos 1 (Titik mulai) • Pos 2 (Challenge) • Pos 3 (Obstacles) • Pos 4 (Effort)
           </p>
         </div>
 
         {/* Etape 2 Info */}
-        <div className="bg-gradient-to-br from-indigo-50 to-sky-50/50 p-4 rounded-2xl border border-indigo-200">
+        <div className="bg-gradient-to-br from-indigo-50 dark:from-indigo-900/30 to-sky-50/50 dark:to-sky-900/30 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-700">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-wider">
               Etape 2
             </span>
-            <span className="text-xs font-bold text-indigo-950">Belajar dari sekitar dan bertumbuh</span>
+            <span className="text-xs font-bold text-indigo-950 dark:text-indigo-100">Belajar dari sekitar dan bertumbuh</span>
           </div>
-          <p className="text-[11px] text-indigo-800/80 mt-1">
+          <p className="text-[11px] text-indigo-800/80 dark:text-indigo-300 mt-1">
             Pos 5 (Critiques) • Pos 6 (Success of others) • Pos 7 (Refleksi) • Pos 8 (Garis akhir)
           </p>
         </div>
       </div>
 
       {/* Interactive Visual Map Section */}
-      <div className="relative bg-gradient-to-b from-sky-100 via-emerald-50/60 to-amber-50/50 rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-md overflow-hidden min-h-[640px] sm:min-h-[720px]">
+      <div className={`relative bg-gradient-to-b from-sky-100 dark:from-sky-900/40 via-emerald-50/60 dark:via-emerald-900/40 to-amber-50/50 dark:to-amber-900/40 rounded-3xl p-4 sm:p-8 border border-slate-200 dark:border-slate-700 shadow-md overflow-hidden min-h-[640px] sm:min-h-[720px]`}>
         {/* Background terrain decorative art */}
-        <div className="absolute inset-0 pointer-events-none opacity-40">
+        <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20">
           <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 800">
             <path d="M0,800 L200,600 L450,800 Z" fill="#99f6e4" opacity="0.3" />
             <path d="M600,800 L850,550 L1000,800 Z" fill="#a7f3d0" opacity="0.4" />
@@ -205,24 +209,24 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ onGoToResult }) => {
         </div>
 
         {/* Map Header Overlay */}
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-xs">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-4 rounded-2xl border border-white/60 dark:border-slate-700 shadow-xs">
           <div>
-            <h2 className="text-base sm:text-lg font-extrabold text-slate-800 font-display flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-800 dark:text-slate-100 font-display flex items-center gap-2">
               <span>🗺️ Peta Petualangan Growth Mindset Percaya Diri</span>
             </h2>
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               Klik setiap pulau pos refleksi untuk membuka misi belajarmu secara bertahap.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-            <span className="flex items-center gap-1 text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Selesai
+            <span className="flex items-center gap-1 text-emerald-800 dark:text-emerald-100 bg-emerald-100/80 dark:bg-emerald-900/40 px-2.5 py-1 rounded-lg">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Selesai
             </span>
-            <span className="flex items-center gap-1 text-amber-800 bg-amber-100/80 px-2.5 py-1 rounded-lg">
-              <Play className="w-3.5 h-3.5 text-amber-600" /> Pos Aktif
+            <span className="flex items-center gap-1 text-amber-800 dark:text-amber-100 bg-amber-100/80 dark:bg-amber-900/40 px-2.5 py-1 rounded-lg">
+              <Play className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Pos Aktif
             </span>
-            <span className="flex items-center gap-1 text-slate-600 bg-slate-200/80 px-2.5 py-1 rounded-lg">
-              <Lock className="w-3.5 h-3.5 text-slate-400" /> Terkunci
+            <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400 bg-slate-200/80 dark:bg-slate-700/60 px-2.5 py-1 rounded-lg">
+              <Lock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> Terkunci
             </span>
           </div>
         </div>

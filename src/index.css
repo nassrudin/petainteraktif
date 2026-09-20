@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Dark mode configuration */
+@theme {
+  --color-dark-bg-primary: #0f172a;
+  --color-dark-bg-secondary: #1e293b;
+  --color-dark-bg-tertiary: #334155;
+  --color-dark-text-primary: #f8fafc;
+  --color-dark-text-secondary: #e2e8f0;
+  --color-dark-border: #475569;
+}
+
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -8,6 +18,11 @@
   .font-display {
     font-family: 'Fredoka', cursive, sans-serif;
   }
+}
+
+.dark {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
 }
 
 @keyframes float {

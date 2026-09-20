@@ -6,11 +6,17 @@ import { ResultView } from './components/ResultView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { StudentEntry } from './components/StudentEntry';
 import { AdminLoginModal } from './components/AdminLoginModal';
+import { Moon, Sun } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
   const { activeStudent, isAdminLoggedIn } = useApp();
   const [activeTab, setActiveTab] = useState<'map' | 'result' | 'admin'>('map');
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Load theme preference from localStorage
+    const saved = localStorage.getItem('gm_theme_preference');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   React.useEffect(() => {
     if (isAdminLoggedIn) {
@@ -20,40 +26,54 @@ const MainLayout: React.FC = () => {
     }
   }, [isAdminLoggedIn]);
 
+  // Save theme preference and apply to document
+  React.useEffect(() => {
+    localStorage.setItem('gm_theme_preference', String(isDarkMode));
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100 text-slate-800">
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenAdminLogin={() => setShowAdminModal(true)}
-      />
+    <div className={`min-h-screen flex flex-col ${isDarkMode ? 'dark' : ''}`}>
+      <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenAdminLogin={() => setShowAdminModal(true)}
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+        />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        {isAdminLoggedIn ? (
-          <AdminDashboard />
-        ) : !activeStudent ? (
-          <StudentEntry onAdminClick={() => setShowAdminModal(true)} />
-        ) : (
-          <>
-            {activeTab === 'map' && (
-              <JourneyMap onGoToResult={() => setActiveTab('result')} />
-            )}
-            {activeTab === 'result' && (
-              <ResultView onBackToMap={() => setActiveTab('map')} />
-            )}
-          </>
-        )}
-      </main>
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+          {isAdminLoggedIn ? (
+            <AdminDashboard />
+          ) : !activeStudent ? (
+            <StudentEntry onAdminClick={() => setShowAdminModal(true)} />
+          ) : (
+            <>
+              {activeTab === 'map' && (
+                <JourneyMap onGoToResult={() => setActiveTab('result')} />
+              )}
+              {activeTab === 'result' && (
+                <ResultView onBackToMap={() => setActiveTab('map')} />
+              )}
+            </>
+          )}
+        </main>
 
-      <AdminLoginModal
-        isOpen={showAdminModal}
-        onClose={() => setShowAdminModal(false)}
-        onSuccess={() => setActiveTab('admin')}
-      />
+        <AdminLoginModal
+          isOpen={showAdminModal}
+          onClose={() => setShowAdminModal(false)}
+          onSuccess={() => setActiveTab('admin')}
+        />
 
-      <footer className="no-print border-t border-slate-200 bg-white/80 py-4 px-4 text-center text-xs text-slate-500">
-        Growth Mindset Journey Map Percaya Diri &copy; 2026 • Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh — media layanan bimbingan klasikal kelas X
-      </footer>
+        <footer className="no-print border-t border-slate-200 dark:border-slate-700 dark:bg-slate-800/80 py-4 px-4 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors duration-300">
+          Growth Mindset Journey Map Percaya Diri &copy; 2026 • Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh — media layanan bimbingan klasikal kelas X
+        </footer>
+      </div>
     </div>
   );
 };
