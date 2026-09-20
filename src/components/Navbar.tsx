@@ -44,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Growth Mindset
               </span>
               <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 hidden md:block max-w-md truncate leading-relaxed">
-                Journey Map Percaya Diri — Kelas X
+                Journey Map Percaya Diri, Kelas X
               </p>
             </div>
           </div>
