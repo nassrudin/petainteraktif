@@ -41,10 +41,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-base sm:text-lg text-slate-800 dark:text-slate-100 tracking-tight leading-tight">
-                Petain Aktif
+                Growth Mindset
               </span>
               <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 hidden md:block max-w-md truncate leading-relaxed">
-                Growth Mindset Journey Map Percaya Diri — Kelas X
+                Journey Map Percaya Diri — Kelas X
               </p>
             </div>
           </div>
