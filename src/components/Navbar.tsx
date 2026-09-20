@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context';
-import { Compass, Shield, LogOut, CheckCircle2, User, KeyRound, ArrowRightLeft } from 'lucide-react';
+import { Compass, Shield, LogOut, CheckCircle2, User, KeyRound, ArrowRightLeft, BookOpen } from 'lucide-react';
 
 interface NavbarProps {
   activeTab: 'map' | 'result' | 'admin';
@@ -48,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {isAdminLoggedIn ? (
             <button
               onClick={() => setActiveTab('admin')}
-              className={`px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'admin'
                   ? 'bg-white text-teal-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -77,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <span>Hasil & Sertifikat</span>
+                <span>Cetak Hasil/Download</span>
                 {isFinishedAll && (
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                 )}
@@ -117,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {activeStudent.name}
                   </p>
                   <p className="text-[10px] text-emerald-700 font-semibold">
-                    Kelas {activeStudent.class}
+                    Kelas {activeStudent.class} • Absen {activeStudent.absentNumber}
                   </p>
                 </div>
               </div>

@@ -1,22 +1,20 @@
 import React, { useState } from 'react';
 import { useApp } from '../context';
-import { Compass, Sparkles, ArrowRight, Shield, User, BookOpen, HeartHandshake, CheckCircle2 } from 'lucide-react';
+import { Compass, Shield, User, BookOpen, HeartHandshake, CheckCircle2, CheckSquare, Square } from 'lucide-react';
+import { Gender } from '../types';
 
 interface StudentEntryProps {
   onAdminClick: () => void;
 }
 
 export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
-  const { startStudentJourney } = useApp();
+  const { startStudentJourney, appSettings } = useApp();
   const [name, setName] = useState('');
-  const [studentClass, setStudentClass] = useState('');
+  const [gender, setGender] = useState<Gender>('L');
+  const [studentClass, setStudentClass] = useState<string>('X-1');
+  const [absentNumber, setAbsentNumber] = useState<number>(1);
   const [customClass, setCustomClass] = useState('');
   const [error, setError] = useState<string | null>(null);
-
-  const CLASS_OPTIONS = [
-    'X-1', 'X-2', 'X-3', 'X-4', 'X-5',
-    'X-6', 'X-7', 'X-8', 'X-9', 'X-10', 'Lainnya'
-  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,15 +22,13 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
       setError('Harap masukkan nama lengkapmu terlebih dahulu.');
       return;
     }
-
     const finalClass = studentClass === 'Lainnya' ? customClass.trim() : studentClass;
-    if (!finalClass) {
-      setError('Harap pilih atau masukkan kelasmu.');
+    if (!finalClass || absentNumber < 1) {
+      setError('Harap pilih kelas dan nomor absen minimal 1.');
       return;
     }
-
     setError(null);
-    startStudentJourney(name, finalClass);
+    startStudentJourney(name, gender, finalClass, absentNumber);
   };
 
   return (
@@ -66,9 +62,9 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
             </p>
           </div>
 
-          {/* Cara Mengisi Callout Box (Revision 5) */}
+          {/* Cara Mengisi Callout Box */}
           <div className="mt-5 p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-200/90 flex gap-3 text-left">
-            <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <Compass className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="text-xs font-extrabold uppercase tracking-wide text-amber-900">
                 Cara Mengisi Petualangan:
@@ -107,25 +103,67 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5 text-left">
+                <label className="block text-xs font-bold text-slate-700">
+                  Jenis Kelamin <span className="text-emerald-600">*</span>
+                </label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value as Gender)}
+                  className="w-full text-xs sm:text-sm px-3.5 py-3 rounded-2xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all cursor-pointer bg-white"
+                >
+                  <option value="L">Laki-laki</option>
+                  <option value="P">Perempuan</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5 text-left">
+                <label className="block text-xs font-bold text-slate-700">
+                  Nomor Absen <span className="text-emerald-600">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="36"
+                  value={absentNumber}
+                  onChange={(e) => setAbsentNumber(Math.max(1, Math.min(36, parseInt(e.target.value) || 1)))}
+                  placeholder="1 - 36"
+                  className="w-full text-xs sm:text-sm px-3.5 py-3 rounded-2xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
+                />
+              </div>
+            </div>
+
             <div className="space-y-1.5 text-left">
               <label className="block text-xs font-bold text-slate-700">
                 Kelas <span className="text-emerald-600">*</span>
               </label>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                {CLASS_OPTIONS.map((cls) => (
+                {appSettings.classNames.slice(0, 12).map((cls) => (
                   <button
-                    key={cls}
+                    key={cls.className}
                     type="button"
-                    onClick={() => setStudentClass(cls)}
+                    onClick={() => setStudentClass(cls.className)}
                     className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                      studentClass === cls
+                      studentClass === cls.className
                         ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
                         : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    {cls}
+                    {cls.className}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => setStudentClass('Lainnya')}
+                  className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                    studentClass === 'Lainnya'
+                      ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  Lainnya
+                </button>
               </div>
 
               {studentClass === 'Lainnya' && (
@@ -146,7 +184,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
               className="w-full mt-6 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
             >
               <span>Mulai Petualangan Refleksi</span>
-              <ArrowRight className="w-4 h-4" />
+              <BookOpen className="w-4 h-4" />
             </button>
           </form>
 

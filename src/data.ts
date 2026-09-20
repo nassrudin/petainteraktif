@@ -1,10 +1,18 @@
-import { StageDefinition, ActiveStudent, StudentJourney, AdminCredentials } from './types';
+import { StageDefinition, ActiveStudent, StudentJourney, AdminCredentials, ClassConfig } from './types';
+import { DEFAULT_DRIVE_FOLDER_URL } from './context';
 
 export const PEGANGAN_DI_SEPANJANG_JALAN =
   'Percaya diri bukan bakat yang dimiliki sejak lahir. Ia tumbuh setiap kali kamu berani mencoba sekali lagi.';
 
 export const PESAN_UNTUK_DIRI_SAYA =
   'Bukan karena mudah lalu saya berani. Karena saya berani, lama-lama menjadi mudah.';
+
+// Default class configurations: X-1 to X-12 with absence 1-36
+export const DEFAULT_CLASS_CONFIGS: ClassConfig[] = Array.from({ length: 12 }, (_, i) => ({
+  className: `X-${i + 1}`,
+  absentRangeMin: 1,
+  absentRangeMax: 36,
+}));
 
 export const STAGES_DATA: StageDefinition[] = [
   {
@@ -78,7 +86,7 @@ export const STAGES_DATA: StageDefinition[] = [
     badgeName: 'Penakluk Rintangan',
     badgeIcon: 'Mountain',
     missionDescription:
-      'Pilihlah satu tantangan nyata yang paling ingin kamu taklukkan dan tukar kalimat keraguan menjadi kalimat bertumbuh.',
+      'Pilihlah satu tantangan nyata yang paling ingin kamu taklukkan.',
     motivationalQuote: PESAN_UNTUK_DIRI_SAYA,
     fields: [
       {
@@ -94,9 +102,21 @@ export const STAGES_DATA: StageDefinition[] = [
         placeholder: 'Jelaskan mengapa tantangan ini terasa berat bagimu...',
       },
       {
+        id: 'tidak_bisa',
+        sectionHeader: "Tukar kalimatnya:",
+        label: 'Saya tidak bisa ..............',
+        type: 'textarea',
+        placeholder: 'Isi dengan pernyataan yang biasanya muncul saat ragu...',
+      },
+      {
+        id: 'belum_bisa',
+        label: 'Saya belum bisa ..............',
+        type: 'textarea',
+        placeholder: 'Isi dengan pernyataan bertumbuh tentang hal yang sama...',
+      },
+      {
         id: 'growth_learning_way',
-        sectionHeader: "Tukar kalimatnya: dari 'Saya tidak bisa' menjadi 'Saya belum bisa'",
-        label: '...dan saya sedang belajar dengan cara:',
+        label: 'Dan saya sedang belajar dengan cara: ..............',
         type: 'textarea',
         placeholder: 'Tuliskan caramu belajar menghadapi hal tersebut...',
       },
@@ -418,206 +438,6 @@ export const DEFAULT_ADMIN: AdminCredentials = {
   name: 'Guru Pembimbing BK',
 };
 
-export const INITIAL_STUDENTS: ActiveStudent[] = [
-  {
-    id: 'student-1',
-    name: 'Budi Santoso',
-    class: 'X-1',
-    startedAt: '2026-09-15 08:00',
-    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-  },
-  {
-    id: 'student-2',
-    name: 'Siti Rahma',
-    class: 'X-1',
-    startedAt: '2026-09-10 08:30',
-    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
-  },
-  {
-    id: 'student-3',
-    name: 'Dimas Pratama',
-    class: 'X-2',
-    startedAt: '2026-09-18 09:00',
-    avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&q=80',
-  },
-  {
-    id: 'student-4',
-    name: 'Aisyah Putri',
-    class: 'X-2',
-    startedAt: '2026-09-18 09:45',
-    avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=120&q=80',
-  },
-];
+export const INITIAL_STUDENTS: ActiveStudent[] = [];
 
-export const INITIAL_JOURNEYS: Record<string, StudentJourney> = {
-  'student-1': {
-    studentId: 'student-1',
-    studentName: 'Budi Santoso',
-    studentClass: 'X-1',
-    confidenceScore: 80,
-    lastActiveStage: 4,
-    updatedAt: '2026-09-17 14:00',
-    stages: {
-      1: {
-        completed: true,
-        completedAt: '2026-09-15 08:30',
-        answers: {
-          situation: 'Saat guru memanggil nama saya untuk membacakan jawaban soal di depan kelas.',
-          thought: 'Bagaimana kalau jawaban saya salah dan teman-teman menertawakan saya.',
-          feeling: 'Jantung berdegup kencang, telapak tangan dingin, dan tenggorokan tercekat.',
-          action: 'Hanya diam menunduk dan pura-pura masih mencari buku catatan.',
-          confidence_scale: 2,
-        },
-      },
-      2: {
-        completed: true,
-        completedAt: '2026-09-16 10:15',
-        answers: {
-          challenge_target: 'Mengangkat tangan dan menjawab minimal 1 pertanyaan guru setiap pelajaran.',
-          heavy_reason: 'Takut salah berbicara dan merasa belum sepintar teman lainnya.',
-          growth_learning_way: 'Mencatat poin jawaban di kertas kecil terlebih dahulu sebelum menjawab.',
-          fear_motto: 'Salah jawab bukan dosa, tapi bukti saya berani belajar!',
-        },
-      },
-      3: {
-        completed: true,
-        completedAt: '2026-09-17 14:00',
-        answers: {
-          internal_obstacles: 'Pikiran overthinking dan rasa ragu sebelum bertindak.',
-          external_obstacles: 'Suasana kelas yang terkadang menyoraki jika ada teman salah bicara.',
-          why_obstacle_arises: 'Karena terlalu memikirkan pandangan orang lain dibanding proses belajar sendiri.',
-          how_to_overcome: 'Tarik nafas dalam 3 hitungan dan fokus pada isi jawaban, bukan pada orang lain.',
-          giveup_motto: 'Kalau saya berhenti sekarang, saya tidak akan pernah tahu seberapa jauh saya bisa bertumbuh.',
-        },
-      },
-    },
-  },
-  'student-2': {
-    studentId: 'student-2',
-    studentName: 'Siti Rahma',
-    studentClass: 'X-1',
-    confidenceScore: 100,
-    lastActiveStage: 8,
-    updatedAt: '2026-09-18 11:20',
-    driveExportedUrl: 'https://drive.google.com/drive/folders/growth-mindset-journey/X-1/Siti_Rahma.png',
-    driveExportedAt: '2026-09-18 11:20',
-    stages: {
-      1: {
-        completed: true,
-        completedAt: '2026-09-10 09:00',
-        answers: {
-          situation: 'Saat harus memulai dialog dalam bahasa Inggris.',
-          thought: 'Grammar saya berantakan, pronunciation saya medok.',
-          feeling: 'Malu dan cemas dinilai kurang pintar.',
-          action: 'Memilih diam dan membiarkan teman lain yang berbicara.',
-          confidence_scale: 2,
-        },
-      },
-      2: {
-        completed: true,
-        completedAt: '2026-09-11 09:30',
-        answers: {
-          challenge_target: 'Berlatih berbicara bahasa Inggris 3 kalimat setiap hari.',
-          heavy_reason: 'Kurang terbiasa dan kosakata masih terbatas.',
-          growth_learning_way: 'Merekam suara sendiri di handphone dan mendengarkannya ulang.',
-          fear_motto: 'Practice makes progress, not perfection.',
-        },
-      },
-      3: {
-        completed: true,
-        completedAt: '2026-09-12 11:00',
-        answers: {
-          internal_obstacles: 'Rasa malu saat mendengar suara rekaman sendiri.',
-          external_obstacles: 'Tidak banyak teman yang mau diajak latihan bersama.',
-          why_obstacle_arises: 'Zona nyaman ingin selalu terlihat sudah sempurna.',
-          how_to_overcome: 'Latihan mandiri di kamar dengan membaca keras artikel berita pendek.',
-          giveup_motto: 'Kesalahan hari ini adalah bahan bakar kefasihan esok hari.',
-        },
-      },
-      4: {
-        completed: true,
-        completedAt: '2026-09-13 13:00',
-        answers: {
-          step_1: 'Membaca 1 paragraf bahasa Inggris setiap pagi.',
-          step_2: 'Mencatat 3 kosakata baru di buku saku.',
-          step_3: 'Menyapa guru bahasa Inggris dengan salam bahasa Inggris saat berpapasan.',
-          start_date: '14 September 2026',
-          consistency_strategy: 'Menempelkan sticky note pengingat di cermin kamar.',
-          helper_person: 'Ibu di rumah dan teman sebangku.',
-          step_done_motto: 'Satu langkah kecil telah saya selesaikan dengan bangga!',
-        },
-      },
-      5: {
-        completed: true,
-        completedAt: '2026-09-14 10:20',
-        answers: {
-          received_criticism: 'Guru bahasa Inggris mengatakan intonasi kalimat tanya saya masih datar.',
-          constructive_aspect: 'Saya jadi tahu bahwa intonasi sangat penting dalam bahasa Inggris.',
-          destructive_aspect: 'Awalnya merasa dianggap tidak bisa sama sekali.',
-          what_i_improve: 'Mendengarkan contoh pengucapan di kamus online dan menirukan intonasinya.',
-          response_strategy: 'Tersenyum, mengucapkan terima kasih atas masukannya, dan langsung mencatatnya.',
-        },
-      },
-      6: {
-        completed: true,
-        completedAt: '2026-09-15 15:45',
-        answers: {
-          admired_figure: 'Kak Raisa, kakak kelas XI yang menjadi juara debat sekolah.',
-          confidence_actions: 'Dia berdiri tegak, berbicara tanpa terburu-buru, dan berani menatap mata lawan bicara.',
-          imitation_action: 'Berlatih berdiri tegak di depan cermin sebelum berbicara.',
-        },
-      },
-      7: {
-        completed: true,
-        completedAt: '2026-09-16 16:30',
-        answers: {
-          what_succeeded: 'Berhasil membaca 5 artikel dan berani menyapa guru bahasa Inggris.',
-          what_failed_and_why: 'Di hari Rabu sempat lupa menghafal kosakata karena kelelahan tugas kelompok.',
-          new_self_knowledge: 'Ternyata saat saya mulai berbicara, rasa takutnya cepat hilang setelah 1 menit.',
-          felt_changes: 'Merasa lebih tenang dan tidak lagi gemetar saat disuruh membaca di kelas.',
-        },
-      },
-      8: {
-        completed: true,
-        completedAt: '2026-09-17 10:00',
-        answers: {
-          target_week_1: 'Mengikuti seleksi klub bahasa Inggris sekolah.',
-          target_week_2: 'Berani mengajukan 1 pertanyaan dalam diskusi kelas.',
-          target_week_3: 'Konsisten membaca 10 halaman buku setiap pekan.',
-          future_confidence_scale: 5,
-          final_commitment: 'Saya berkomitmen untuk menyambut setiap tantangan sebagai kesempatan bertumbuh.',
-        },
-      },
-    },
-  },
-  'student-3': {
-    studentId: 'student-3',
-    studentName: 'Dimas Pratama',
-    studentClass: 'X-2',
-    confidenceScore: 40,
-    lastActiveStage: 1,
-    updatedAt: '2026-09-18 09:10',
-    stages: {
-      1: {
-        completed: true,
-        completedAt: '2026-09-18 09:10',
-        answers: {
-          situation: 'Saat harus memimpin diskusi kerja kelompok.',
-          thought: 'Takut teman tidak mau mendengarkan pendapat saya.',
-          feeling: 'Gelisah dan canggung.',
-          action: 'Menyerahkan tugas ketua kelompok ke teman lain.',
-          confidence_scale: 2,
-        },
-      },
-    },
-  },
-  'student-4': {
-    studentId: 'student-4',
-    studentName: 'Aisyah Putri',
-    studentClass: 'X-2',
-    confidenceScore: 0,
-    lastActiveStage: 1,
-    updatedAt: '2026-09-18 09:45',
-    stages: {},
-  },
-};
+export const INITIAL_JOURNEYS: Record<string, StudentJourney> = {};

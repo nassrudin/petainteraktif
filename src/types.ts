@@ -1,9 +1,12 @@
 export type Role = 'student' | 'admin';
+export type Gender = 'L' | 'P';
 
 export interface ActiveStudent {
   id: string;
   name: string;
+  gender: Gender;
   class: string;
+  absentNumber: number;
   startedAt: string;
   avatarUrl?: string;
 }
@@ -15,6 +18,16 @@ export interface AdminCredentials {
   username: string;
   password: string;
   name?: string;
+}
+
+export interface ClassConfig {
+  className: string;
+  absentRangeMin: number;
+  absentRangeMax: number;
+}
+
+export interface AppSettings {
+  classNames: ClassConfig[];
 }
 
 export interface StageField {
@@ -62,7 +75,9 @@ export interface StageAnswer {
 export interface StudentJourney {
   studentId: string;
   studentName: string;
+  studentGender: Gender;
   studentClass: string;
+  studentAbsentNumber: number;
   confidenceScore: number; // 0-100
   stages: Record<number, StageAnswer>;
   lastActiveStage: number;

@@ -1,10 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ActiveStudent, StudentJourney, AdminCredentials } from './types';
-import { INITIAL_STUDENTS, INITIAL_JOURNEYS, DEFAULT_ADMIN } from './data';
+import { ActiveStudent, StudentJourney, AdminCredentials, Gender, AppSettings, ClassConfig } from './types';
+import { INITIAL_STUDENTS, INITIAL_JOURNEYS, DEFAULT_ADMIN, DEFAULT_CLASS_CONFIGS } from './data';
+
+// Define default drive folder URL here to avoid circular imports
+export const DEFAULT_DRIVE_FOLDER_URL =
+  'https://drive.google.com/drive/folders/1Slmi-qS--PbmWZh7KzFoMVG3iE5QqD_Z?usp=sharing';
 
 interface AppContextType {
   activeStudent: ActiveStudent | null;
-  startStudentJourney: (name: string, studentClass: string) => void;
+  startStudentJourney: (name: string, gender: Gender, studentClass: string, absentNumber: number) => void;
   clearActiveStudent: () => void;
   isAdminLoggedIn: boolean;
   adminLogin: (user: string, pass: string) => boolean;
@@ -23,6 +27,8 @@ interface AppContextType {
   resetStudentProgress: (studentId: string) => void;
   driveFolderUrl: string;
   updateDriveFolderUrl: (url: string) => { success: boolean; message: string };
+  appSettings: AppSettings;
+  updateAppSettings: (settings: AppSettings) => { success: boolean; message: string };
 }
 
 const STORAGE_KEY_ACTIVE_STUDENT = 'gm_active_student_v2';
@@ -31,9 +37,7 @@ const STORAGE_KEY_JOURNEYS = 'gm_journeys_v2';
 const STORAGE_KEY_ADMIN_AUTH = 'gm_admin_auth_v2';
 const STORAGE_KEY_ADMIN_LOGGED_IN = 'gm_admin_logged_in_v2';
 const STORAGE_KEY_DRIVE_FOLDER = 'gm_drive_folder_url_v2';
-
-export const DEFAULT_DRIVE_FOLDER_URL =
-  'https://drive.google.com/drive/folders/1Slmi-qS--PbmWZh7KzFoMVG3iE5QqD_Z?usp=sharing';
+const STORAGE_KEY_APP_SETTINGS = 'gm_app_settings_v2';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -48,6 +52,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return localStorage.getItem(STORAGE_KEY_ADMIN_LOGGED_IN) === 'true';
   });
 
+  // App settings (class configurations)
+  const [appSettings, setAppSettings] = useState<AppSettings>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_APP_SETTINGS);
+    return saved ? JSON.parse(saved) : { classNames: DEFAULT_CLASS_CONFIGS };
+  });
+
   // Google Drive folder URL (configurable by Admin)
   const [driveFolderUrl, setDriveFolderUrlState] = useState<string>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_DRIVE_FOLDER);
@@ -57,7 +67,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Students list (for admin dashboard viewing)
   const [allStudents, setAllStudents] = useState<ActiveStudent[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_ALL_STUDENTS);
-    return saved ? JSON.parse(saved) : INITIAL_STUDENTS;
+    return saved ? JSON.parse(saved) : []; // Empty array!
   });
 
   // Currently active student filling the journey
@@ -76,7 +86,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Journeys map
   const [journeys, setJourneys] = useState<Record<string, StudentJourney>>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_JOURNEYS);
-    return saved ? JSON.parse(saved) : INITIAL_JOURNEYS;
+    return saved ? JSON.parse(saved) : {}; // Empty object!
   });
 
   // Sync to LocalStorage
@@ -87,6 +97,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_ADMIN_LOGGED_IN, String(isAdminLoggedIn));
   }, [isAdminLoggedIn]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_APP_SETTINGS, JSON.stringify(appSettings));
+  }, [appSettings]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_DRIVE_FOLDER, driveFolderUrl);
@@ -109,14 +123,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [journeys]);
 
   // Actions
-  const startStudentJourney = (name: string, studentClass: string) => {
+  const startStudentJourney = (name: string, gender: Gender, studentClass: string, absentNumber: number) => {
     const trimmedName = name.trim();
     const trimmedClass = studentClass.trim();
-    if (!trimmedName || !trimmedClass) return;
+    if (!trimmedName || !trimmedClass || absentNumber < 1) return;
 
     // Look for existing student record or create new
     const existing = allStudents.find(
-      (s) => s.name.toLowerCase() === trimmedName.toLowerCase() && s.class.toLowerCase() === trimmedClass.toLowerCase()
+      (s) => s.name.toLowerCase() === trimmedName.toLowerCase() && 
+             s.class.toLowerCase() === trimmedClass.toLowerCase() &&
+             s.absentNumber === absentNumber
     );
 
     const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
@@ -126,11 +142,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currentStudent = existing;
     } else {
       currentStudent = {
-        id: `student-${Date.now()}`,
+        id: `student-${Date.now()}-${absentNumber}`,
         name: trimmedName,
+        gender,
         class: trimmedClass,
+        absentNumber,
         startedAt: nowStr,
-        avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(trimmedName)}`,
+        avatarUrl: gender === 'L' 
+          ? `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(trimmedName)}&gender=male`
+          : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(trimmedName)}&gender=female`,
       };
       setAllStudents((prev) => [currentStudent, ...prev]);
     }
@@ -142,7 +162,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         [currentStudent.id]: {
           studentId: currentStudent.id,
           studentName: currentStudent.name,
+          studentGender: currentStudent.gender,
           studentClass: currentStudent.class,
+          studentAbsentNumber: currentStudent.absentNumber,
           confidenceScore: 50,
           stages: {},
           lastActiveStage: 1,
@@ -206,6 +228,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true, message: 'Link folder Google Drive berhasil diperbarui!' };
   };
 
+  const updateAppSettings = (settings: AppSettings): { success: boolean; message: string } => {
+    const hasValidClasses = settings.classNames.length > 0 && 
+                           settings.classNames.every(c => c.className && c.absentRangeMin >= 1 && c.absentRangeMax >= c.absentRangeMin);
+    if (!hasValidClasses) {
+      return { success: false, message: 'Konfigurasi kelas tidak valid.' };
+    }
+    setAppSettings(settings);
+    return { success: true, message: 'Pengaturan kelas berhasil disimpan!' };
+  };
+
   const getStudentJourney = (studentId: string): StudentJourney => {
     if (journeys[studentId]) {
       return journeys[studentId];
@@ -214,7 +246,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return {
       studentId,
       studentName: student?.name || 'Siswa',
+      studentGender: student?.gender || 'L',
       studentClass: student?.class || 'Kelas X',
+      studentAbsentNumber: student?.absentNumber || 1,
       confidenceScore: 50,
       lastActiveStage: 1,
       stages: {},
@@ -228,7 +262,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const current = prev[studentId] || {
         studentId,
         studentName: student?.name || activeStudent?.name || 'Siswa',
+        studentGender: student?.gender || activeStudent?.gender || 'L',
         studentClass: student?.class || activeStudent?.class || 'Kelas X',
+        studentAbsentNumber: student?.absentNumber || activeStudent?.absentNumber || 1,
         confidenceScore: 50,
         lastActiveStage: 1,
         stages: {},
@@ -250,12 +286,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let calculatedScore = 50;
       if (answers.confidence_scale !== undefined) {
         calculatedScore = Math.min(100, Math.max(10, answers.confidence_scale * 20));
-      } else if (answers.future_confidence_scale !== undefined) {
-        calculatedScore = Math.min(100, Math.max(10, answers.future_confidence_scale * 20));
-      } else if (answers.confidence_level !== undefined) {
-        calculatedScore = Math.min(100, Math.max(10, answers.confidence_level * 10));
-      } else if (answers.effort_score !== undefined) {
-        calculatedScore = Math.min(100, Math.max(10, answers.effort_score * 10));
       } else {
         const completedCount = Object.keys(updatedStages).length;
         calculatedScore = Math.min(100, 20 + completedCount * 10);
@@ -283,7 +313,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const simulateGoogleDriveSync = async (studentId: string): Promise<string> => {
     await new Promise((resolve) => setTimeout(resolve, 800));
-
     setJourneys((prev) => {
       const current = prev[studentId];
       if (!current) return prev;
@@ -296,7 +325,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         },
       };
     });
-
     return driveFolderUrl;
   };
 
@@ -308,7 +336,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         [studentId]: {
           studentId,
           studentName: student?.name || 'Siswa',
+          studentGender: student?.gender || 'L',
           studentClass: student?.class || 'Kelas X',
+          studentAbsentNumber: student?.absentNumber || 1,
           confidenceScore: 40,
           lastActiveStage: 1,
           stages: {},
@@ -339,6 +369,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         resetStudentProgress,
         driveFolderUrl,
         updateDriveFolderUrl,
+        appSettings,
+        updateAppSettings,
       }}
     >
       {children}
