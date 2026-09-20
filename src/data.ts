@@ -105,19 +105,19 @@ export const STAGES_DATA: StageDefinition[] = [
       {
         id: 'tidak_bisa',
         sectionHeader: "Tukar kalimatnya:",
-        label: 'Saya tidak bisa',
+        label: 'Saya tidak bisa :',
         type: 'textarea',
         placeholder: 'Isi dengan pernyataan yang biasanya muncul saat ragu...',
       },
       {
         id: 'belum_bisa',
-        label: 'Saya belum bisa',
+        label: 'Saya belum bisa :',
         type: 'textarea',
         placeholder: 'Isi dengan pernyataan bertumbuh tentang hal yang sama...',
       },
       {
         id: 'growth_learning_way',
-        label: 'Dan saya sedang belajar dengan cara',
+        label: 'Dan saya sedang belajar dengan cara :',
         type: 'textarea',
         placeholder: 'Tuliskan caramu belajar menghadapi hal tersebut...',
       },
