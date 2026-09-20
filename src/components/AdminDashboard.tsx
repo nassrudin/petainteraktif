@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context';
-import { STAGES_DATA, DEFAULT_ADMIN, DEFAULT_CLASS_CONFIGS } from '../data';
+import { STAGES_DATA, DEFAULT_DRIVE_FOLDER_URL } from '../data';
 import { ActiveStudent } from '../types';
 import { 
   Users, CheckCircle, Clock, Trophy, BarChart3, 
@@ -121,6 +121,24 @@ export const AdminDashboard: React.FC = () => {
     if (editClasses.length > 1) {
       setEditClasses(editClasses.filter((_, i) => i !== index));
     }
+  };
+
+  const handleDeleteStudent = (studentId: string) => {
+    if (!confirm('Hapus semua jawaban dan reset progress siswa ini?')) return;
+    
+    // Delete student journey
+    setJourneys((prev) => {
+      const { [studentId]: deleted, ...rest } = prev;
+      return rest;
+    });
+    
+    // Remove student from allStudents too
+    setAllStudents((prev) => prev.filter((s) => s.id !== studentId));
+  };
+
+  const handleDownloadStudentResult = (studentId: string, name: string, class: string) => {
+    // Trigger window.print which will print the result view in PPT format
+    alert(`Download fitur untuk ${name} akan segera tersedia.`);
   };
 
   const handleExportCSV = () => {
@@ -399,12 +417,9 @@ export const AdminDashboard: React.FC = () => {
                                 <span>Lihat Refleksi</span>
                               </button>
                               <button
-                                onClick={() => {
-                                  if (confirm('Hapus jawaban dan reset progress siswa ini?')) {
-                                    // TODO: Add reset function call here
-                                  }
-                                }}
+                                onClick={() => handleDeleteStudent(student.id)}
                                 className="px-3 py-1.5 rounded-xl border border-red-200 bg-white text-red-600 font-bold text-xs hover:bg-red-50 transition-all flex items-center gap-1.5 cursor-pointer"
+                                title="Hapus jawaban siswa ini"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
