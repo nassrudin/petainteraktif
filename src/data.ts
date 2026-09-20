@@ -1,4 +1,4 @@
-import { StageDefinition, ActiveStudent, StudentJourney, AdminCredentials } from './types';
+import { StageDefinition, User, StudentJourney } from './types';
 
 export const STAGES_DATA: StageDefinition[] = [
   {
@@ -7,7 +7,6 @@ export const STAGES_DATA: StageDefinition[] = [
     subtitle: 'Tahap Awal Petualangan: Kenali potensi terbaikmu',
     theme: 'Lembah Pengenalan Diri',
     islandName: 'Puncak Percaya Diri',
-    meetingPhase: 1,
     color: 'emerald',
     badgeName: 'Berani Memulai',
     badgeIcon: 'Compass',
@@ -44,7 +43,6 @@ export const STAGES_DATA: StageDefinition[] = [
     subtitle: 'Menetapkan target berani yang ingin kamu taklukkan',
     theme: 'Hutan Belantara Target',
     islandName: 'Tebing Tantangan',
-    meetingPhase: 1,
     color: 'teal',
     badgeName: 'Penakluk Rintangan',
     badgeIcon: 'Mountain',
@@ -78,7 +76,6 @@ export const STAGES_DATA: StageDefinition[] = [
     subtitle: 'Memetakan monster keraguan dan distraksi',
     theme: 'Rawa-Rawa Keraguan',
     islandName: 'Goa Pembuka Rahasia',
-    meetingPhase: 1,
     color: 'sky',
     badgeName: 'Mata Elang',
     badgeIcon: 'Eye',
@@ -112,7 +109,6 @@ export const STAGES_DATA: StageDefinition[] = [
     subtitle: 'Prinsip 1% lebih baik setiap hari (Micro-steps)',
     theme: 'Jembatan Langkah Emas',
     islandName: 'Pondok Rencana Aksi',
-    meetingPhase: 1,
     color: 'blue',
     badgeName: 'Arsitek Aksi',
     badgeIcon: 'Footprints',
@@ -146,7 +142,6 @@ export const STAGES_DATA: StageDefinition[] = [
     subtitle: 'Mengubah umpan balik menjadi bahan bakar pertumbuhan',
     theme: 'Air Terjun Kejernihan',
     islandName: 'Kuil Umpan Balik',
-    meetingPhase: 2,
     color: 'indigo',
     badgeName: 'Hati Terbuka',
     badgeIcon: 'ShieldCheck',
@@ -174,7 +169,6 @@ export const STAGES_DATA: StageDefinition[] = [
     subtitle: 'Inspirasi dari role model dan teman seperjuangan',
     theme: 'Desa Para Sahabat Bijak',
     islandName: 'Pustaka Inspirasi',
-    meetingPhase: 2,
     color: 'violet',
     badgeName: 'Pembelajar Aktif',
     badgeIcon: 'Users',
@@ -202,7 +196,6 @@ export const STAGES_DATA: StageDefinition[] = [
     subtitle: 'Menghargai proses, bukan hanya hasil akhir',
     theme: 'Cermin Keheningan Bintang',
     islandName: 'Menara Refleksi',
-    meetingPhase: 2,
     color: 'purple',
     badgeName: 'Penghargai Proses',
     badgeIcon: 'Sparkles',
@@ -233,7 +226,6 @@ export const STAGES_DATA: StageDefinition[] = [
     subtitle: 'Deklarasi janji petualang sejati untuk masa depan',
     theme: 'Kuil Penobatan Juara',
     islandName: 'Puncak Growth Mindset',
-    meetingPhase: 2,
     color: 'amber',
     badgeName: 'Growth Master',
     badgeIcon: 'Award',
@@ -266,51 +258,53 @@ export const STAGES_DATA: StageDefinition[] = [
   },
 ];
 
-export const DEFAULT_ADMIN: AdminCredentials = {
-  username: 'admin',
-  password: 'admin123',
-  name: 'Guru Pembimbing BK',
-};
-
-export const INITIAL_STUDENTS: ActiveStudent[] = [
+export const INITIAL_USERS: User[] = [
   {
     id: 'student-1',
     name: 'Budi Santoso',
-    class: 'X-1',
-    startedAt: '2026-09-15 08:00',
+    email: 'budi@sekolah.sch.id',
+    role: 'student',
+    class: 'Kelas 8A',
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
   },
   {
     id: 'student-2',
     name: 'Siti Rahma',
-    class: 'X-1',
-    startedAt: '2026-09-10 08:30',
+    email: 'siti@sekolah.sch.id',
+    role: 'student',
+    class: 'Kelas 8A',
     avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
   },
   {
     id: 'student-3',
     name: 'Dimas Pratama',
-    class: 'X-2',
-    startedAt: '2026-09-18 09:00',
+    email: 'dimas@sekolah.sch.id',
+    role: 'student',
+    class: 'Kelas 8B',
     avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&q=80',
   },
   {
     id: 'student-4',
     name: 'Aisyah Putri',
-    class: 'X-2',
-    startedAt: '2026-09-18 09:45',
+    email: 'aisyah@sekolah.sch.id',
+    role: 'student',
+    class: 'Kelas 8B',
     avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=120&q=80',
+  },
+  {
+    id: 'admin-1',
+    name: 'Ibu Rina Wijaya, S.Pd.',
+    email: 'rina.guru@sekolah.sch.id',
+    role: 'admin',
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=120&q=80',
   },
 ];
 
 export const INITIAL_JOURNEYS: Record<string, StudentJourney> = {
   'student-1': {
-    studentId: 'student-1',
-    studentName: 'Budi Santoso',
-    studentClass: 'X-1',
+    userId: 'student-1',
     confidenceScore: 85,
     lastActiveStage: 4,
-    updatedAt: '2026-09-17 14:00',
     stages: {
       1: {
         completed: true,
@@ -344,13 +338,10 @@ export const INITIAL_JOURNEYS: Record<string, StudentJourney> = {
     },
   },
   'student-2': {
-    studentId: 'student-2',
-    studentName: 'Siti Rahma',
-    studentClass: 'X-1',
+    userId: 'student-2',
     confidenceScore: 95,
     lastActiveStage: 8,
-    updatedAt: '2026-09-18 11:20',
-    driveExportedUrl: 'https://drive.google.com/drive/folders/growth-mindset-journey/X-1/Siti_Rahma.png',
+    driveExportedUrl: 'https://drive.google.com/drive/folders/growth-mindset-journey/8A/Siti_Rahma.png',
     driveExportedAt: '2026-09-18 11:20',
     stages: {
       1: {
@@ -424,12 +415,9 @@ export const INITIAL_JOURNEYS: Record<string, StudentJourney> = {
     },
   },
   'student-3': {
-    studentId: 'student-3',
-    studentName: 'Dimas Pratama',
-    studentClass: 'X-2',
+    userId: 'student-3',
     confidenceScore: 60,
     lastActiveStage: 1,
-    updatedAt: '2026-09-18 09:10',
     stages: {
       1: {
         completed: true,
@@ -443,12 +431,9 @@ export const INITIAL_JOURNEYS: Record<string, StudentJourney> = {
     },
   },
   'student-4': {
-    studentId: 'student-4',
-    studentName: 'Aisyah Putri',
-    studentClass: 'X-2',
+    userId: 'student-4',
     confidenceScore: 0,
     lastActiveStage: 1,
-    updatedAt: '2026-09-18 09:45',
     stages: {},
   },
 };
