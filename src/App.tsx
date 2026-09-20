@@ -28,14 +28,27 @@ const MainLayout: React.FC = () => {
     }
   }, [isAdminLoggedIn]);
 
-  // Save theme preference and apply to document
+  // Save theme preference and apply to document - FIX DARK MODE
   React.useEffect(() => {
     localStorage.setItem('gm_theme_preference', String(isDarkMode));
+    
+    // Apply dark class to the app element
     if (htmlElement) {
       if (isDarkMode) {
         htmlElement.classList.add('dark');
       } else {
         htmlElement.classList.remove('dark');
+      }
+      console.log('Dark mode applied:', isDarkMode, 'classList:', htmlElement.className);
+    }
+    
+    // Also apply to body for fallback
+    const body = document.body;
+    if (body) {
+      if (isDarkMode) {
+        body.classList.add('dark-bg');
+      } else {
+        body.classList.remove('dark-bg');
       }
     }
   }, [isDarkMode]);
