@@ -3,7 +3,7 @@ import { useApp } from '../context';
 import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA } from '../data';
 import { 
   Printer, ArrowLeft, ChevronLeft, ChevronRight, 
-  MonitorPlay, LayoutGrid
+  MonitorPlay, LayoutGrid, Award
 } from 'lucide-react';
 
 interface ResultViewProps {
@@ -344,6 +344,387 @@ export const ResultView: React.FC<ResultViewProps> = ({ onBackToMap }) => {
         )}
 
         {/* ... (remaining slides will be added here) */}
+        
+        {/* ========================================================================= */}
+        {/* SLIDE 3: ETAPE 1 BAGIAN 2 (POS 3 & POS 4) */}
+        {/* ========================================================================= */}
+        {(viewMode === 'all' || currentSlide === 3) && (
+          <div className="ppt-slide aspect-[16/9] w-full bg-slate-50 p-6 sm:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page">
+            {/* Slide Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-black text-xs uppercase tracking-wider">
+                  Etape 1 : Mengenali Diri
+                </span>
+                <h2 className="text-base sm:text-lg font-black text-slate-800">
+                  Hambatan di Jalan & Langkah Kecil
+                </h2>
+              </div>
+              <span className="text-xs text-slate-400 font-mono">
+                Slide 3 / 5 • Presenter: {activeStudent.name} ({activeStudent.class})
+              </span>
+            </div>
+
+            {/* 2-Column Content: Pos 3 & Pos 4 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 my-auto">
+              {/* POS 3 CARD */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-sky-100 pb-2">
+                  <h3 className="font-extrabold text-sm text-sky-800 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-sky-600 text-white flex items-center justify-center text-xs">3</span>
+                    <span>Hambatan di Jalan Saya (Obstacles)</span>
+                  </h3>
+                  <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded">
+                    Pos 3
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Hambatan dari dalam diri saya:</p>
+                  <p className="bg-slate-50 p-2.5 rounded-xl text-slate-800 font-medium italic border border-slate-100">
+                    "{getStageAnswer(3, 'internal_obstacles') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Hambatan dari luar:</p>
+                  <p className="bg-slate-50 p-2.5 rounded-xl text-slate-800 font-medium italic border border-slate-100">
+                    "{getStageAnswer(3, 'external_obstacles') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Mengapa hambatan muncul?</p>
+                  <p className="bg-slate-50 p-2.5 rounded-xl text-slate-800 font-medium border border-slate-100">
+                    "{getStageAnswer(3, 'why_obstacle_arises') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Cara melewatinya:</p>
+                  <p className="bg-slate-50 p-2.5 rounded-xl text-slate-800 font-semibold border border-slate-100">
+                    "{getStageAnswer(3, 'how_to_overcome') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="bg-sky-50 p-2.5 rounded-xl border border-sky-200 text-xs">
+                  <p className="text-[10px] font-bold text-sky-700 mb-1 block">Pengingat saat ingin menyerah:</p>
+                  <p className="font-medium text-sky-950 italic">"{getStageAnswer(3, 'giveup_motto') || '-'}"</p>
+                </div>
+              </div>
+
+              {/* POS 4 CARD */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                  <h3 className="font-extrabold text-sm text-blue-800 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">4</span>
+                    <span>Langkah Kecil Saya (Effort)</span>
+                  </h3>
+                  <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                    Pos 4
+                  </span>
+                </div>
+
+                <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 text-xs space-y-1">
+                  <p className="text-[10px] font-bold text-blue-700 block mb-2">Tiga langkah menuju tantangan:</p>
+                  <div className="space-y-1">
+                    <div className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-5 h-5 rounded bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">1</span>
+                      <p className="text-slate-800 flex-1">{getStageAnswer(4, 'step_1') || 'Belum diisi'}</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-5 h-5 rounded bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center">2</span>
+                      <p className="text-slate-800 flex-1">{getStageAnswer(4, 'step_2') || 'Belum diisi'}</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-5 h-5 rounded bg-blue-400 text-white text-[10px] font-bold flex items-center justify-center">3</span>
+                      <p className="text-slate-800 flex-1">{getStageAnswer(4, 'step_3') || 'Belum diisi'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Mulai tanggal:</p>
+                  <p className="bg-slate-50 p-2.5 rounded-xl text-slate-800 font-medium border border-slate-100">
+                    "{getStageAnswer(4, 'start_date') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+                    <p className="text-[10px] font-bold text-blue-700 mb-1 block">Agar konsisten:</p>
+                    <p className="text-slate-800 line-clamp-3">{getStageAnswer(4, 'consistency_strategy') || '-'}</p>
+                  </div>
+                  <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+                    <p className="text-[10px] font-bold text-blue-700 mb-1 block">Yang membantu:</p>
+                    <p className="text-slate-800 line-clamp-3">{getStageAnswer(4, 'helper_person') || '-'}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1 text-xs bg-blue-50 p-2 rounded-xl border border-blue-100">
+                  <p className="text-[10px] font-bold text-blue-600 uppercase">Apresiasi untuk diriku:</p>
+                  <p className="font-medium text-blue-900 italic">"{getStageAnswer(4, 'appreciation_self') || '-'}"</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Slide Footer */}
+            <div className="text-[11px] text-slate-400 italic pt-2 flex justify-between border-t border-slate-200">
+              <span>Media Layanan Bimbingan Klasikal Kelas X</span>
+              <span>Growth Mindset Journey Map</span>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SLIDE 4: ETAPE 2 BAGIAN 1 (POS 5 & POS 6) */}
+        {/* ========================================================================= */}
+        {(viewMode === 'all' || currentSlide === 4) && (
+          <div className="ppt-slide aspect-[16/9] w-full bg-slate-50 p-6 sm:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page">
+            {/* Slide Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-wider">
+                  Etape 2 : Belajar dari Sekitar
+                </span>
+                <h2 className="text-base sm:text-lg font-black text-slate-800">
+                  Saat Dikritik & Belajar dari Orang Lain
+                </h2>
+              </div>
+              <span className="text-xs text-slate-400 font-mono">
+                Slide 4 / 5 • Presenter: {activeStudent.name} ({activeStudent.class})
+              </span>
+            </div>
+
+            {/* 2-Column Content: Pos 5 & Pos 6 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 my-auto">
+              {/* POS 5 CARD */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-violet-100 pb-2">
+                  <h3 className="font-extrabold text-sm text-violet-800 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">5</span>
+                    <span>Saat Saya Dikritik (Critiques)</span>
+                  </h3>
+                  <span className="text-[10px] font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded">
+                    Pos 5
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Masukan yang pernah diterima:</p>
+                  <p className="bg-slate-50 p-2.5 rounded-xl text-slate-800 font-medium italic border border-slate-100">
+                    "{getStageAnswer(5, 'feedback_received') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-green-50 p-2.5 rounded-xl border border-green-200">
+                    <p className="text-[10px] font-bold text-green-700 mb-1 block">✅ Membangun:</p>
+                    <p className="text-slate-800 line-clamp-3">{getStageAnswer(5, 'constructive_part') || '-'}</p>
+                  </div>
+                  <div className="bg-red-50 p-2.5 rounded-xl border border-red-200">
+                    <p className="text-[10px] font-bold text-red-700 mb-1 block">❌ Menjatuhkan:</p>
+                    <p className="text-slate-800 line-clamp-3">{getStageAnswer(5, 'destructive_part') || '-'}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Hal yang akan diperbaiki:</p>
+                  <p className="bg-slate-50 p-2.5 rounded-xl text-slate-800 font-medium border border-slate-100">
+                    "{getStageAnswer(5, 'improvement_plan') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="bg-violet-50 p-2.5 rounded-xl border border-violet-200 text-xs">
+                  <p className="text-[10px] font-bold text-violet-700 mb-1 block">Komitmen merespons kritik:</p>
+                  <p className="font-medium text-violet-950 italic">"{getStageAnswer(5, 'commitment_response') || '-'}"</p>
+                </div>
+              </div>
+
+              {/* POS 6 CARD */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+                  <h3 className="font-extrabold text-sm text-purple-800 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-purple-600 text-white flex items-center justify-center text-xs">6</span>
+                    <span>Belajar dari Orang Lain (Success of Others)</span>
+                  </h3>
+                  <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">
+                    Pos 6
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Sosok yang dikagumi:</p>
+                  <p className="bg-slate-50 p-2.5 rounded-xl text-slate-800 font-semibold border border-slate-100">
+                    "{getStageAnswer(6, 'role_model') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Apa yang mereka lakukan:</p>
+                  <p className="bg-slate-50 p-2.5 rounded-xl text-slate-800 font-medium border border-slate-100">
+                    "{getStageAnswer(6, 'what_they_do') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="bg-purple-50 p-2.5 rounded-xl border border-purple-200 text-xs">
+                  <p className="text-[10px] font-bold text-purple-700 mb-1 block">Yang bisa saya tiru minggu ini:</p>
+                  <p className="font-medium text-purple-950 italic">"{getStageAnswer(6, 'what_i_copy') || '-'}"</p>
+                </div>
+
+                <div className="bg-orange-50 p-2.5 rounded-xl border border-orange-200 text-xs">
+                  <p className="text-[10px] font-bold text-orange-700 mb-1 block">Ingat-ingat:</p>
+                  <p className="font-medium text-orange-950 italic">"Keberhasilan orang lain bukan ukuran kegagalan saya—itu bukti bahwa hal itu bisa dicapai!"</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Slide Footer */}
+            <div className="text-[11px] text-slate-400 italic pt-2 flex justify-between border-t border-slate-200">
+              <span>Media Layanan Bimbingan Klasikal Kelas X</span>
+              <span>Growth Mindset Journey Map</span>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SLIDE 5: ETAPE 2 BAGIAN 2 (POS 7 & POS 8) */}
+        {/* ========================================================================= */}
+        {(viewMode === 'all' || currentSlide === 5) && (
+          <div className="ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 p-6 sm:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-amber-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page">
+            {/* Slide Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-amber-300">
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1 rounded-xl bg-amber-500 text-white font-black text-xs uppercase tracking-wider">
+                  Etape 2 : Refleksi Diri
+                </span>
+                <h2 className="text-base sm:text-lg font-black text-slate-800">
+                  Melihat Usaha & Komitmen Target
+                </h2>
+              </div>
+              <span className="text-xs text-slate-400 font-mono">
+                Slide 5 / 5 • Presenter: {activeStudent.name} ({activeStudent.class})
+              </span>
+            </div>
+
+            {/* 2-Column Content: Pos 7 & Pos 8 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 my-auto flex-1">
+              {/* POS 7 CARD */}
+              <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-amber-100 pb-2">
+                  <h3 className="font-extrabold text-sm text-amber-800 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center text-xs">7</span>
+                    <span>Melihat Kembali Usaha Saya (Refleksi)</span>
+                  </h3>
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                    Pos 7
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Berhasil setelah mencoba seminggu:</p>
+                  <p className="bg-green-50 p-2.5 rounded-xl text-green-900 font-medium border border-green-200">
+                    "{getStageAnswer(7, 'successes_achieved') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Yang masih kurang berhasil:</p>
+                  <p className="bg-yellow-50 p-2.5 rounded-xl text-yellow-900 font-medium border border-yellow-200">
+                    "{getStageAnswer(7, 'areas_improvement') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-bold text-slate-700">Alasannya:</p>
+                  <p className="bg-slate-50 p-2.5 rounded-xl text-slate-800 font-medium border border-slate-100">
+                    "{getStageAnswer(7, 'reasons_behind') || 'Belum diisi'}"
+                  </p>
+                </div>
+
+                <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-xs space-y-1">
+                  <p className="text-[10px] font-bold text-amber-700 block mb-2">Penemuan baru tentang diri sendiri:</p>
+                  <p className="text-slate-800 font-medium italic">"{getStageAnswer(7, 'new_discoveries') || '-'}"</p>
+                  <p className="text-slate-800 font-medium italic">"{getStageAnswer(7, 'small_changes_felt') || ''}"</p>
+                </div>
+              </div>
+
+              {/* POS 8 CARD */}
+              <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-orange-200 pb-2">
+                  <h3 className="font-extrabold text-sm text-orange-800 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-orange-500 text-white flex items-center justify-center text-xs">8</span>
+                    <span>Komitmen & Target Saya (Garis Akhir)</span>
+                  </h3>
+                  <span className="text-[10px] font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded">
+                    Pos 8
+                  </span>
+                </div>
+
+                <div className="bg-orange-50 p-3 rounded-xl border border-orange-200 text-xs space-y-1">
+                  <p className="text-[10px] font-bold text-orange-700 block mb-2">Target satu minggu ke depan:</p>
+                  <div className="space-y-1">
+                    <div className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-5 h-5 rounded bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">1</span>
+                      <p className="text-slate-800 flex-1">{getStageAnswer(8, 'target_week_1') || 'Belum diisi'}</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-5 h-5 rounded bg-orange-400 text-white text-[10px] font-bold flex items-center justify-center">2</span>
+                      <p className="text-slate-800 flex-1">{getStageAnswer(8, 'target_week_2') || 'Belum diisi'}</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-5 h-5 rounded bg-orange-300 text-white text-[10px] font-bold flex items-center justify-center">3</span>
+                      <p className="text-slate-800 flex-1">{getStageAnswer(8, 'target_week_3') || 'Belum diisi'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-1 flex items-center justify-between text-xs bg-amber-50/50 p-2.5 rounded-xl border border-amber-100">
+                  <span className="font-bold text-amber-900">Keyakinan saya terhadap perubahan:</span>
+                  <div className="flex items-center gap-1 font-bold">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <span
+                        key={n}
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs ${
+                          getStageScale(8, 'future_confidence_scale') === n
+                            ? 'bg-amber-500 text-white font-black'
+                            : 'bg-white text-slate-400 border border-slate-200'
+                        }`}
+                      >
+                        {n}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-3.5 rounded-2xl border border-amber-400 text-xs space-y-1">
+                  <p className="text-[10px] font-bold text-white uppercase tracking-wider">Ikisar Komitmen Saya:</p>
+                  <p className="font-bold text-white leading-relaxed italic">
+                    "{getStageAnswer(8, 'final_commitment') || 'Belum diisi'}"
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Certificate Section */}
+            <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border-2 border-amber-400 mt-4">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <Award className="w-8 h-8 text-amber-600" />
+                <h3 className="font-extrabold text-lg text-amber-900">SERTIFIKAT KEBERANIAN</h3>
+                <Award className="w-8 h-8 text-amber-600" />
+              </div>
+              <p className="text-center text-sm text-slate-700 font-medium">
+                Siswa yang telah menyelesaikan 8 pos Growth Mindset Journey Map Percaya Diri
+              </p>
+            </div>
+
+            {/* Slide Footer */}
+            <div className="text-[11px] text-slate-400 italic pt-2 flex justify-between border-t border-slate-200">
+              <span>Media Layanan Bimbingan Klasikal Kelas X</span>
+              <span>Growth Mindset Journey Map</span>
+            </div>
+          </div>
+        )}
         
       </div>
     </div>
