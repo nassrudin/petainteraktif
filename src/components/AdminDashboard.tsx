@@ -22,15 +22,6 @@ const getStageAnswer = (journeys: Record<string, StudentJourney>, studentId: str
   return Array.isArray(val) ? val.join(', ') : String(val);
 };
 
-// Helper function to get stage answer
-const getStageAnswer = (journeys: Record<string, StudentJourney>, studentId: string, stageId: number, fieldId: string): string => {
-  const journey = journeys[studentId];
-  if (!journey?.stages[stageId]?.answers) return '';
-  const val = journey.stages[stageId].answers[fieldId];
-  if (val === undefined || val === null) return '';
-  return Array.isArray(val) ? val.join(', ') : String(val);
-};
-
 export const AdminDashboard: React.FC = () => {
   const { 
     allStudents, 
@@ -53,15 +44,6 @@ export const AdminDashboard: React.FC = () => {
   // Result preview state
   const [showResultModal, setShowResultModal] = useState(false);
   const [currentPreviewStudent, setCurrentPreviewStudent] = useState<ActiveStudent | null>(null);
-
-  // Helper function to get stage answer using local journeys
-  const getStageAnswerHelper = (studentId: string, stageId: number, fieldId: string): string => {
-    const j = journeys[studentId];
-    if (!j?.stages[stageId]?.answers) return '';
-    const val = j.stages[stageId].answers[fieldId];
-    if (val === undefined || val === null) return '';
-    return Array.isArray(val) ? val.join(', ') : String(val);
-  };
 
   // Change password form state
   const [newUsername, setNewUsername] = useState(adminCredentials.username);
@@ -105,11 +87,11 @@ export const AdminDashboard: React.FC = () => {
   const completionPercentage = totalStudents ? Math.round((completedAllCount / totalStudents) * 100) : 0;
   const avgConfidence = totalStudents ? Math.round(totalConfidenceSum / totalStudents) : 0;
 
-  // Helper function to get stage answer
-  const getStageAnswer = (studentId: string, stageId: number, fieldId: string): string => {
-    const journey = journeys[studentId];
-    if (!journey?.stages[stageId]?.answers) return '';
-    const val = journey.stages[stageId].answers[fieldId];
+  // Helper function to get stage answer using local journeys variable
+  const getStageAnswerLocal = (studentId: string, stageId: number, fieldId: string): string => {
+    const j = journeys[studentId];
+    if (!j?.stages[stageId]?.answers) return '';
+    const val = j.stages[stageId].answers[fieldId];
     if (val === undefined || val === null) return '';
     return Array.isArray(val) ? val.join(', ') : String(val);
   };
@@ -966,19 +948,19 @@ export const AdminDashboard: React.FC = () => {
                       <div className="space-y-2">
                         <p className="text-[10px] text-slate-500 font-bold">Di situasi apa saya merasa kurang percaya diri?</p>
                         <p className="bg-emerald-50 p-2.5 rounded-xl text-emerald-900 font-medium italic border border-emerald-200 text-xs">
-                          "{getStageAnswerHelper(currentPreviewStudent.id, 1, 'situation') || 'Belum diisi'}"
+                          "{getStageAnswerLocal(currentPreviewStudent.id, 1, 'situation') || 'Belum diisi'}"
                         </p>
                       </div>
                       <div className="space-y-2">
                         <p className="text-[10px] text-slate-500 font-bold">Saya berpikir:</p>
                         <p className="bg-slate-50 p-2 rounded-xl text-slate-800 font-medium text-xs border border-slate-200">
-                          "{getStageAnswerHelper(currentPreviewStudent.id, 1, 'thought') || '-'}"
+                          "{getStageAnswerLocal(currentPreviewStudent.id, 1, 'thought') || '-'}"
                         </p>
                       </div>
                       <div className="space-y-2">
                         <p className="text-[10px] text-slate-500 font-bold">Saya merasa:</p>
                         <p className="bg-slate-50 p-2 rounded-xl text-slate-800 font-medium text-xs border border-slate-200">
-                          "{getStageAnswerHelper(currentPreviewStudent.id, 1, 'feeling') || '-'}"
+                          "{getStageAnswerLocal(currentPreviewStudent.id, 1, 'feeling') || '-'}"
                         </p>
                       </div>
                     </div>
@@ -994,7 +976,7 @@ export const AdminDashboard: React.FC = () => {
                       <div className="space-y-2">
                         <p className="text-[10px] text-slate-500 font-bold">Satu tantangan yang paling ingin saya taklukkan:</p>
                         <p className="bg-teal-50 p-2 rounded-xl text-teal-900 font-medium border border-teal-200 text-xs">
-                          "{getStageAnswerHelper(currentPreviewStudent.id, 2, 'challenge_target') || 'Belum diisi'}"
+                          "{getStageAnswerLocal(currentPreviewStudent.id, 2, 'challenge_target') || 'Belum diisi'}"
                         </p>
                       </div>
                     </div>
@@ -1017,7 +999,7 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Hambatan dari dalam diri saya:</p>
                       <p className="bg-sky-50 p-2 rounded-xl text-sky-900 font-medium text-xs border border-sky-200">
-                        "{getStageAnswerHelper(currentPreviewStudent.id, 3, 'internal_obstacles') || 'Belum diisi'}"
+                        "{getStageAnswerLocal(currentPreviewStudent.id, 3, 'internal_obstacles') || 'Belum diisi'}"
                       </p>
                     </div>
 
@@ -1031,7 +1013,7 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Langkah pertama (paling mudah):</p>
                       <p className="bg-blue-50 p-2 rounded-xl text-blue-900 font-medium text-xs border border-blue-200">
-                        "{getStageAnswerHelper(currentPreviewStudent.id, 4, 'step_1') || 'Belum diisi'}"
+                        "{getStageAnswerLocal(currentPreviewStudent.id, 4, 'step_1') || 'Belum diisi'}"
                       </p>
                     </div>
                   </div>
@@ -1053,7 +1035,7 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Masukan yang pernah diterima:</p>
                       <p className="bg-violet-50 p-2 rounded-xl text-violet-900 font-medium text-xs border border-violet-200">
-                        "{getStageAnswerHelper(currentPreviewStudent.id, 5, 'feedback_received') || 'Belum diisi'}"
+                        "{getStageAnswerLocal(currentPreviewStudent.id, 5, 'feedback_received') || 'Belum diisi'}"
                       </p>
                     </div>
 
@@ -1067,7 +1049,7 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Sosok yang dikagumi:</p>
                       <p className="bg-purple-50 p-2 rounded-xl text-purple-900 font-medium text-xs border border-purple-200">
-                        "{getStageAnswerHelper(currentPreviewStudent.id, 6, 'role_model') || 'Belum diisi'}"
+                        "{getStageAnswerLocal(currentPreviewStudent.id, 6, 'role_model') || 'Belum diisi'}"
                       </p>
                     </div>
                   </div>
@@ -1089,7 +1071,7 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Berhasil setelah mencoba seminggu:</p>
                       <p className="bg-green-50 p-2 rounded-xl text-green-900 font-medium text-xs border border-green-200">
-                        "{getStageAnswerHelper(currentPreviewStudent.id, 7, 'what_succeeded') || 'Belum diisi'}"
+                        "{getStageAnswerLocal(currentPreviewStudent.id, 7, 'what_succeeded') || 'Belum diisi'}"
                       </p>
                     </div>
 
@@ -1103,7 +1085,7 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                       <p className="text-[10px] text-slate-500 font-bold">Target satu minggu ke depan:</p>
                       <p className="bg-orange-50 p-2 rounded-xl text-orange-900 font-medium text-xs border border-orange-200">
-                        "{getStageAnswerHelper(currentPreviewStudent.id, 8, 'target_week_1') || 'Belum diisi'}"
+                        "{getStageAnswerLocal(currentPreviewStudent.id, 8, 'target_week_1') || 'Belum diisi'}"
                       </p>
                     </div>
                   </div>
@@ -1145,3 +1127,4 @@ export const AdminDashboard: React.FC = () => {
     </div>
   );
 };
+
