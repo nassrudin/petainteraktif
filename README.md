@@ -104,6 +104,7 @@ Siswa mempraktikkan langkah kecil yang telah dirancang di kehidupan nyata sekola
    - Guru BK dapat langsung login ke **Dashboard Guru / Admin** secara mandiri tanpa memasuki alur siswa.
    - Autentikasi berbasis username & password bawaan (`admin` / `admin123`).
    - **Fitur Ubah Username & Password:** Guru dapat mengganti username dan password langsung di dashboard admin dengan verifikasi password lama.
+   - **Kelola Data Siswa:** Hapus data per siswa atau reset progres jika diperlukan.
    - Monitoring komprehensif: rekap seluruh siswa, filter berdasarkan kelas, pencarian nama, inspeksi jawaban detail 8 pos, dan ekspor rekapitulasi data format CSV.
 
 ---
