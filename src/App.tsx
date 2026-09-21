@@ -87,7 +87,7 @@ const MainLayout: React.FC = () => {
       />
 
       <footer className="no-print border-t border-slate-200 dark:border-slate-700 dark:bg-slate-800/80 py-4 px-4 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors duration-300">
-        Growth Mindset Journey Map Percaya Diri &copy; 2026 • Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh — media layanan bimbingan klasikal kelas X
+        Growth Mindset Journey Map Percaya Diri &copy; 2026 • Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh, media layanan bimbingan klasikal kelas X
       </footer>
     </>
   );

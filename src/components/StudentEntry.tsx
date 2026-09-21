@@ -58,7 +58,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
               Growth Mindset Journey Map Percaya Diri
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh — media layanan bimbingan klasikal kelas X
+              Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh, media layanan bimbingan klasikal kelas X
             </p>
           </div>
 

@@ -1,6 +1,6 @@
 # Growth Mindset Journey Map Percaya Diri
 
-> **Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh — media layanan bimbingan klasikal kelas X**
+> **Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh, media layanan bimbingan klasikal kelas X**
 
 🌐 **Aplikasi Online (Live Demo):** [https://nassrudin.github.io/petainteraktif/](https://nassrudin.github.io/petainteraktif/)
 
@@ -12,7 +12,7 @@ Platform web interaktif gamifikasi untuk layanan bimbingan klasikal Bimbingan da
 
 Sesuai rancangan bimbingan klasikal 2 etape (siklus bertahap):
 
-> **"Isi pos 1 sampai 4 pada pertemuan ini, lalu coba langkahmu selama satu minggu. Pos 5 sampai 8 diisi setelah kamu mencobanya. Tidak ada jawaban benar atau salah — tulis sejujurnya tentang dirimu."**
+> **"Isi pos 1 sampai 4 pada pertemuan ini, lalu coba langkahmu selama satu minggu. Pos 5 sampai 8 diisi setelah kamu mencobanya. Tidak ada jawaban benar atau salah, tulis sejujurnya tentang dirimu."**
 
 ### 📍 Etape 1: Mengenali diri dan menghadapi tantangan (Pertemuan 1)
 - **1. Potret percaya diri saya (`Titik mulai`):**

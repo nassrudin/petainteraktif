@@ -188,7 +188,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               Dashboard Analitik & Refleksi Siswa
             </h1>
             <p className="text-xs sm:text-sm text-teal-100/80 mt-1 leading-relaxed">
-              Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh — media layanan bimbingan klasikal kelas X.
+              Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh, media layanan bimbingan klasikal kelas X.
             </p>
           </div>
 
