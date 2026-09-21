@@ -4,8 +4,9 @@ import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA } from 
 import { ActiveStudent } from '../types';
 import { 
   Printer, ArrowLeft, ChevronLeft, ChevronRight, 
-  MonitorPlay, LayoutGrid, Award, CheckCircle2, Trophy
+  MonitorPlay, LayoutGrid, Award, CheckCircle2, Trophy, CloudUpload, FileText
 } from 'lucide-react';
+import { generateResultPDF, uploadPDFToGoogleDrive } from '../utils/pdf-export';
 
 interface ResultViewProps {
   onBackToMap: () => void;
@@ -30,9 +31,62 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
   const [viewMode, setViewMode] = useState<'slides' | 'all'>('slides');
   const [currentSlide, setCurrentSlide] = useState<number>(1);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handlePrintPdf = () => {
     window.print();
+  };
+
+  const handleUploadPDFToDrive = async () => {
+    try {
+      setIsUploading(true);
+      
+      // Generate PDF from all slides view
+      const allSlidesElement = document.getElementById('result-pdf-export');
+      if (!allSlidesElement) {
+        alert('Tidak dapat menemukan element export');
+        return;
+      }
+
+      const pdfBlob = await generateResultPDF('result-pdf-export', {
+        student: activeStudent,
+        journey: journey,
+        format: 'A4',
+        orientation: 'portrait',
+      });
+
+      // Get Google Drive folder ID from context (you may need to pass this as prop)
+      // For now, we'll use a placeholder - in real implementation, get it from localStorage or context
+      const googleApiKey = ''; // User needs to input this
+      const folderId = '';     // User needs to input this
+
+      if (!googleApiKey || !folderId) {
+        alert('Google API Key dan Folder ID diperlukan untuk upload ke Drive. \nSilakan konfigurasi di settings.');
+        
+        // Download locally instead
+        const url = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Growth_Mindset_${activeStudent.name.replace(/\s+/g, '_')}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        const shareUrl = await uploadPDFToGoogleDrive(
+          pdfBlob, 
+          googleApiKey, 
+          folderId,
+          `Growth_Mindset_${activeStudent.name.replace(/\s+/g, '_')}.pdf`
+        );
+        alert(`PDF berhasil diupload! \nLink: ${shareUrl}`);
+      }
+    } catch (error) {
+      console.error('Error uploading PDF:', error);
+      alert(`Terjadi kesalahan: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const getStageAnswer = (stageId: number, fieldId: string): string => {
@@ -94,14 +148,35 @@ export const ResultView: React.FC<ResultViewProps> = ({
           </button>
         </div>
 
-        {/* Print / Export button */}
+        {/* Export Actions */}
         <div className="flex items-center gap-2 w-full md:w-auto">
+          <button
+            onClick={handleUploadPDFToDrive}
+            disabled={isUploading}
+            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-xs font-bold shadow-md shadow-purple-200 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Export dan Upload PDF ke Google Drive"
+          >
+            {isUploading ? (
+              <>
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Upload...</span>
+              </>
+            ) : (
+              <>
+                <CloudUpload className="w-4 h-4" />
+                <span>Upload PDF ke Google Drive</span>
+              </>
+            )}
+          </button>
           <button
             onClick={handlePrintPdf}
             className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-200 transition-all cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>Cetak / Simpan PDF (10 Slide PPT 16:9)</span>
+            <span>Cetak / Simpan PDF (Local)</span>
           </button>
         </div>
       </div>
@@ -807,6 +882,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
     </div>
   );
 };
+
 
 
 
