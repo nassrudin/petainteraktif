@@ -37,19 +37,11 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
         {/* Main Card */}
         <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-xl relative overflow-hidden">
           {/* Header decorative badge */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-start mb-4">
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-800 text-xs font-bold">
               <Compass className="w-4 h-4 animate-spin-slow text-emerald-600" />
               <span>Bimbingan Klasikal Kelas X</span>
             </div>
-            <button
-              onClick={onAdminClick}
-              type="button"
-              className="text-xs font-semibold text-slate-500 hover:text-emerald-700 flex items-center gap-1.5 px-3 py-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>Login Guru / Admin</span>
-            </button>
           </div>
 
           {/* Titles */}
