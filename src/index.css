@@ -71,8 +71,8 @@
     break-after: page !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: none !important;
     width: 100vw !important;
     border-radius: 0 !important;
     box-shadow: none !important;
@@ -80,8 +80,57 @@
     margin: 0 !important;
     padding: 2rem 2.5rem !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+  
+  /* Prevent text cut-off */
+  .ppt-slide * {
+    overflow: visible !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    hyphens: auto !important;
+  }
+  
+  /* Allow content boxes to expand */
+  .ppt-slide [class*="min-h"] {
+    min-height: auto !important;
+  }
+  
+  /* Ensure cards can grow */
+  .ppt-slide > div[class*="grid"], 
+  .ppt-slide > div[class*="space-y"] {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  /* Better spacing for long text */
+  .ppt-slide .bg-white,
+  .ppt-slide .bg-slate-50,
+  .ppt-slide .bg-emerald-50,
+  .ppt-slide .bg-teal-50,
+  .ppt-slide .bg-blue-50,
+  .ppt-slide .bg-indigo-50,
+  .ppt-slide .bg-violet-50,
+  .ppt-slide .bg-purple-50,
+  .ppt-slide .bg-amber-50,
+  .ppt-slide .bg-red-50,
+  .ppt-slide .bg-rose-50 {
+    padding: 1rem !important;
+    min-width: 0 !important;
+  }
+  
+  /* Flexible font sizes for print */
+  .ppt-slide p, .ppt-slide span, .ppt-slide div {
+    font-size: clamp(0.7rem, 1.3vw, 1.1rem) !important;
+  }
+}
+
+/* Utility classes for better text handling */
+.break-words {
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
