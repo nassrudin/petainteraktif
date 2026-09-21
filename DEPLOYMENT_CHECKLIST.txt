@@ -1,0 +1,23 @@
+# Deployment Checklist - Growth Mindset Journey Map
+Tanggal Deployment: 2026-09-21 16:12:09
+
+## ? Langkah yang Sudah Dicommit:
+1. Build aplikasi berhasil (npm run build)
+2. Workflow GitHub Actions sudah terkonfigurasi (.github/workflows/deploy.yml)
+3. Repository terhubung ke GitHub: https://github.com/nassrudin/petainteraktif.git
+
+## ?? Cara Trigger Deployment Manual:
+1. Buka: https://github.com/nassrudin/petainteraktif/actions/workflows/deploy.yml
+2. Klik "Run workflow" button di pojok kanan atas
+3. Pilih branch "main"
+4. Klik "Run workflow"
+
+## ?? Cek GitHub Pages Settings:
+1. Buka repository: https://github.com/nassrudin/petainteraktif/settings/pages
+2. Pastikan Source diset ke: "GitHub Actions"
+3. URL akan tersedia setelah workflow selesai: https://nassrudin.github.io/petainteraktif/
+
+## ?? Monitoring Deployment:
+- Lihat di tab "Actions" ? "Deploy to GitHub Pages"
+- Build artifact ada di folder ./dist
+
