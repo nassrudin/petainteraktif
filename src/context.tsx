@@ -29,6 +29,8 @@ interface AppContextType {
   deleteStudent: (studentId: string) => void;
   driveFolderUrl: string;
   updateDriveFolderUrl: (url: string) => { success: boolean; message: string };
+  driveWebhookUrl: string;
+  updateDriveWebhookUrl: (url: string) => { success: boolean; message: string };
   appSettings: AppSettings;
   updateAppSettings: (settings: AppSettings) => { success: boolean; message: string };
 }
@@ -39,6 +41,7 @@ const STORAGE_KEY_JOURNEYS = 'gm_journeys_v2';
 const STORAGE_KEY_ADMIN_AUTH = 'gm_admin_auth_v2';
 const STORAGE_KEY_ADMIN_LOGGED_IN = 'gm_admin_logged_in_v2';
 const STORAGE_KEY_DRIVE_FOLDER = 'gm_drive_folder_url_v2';
+const STORAGE_KEY_DRIVE_WEBHOOK = 'gm_drive_webhook_url_v2';
 const STORAGE_KEY_APP_SETTINGS = 'gm_app_settings_v2';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -64,6 +67,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [driveFolderUrl, setDriveFolderUrlState] = useState<string>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_DRIVE_FOLDER);
     return saved || DEFAULT_DRIVE_FOLDER_URL;
+  });
+
+  // Google Apps Script Webhook URL for auto-uploading actual files to Google Drive
+  const [driveWebhookUrl, setDriveWebhookUrlState] = useState<string>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_DRIVE_WEBHOOK);
+    return saved || '';
   });
 
   // Students list (for admin dashboard viewing)
@@ -107,6 +116,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_DRIVE_FOLDER, driveFolderUrl);
   }, [driveFolderUrl]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_DRIVE_WEBHOOK, driveWebhookUrl);
+  }, [driveWebhookUrl]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_ALL_STUDENTS, JSON.stringify(allStudents));
@@ -276,6 +289,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true, message: 'Link folder Google Drive berhasil diperbarui!' };
   };
 
+  const updateDriveWebhookUrl = (url: string): { success: boolean; message: string } => {
+    const trimmed = url.trim();
+    if (!trimmed) {
+      setDriveWebhookUrlState('');
+      return { success: true, message: 'Link Webhook Google Apps Script dikosongkan.' };
+    }
+    
+    try {
+      const urlObj = new URL(trimmed);
+      if (!urlObj.hostname.includes('script.google.com')) {
+        return {
+          success: false,
+          message: 'URL harus berasal dari script.google.com (Google Apps Script Web App).',
+        };
+      }
+    } catch {
+      return { success: false, message: 'Format URL Webhook tidak valid.' };
+    }
+
+    setDriveWebhookUrlState(trimmed);
+    return { success: true, message: 'Link Webhook Google Apps Script berhasil disimpan!' };
+  };
+
   const updateAppSettings = (settings: AppSettings): { success: boolean; message: string } => {
     const hasValidClasses = settings.classNames.length > 0 && 
                            settings.classNames.every(c => c.className && c.absentRangeMin >= 1 && c.absentRangeMax >= c.absentRangeMin);
@@ -339,10 +375,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         calculatedScore = Math.min(100, 20 + completedCount * 10);
       }
 
-      // Check if all 8 stages are completed: automatically mark synced to Google Drive!
+      // Check if all 8 stages are completed: trigger actual Google Drive upload if webhook exists
       const isAllCompleted = Object.keys(updatedStages).length === 8;
       const driveExportedUrl = isAllCompleted ? driveFolderUrl : current.driveExportedUrl;
       const driveExportedAt = isAllCompleted ? (current.driveExportedAt || nowTime) : current.driveExportedAt;
+
+      if (isAllCompleted && driveWebhookUrl) {
+        const folderIdMatch = driveFolderUrl.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+        const folderId = folderIdMatch ? folderIdMatch[1] : '';
+
+        const payload = {
+          studentId: current.studentId,
+          studentName: current.studentName,
+          studentGender: current.studentGender,
+          studentClass: current.studentClass,
+          studentAbsentNumber: current.studentAbsentNumber,
+          confidenceScore: Math.round(calculatedScore),
+          stages: updatedStages,
+          folderId,
+          completedAt: nowTime,
+        };
+
+        fetch(driveWebhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'text/plain',
+          },
+          body: JSON.stringify(payload),
+        }).catch((err) => {
+          console.warn('Gagal sinkronisasi Google Drive Webhook:', err);
+        });
+      }
 
       return {
         ...prev,
@@ -430,6 +494,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteStudent,
         driveFolderUrl,
         updateDriveFolderUrl,
+        driveWebhookUrl,
+        updateDriveWebhookUrl,
         appSettings,
         updateAppSettings,
       }}

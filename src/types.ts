@@ -84,6 +84,7 @@ export interface StudentJourney {
   updatedAt: string;
   driveExportedUrl?: string;
   driveExportedAt?: string;
+  driveSyncStatus?: 'pending' | 'success' | 'failed';
 }
 
 export interface AchievementBadge {

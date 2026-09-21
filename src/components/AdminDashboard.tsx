@@ -23,6 +23,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     adminLogout,
     driveFolderUrl,
     updateDriveFolderUrl,
+    driveWebhookUrl,
+    updateDriveWebhookUrl,
     appSettings,
     updateAppSettings,
     deleteStudent,
@@ -44,6 +46,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   // Google Drive configuration state
   const [driveInput, setDriveInput] = useState(driveFolderUrl);
   const [driveFeedback, setDriveFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [webhookInput, setWebhookInput] = useState(driveWebhookUrl);
+  const [webhookFeedback, setWebhookFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Class settings state
   const [editClasses, setEditClasses] = useState(appSettings.classNames);
@@ -111,6 +115,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       setDriveFeedback({ type: 'success', text: res.message });
     } else {
       setDriveFeedback({ type: 'error', text: res.message });
+    }
+  };
+
+  const handleSaveWebhookUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = updateDriveWebhookUrl(webhookInput);
+    if (res.success) {
+      setWebhookFeedback({ type: 'success', text: res.message });
+    } else {
+      setWebhookFeedback({ type: 'error', text: res.message });
     }
   };
 
@@ -654,6 +668,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               </button>
             </div>
           </form>
+
+          {/* GOOGLE APPS SCRIPT WEBHOOK SECTION */}
+          <div className="pt-4 border-t border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">Koneksi Otomatis Upload Berkas (Google Apps Script)</h3>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Pasang URL Webhook Web App jika ingin berkas JSON jawaban siswa terkirim dan tersimpan otomatis ke folder Drive di atas.
+                </p>
+              </div>
+            </div>
+
+            {webhookFeedback && (
+              <div
+                className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
+                  webhookFeedback.type === 'success'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-red-50 border-red-200 text-red-700'
+                }`}
+              >
+                {webhookFeedback.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                )}
+                <span>{webhookFeedback.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveWebhookUrl} className="space-y-3">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <LinkIcon className="w-4 h-4" />
+                </div>
+                <input
+                  type="url"
+                  value={webhookInput}
+                  onChange={(e) => setWebhookInput(e.target.value)}
+                  placeholder="https://script.google.com/macros/s/.../exec"
+                  className="w-full text-xs sm:text-sm pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none transition-all font-mono"
+                />
+              </div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-[10px] text-slate-400">Skrip: file google-apps-script-sync.js di proyek</span>
+                <button
+                  type="submit"
+                  className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition-all cursor-pointer"
+                >
+                  Simpan Webhook URL
+                </button>
+              </div>
+            </form>
+          </div>
 
           <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-emerald-950 space-y-1">
             <p className="font-bold flex items-center gap-1.5 text-emerald-900">

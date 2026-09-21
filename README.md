@@ -99,6 +99,7 @@ Siswa mempraktikkan langkah kecil yang telah dirancang di kehidupan nyata sekola
    - Ketika siswa menyelesaikan seluruh 8 pos, berkas refleksi **secara otomatis tersimpan dan terhubung ke Google Drive** tanpa perlu mengklik tombol upload manual (tombol manual telah dihilangkan).
    - Link folder Google Drive dapat diatur dan diubah kapan saja oleh guru di **Dashboard Admin -> Pengaturan Drive**.
    - Tautan bawaan yang terpasang: `https://drive.google.com/drive/folders/1Slmi-qS--PbmWZh7KzFoMVG3iE5QqD_Z?usp=sharing`.
+   - **Google Apps Script Webhook:** Disediakan skrip `google-apps-script-sync.js` dan kolom input URL Webhook di dashboard guru agar setiap siswa yang tuntas 8 pos dapat langsung mengirim berkas JSON refleksi ke folder Google Drive tujuan secara real-time.
 
 5. **Portal Guru / Admin Terpisah:**
    - Guru BK dapat langsung login ke **Dashboard Guru / Admin** secara mandiri tanpa memasuki alur siswa.
