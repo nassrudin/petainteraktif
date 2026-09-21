@@ -30,7 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isFinishedAll = completedCount === 8;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 shadow-lg">
+    <header className="no-print sticky top-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="min-h-16 py-3 flex flex-wrap items-center justify-between gap-3">
           

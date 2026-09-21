@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context';
 import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA } from '../data';
+import { ActiveStudent } from '../types';
 import { 
   Printer, ArrowLeft, ChevronLeft, ChevronRight, 
   MonitorPlay, LayoutGrid, Award
@@ -8,10 +9,17 @@ import {
 
 interface ResultViewProps {
   onBackToMap: () => void;
+  targetStudent?: ActiveStudent | null;
+  isTeacherView?: boolean;
 }
 
-export const ResultView: React.FC<ResultViewProps> = ({ onBackToMap }) => {
-  const { activeStudent, getStudentJourney } = useApp();
+export const ResultView: React.FC<ResultViewProps> = ({ 
+  onBackToMap, 
+  targetStudent, 
+  isTeacherView = false 
+}) => {
+  const { activeStudent: currentActiveStudent, getStudentJourney } = useApp();
+  const activeStudent = targetStudent || currentActiveStudent;
 
   if (!activeStudent) {
     return null;
@@ -54,7 +62,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ onBackToMap }) => {
           className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-emerald-700 transition-colors cursor-pointer self-start md:self-auto"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Peta Petualangan</span>
+          <span>{isTeacherView ? 'Kembali ke Dashboard Guru BK' : 'Kembali ke Peta Petualangan'}</span>
         </button>
 
         {/* View mode toggle */}
@@ -151,9 +159,8 @@ export const ResultView: React.FC<ResultViewProps> = ({ onBackToMap }) => {
         {/* ========================================================================= */}
         {/* SLIDE 1: COVER PRESENTATION SLIDE (16:9 PPT) */}
         {/* ========================================================================= */}
-        {(viewMode === 'all' || currentSlide === 1) && (
-          <div className="ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-slate-900 via-teal-950 to-emerald-950 text-white p-8 sm:p-14 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-hidden border border-slate-700 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page">
-            {/* Background ambient accents */}
+        <div className={`ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-slate-900 via-teal-950 to-emerald-950 text-white p-8 sm:p-14 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-hidden border border-slate-700 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 1 ? 'hidden' : ''}`}>
+          {/* Background ambient accents */}
             <div className="absolute -right-20 -top-20 w-96 h-96 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
             <div className="absolute -left-20 -bottom-20 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl pointer-events-none"></div>
 
@@ -202,14 +209,12 @@ export const ResultView: React.FC<ResultViewProps> = ({ onBackToMap }) => {
               </div>
             </div>
           </div>
-        )}
 
         {/* ========================================================================= */}
         {/* SLIDE 2: ETAPE 1 (POS 1 & POS 2) */}
         {/* ========================================================================= */}
-        {(viewMode === 'all' || currentSlide === 2) && (
-          <div className="ppt-slide aspect-[16/9] w-full bg-slate-50 p-6 sm:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page">
-            {/* Slide Header */}
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-6 sm:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 2 ? 'hidden' : ''}`}>
+          {/* Slide Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-3">
                 <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-black text-xs uppercase tracking-wider">
@@ -341,16 +346,12 @@ export const ResultView: React.FC<ResultViewProps> = ({ onBackToMap }) => {
               <span>Growth Mindset Journey Map</span>
             </div>
           </div>
-        )}
 
-        {/* ... (remaining slides will be added here) */}
-        
         {/* ========================================================================= */}
         {/* SLIDE 3: ETAPE 1 BAGIAN 2 (POS 3 & POS 4) */}
         {/* ========================================================================= */}
-        {(viewMode === 'all' || currentSlide === 3) && (
-          <div className="ppt-slide aspect-[16/9] w-full bg-slate-50 p-6 sm:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page">
-            {/* Slide Header */}
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-6 sm:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 3 ? 'hidden' : ''}`}>
+          {/* Slide Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-3">
                 <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-black text-xs uppercase tracking-wider">
@@ -474,14 +475,12 @@ export const ResultView: React.FC<ResultViewProps> = ({ onBackToMap }) => {
               <span>Growth Mindset Journey Map</span>
             </div>
           </div>
-        )}
 
         {/* ========================================================================= */}
         {/* SLIDE 4: ETAPE 2 BAGIAN 1 (POS 5 & POS 6) */}
         {/* ========================================================================= */}
-        {(viewMode === 'all' || currentSlide === 4) && (
-          <div className="ppt-slide aspect-[16/9] w-full bg-slate-50 p-6 sm:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page">
-            {/* Slide Header */}
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-6 sm:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 4 ? 'hidden' : ''}`}>
+          {/* Slide Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-3">
                 <span className="px-3 py-1 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-wider">
@@ -585,14 +584,12 @@ export const ResultView: React.FC<ResultViewProps> = ({ onBackToMap }) => {
               <span>Growth Mindset Journey Map</span>
             </div>
           </div>
-        )}
 
         {/* ========================================================================= */}
         {/* SLIDE 5: ETAPE 2 BAGIAN 2 (POS 7 & POS 8) */}
         {/* ========================================================================= */}
-        {(viewMode === 'all' || currentSlide === 5) && (
-          <div className="ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 p-6 sm:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-amber-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page">
-            {/* Slide Header */}
+        <div className={`ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 p-6 sm:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-amber-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 5 ? 'hidden' : ''}`}>
+          {/* Slide Header */}
             <div className="flex items-center justify-between pb-3 border-b border-amber-300">
               <div className="flex items-center gap-3">
                 <span className="px-3 py-1 rounded-xl bg-amber-500 text-white font-black text-xs uppercase tracking-wider">
@@ -724,7 +721,6 @@ export const ResultView: React.FC<ResultViewProps> = ({ onBackToMap }) => {
               <span>Growth Mindset Journey Map</span>
             </div>
           </div>
-        )}
         
       </div>
     </div>

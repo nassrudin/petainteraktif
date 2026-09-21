@@ -1,28 +1,20 @@
 import React, { useState } from 'react';
 import { useApp } from '../context';
 import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA, DEFAULT_CLASS_CONFIGS } from '../data';
-import { ActiveStudent, StudentJourney } from '../types';
+import { ActiveStudent } from '../types';
+import { ResultView } from './ResultView';
 import { 
   Users, CheckCircle, BarChart3, 
   ExternalLink, Download, Search, Eye, Filter,
   KeyRound, CheckCircle2, AlertCircle, RefreshCw,
-  CloudUpload, Link as LinkIcon, Plus, Trash2, Save, X, MonitorPlay, Printer, Trophy, Award
+  CloudUpload, Link as LinkIcon, Plus, Trash2, Save, X, MonitorPlay
 } from 'lucide-react';
 
 interface AdminDashboardProps {
   isDarkMode?: boolean;
 }
 
-// Helper function to get stage answer
-const getStageAnswer = (journeys: Record<string, StudentJourney>, studentId: string, stageId: number, fieldId: string): string => {
-  const journey = journeys[studentId];
-  if (!journey?.stages[stageId]?.answers) return '';
-  const val = journey.stages[stageId].answers[fieldId];
-  if (val === undefined || val === null) return '';
-  return Array.isArray(val) ? val.join(', ') : String(val);
-};
-
-export const AdminDashboard: React.FC = () => {
+export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   const { 
     allStudents, 
     journeys, 
@@ -40,10 +32,7 @@ export const AdminDashboard: React.FC = () => {
   const [filterClass, setFilterClass] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeAdminTab, setActiveAdminTab] = useState<'students' | 'drive' | 'security' | 'classsettings'>('students');
-  
-  // Result preview state
-  const [showResultModal, setShowResultModal] = useState(false);
-  const [currentPreviewStudent, setCurrentPreviewStudent] = useState<ActiveStudent | null>(null);
+  const [viewingStudentReport, setViewingStudentReport] = useState<ActiveStudent | null>(null);
 
   // Change password form state
   const [newUsername, setNewUsername] = useState(adminCredentials.username);
@@ -87,27 +76,15 @@ export const AdminDashboard: React.FC = () => {
   const completionPercentage = totalStudents ? Math.round((completedAllCount / totalStudents) * 100) : 0;
   const avgConfidence = totalStudents ? Math.round(totalConfidenceSum / totalStudents) : 0;
 
-  // Helper function to get stage answer using local journeys variable
-  const getStageAnswerLocal = (studentId: string, stageId: number, fieldId: string): string => {
-    const j = journeys[studentId];
-    if (!j?.stages[stageId]?.answers) return '';
-    const val = j.stages[stageId].answers[fieldId];
-    if (val === undefined || val === null) return '';
-    return Array.isArray(val) ? val.join(', ') : String(val);
-  };
-
-  // Helper function to get stage scale
-  const getStageScale = (studentId: string, stageId: number, fieldId: string): number => {
-    const journey = journeys[studentId];
-    if (!journey?.stages[stageId]?.answers) return 3;
-    const val = journey.stages[stageId].answers[fieldId];
-    return typeof val === 'number' ? val : 3;
-  };
-
-  // Handle print/PDF download
-  const handlePrintPdf = () => {
-    window.print();
-  };
+  if (viewingStudentReport) {
+    return (
+      <ResultView
+        targetStudent={viewingStudentReport}
+        onBackToMap={() => setViewingStudentReport(null)}
+        isTeacherView={true}
+      />
+    );
+  }
 
   const handleUpdatePassword = (e: React.FormEvent) => {
     e.preventDefault();
@@ -442,10 +419,7 @@ export const AdminDashboard: React.FC = () => {
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button
-                                onClick={() => {
-                                  setCurrentPreviewStudent(student);
-                                  setShowResultModal(true);
-                                }}
+                                onClick={() => setViewingStudentReport(student)}
                                 className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-emerald-500 bg-white text-emerald-700 font-bold text-xs hover:bg-emerald-50 transition-all flex items-center gap-1.5 cursor-pointer"
                                 title="Lihat & Download Hasil Siswa"
                               >
@@ -877,253 +851,6 @@ export const AdminDashboard: React.FC = () => {
            </div>
          </div>
        )}
-       
-       {/* RESULT PREVIEW MODAL */}
-       {showResultModal && currentPreviewStudent && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            {/* Overlay */}
-            <div
-              className="fixed inset-0 transition-opacity bg-slate-900/75 backdrop-blur-sm"
-              onClick={() => setShowResultModal(false)}
-              aria-hidden="true"
-            ></div>
-
-            {/* Panel */}
-            <div className="inline-block w-full max-w-6xl p-4 my-8 overflow-hidden text-left align-middle transition-all transform sm:max-w-full sm:p-6">
-              <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                {/* Modal Header */}
-                <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center gap-3">
-                    <MonitorPlay className="w-6 h-6 text-emerald-600" />
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                      Hasil Refleksi Siswa: {currentPreviewStudent.name}
-                    </h3>
-                  </div>
-                  <button
-                    onClick={() => setShowResultModal(false)}
-                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
-                  >
-                    <X className="w-5 h-5 text-slate-500" />
-                  </button>
-                </div>
-
-                {/* Slide 1: Cover */}
-                <div className="ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-6 sm:p-10 flex flex-col justify-center border-x-0 print:aspect-[16/9] print:h-screen print:w-screen">
-                  <div className="text-center space-y-4">
-                    <Trophy className="w-16 h-16 mx-auto text-emerald-600" />
-                    <h2 className="text-3xl font-black text-slate-800">Growth Mindset Journey Map</h2>
-                    <p className="text-xl font-semibold text-emerald-700">Percaya Diri</p>
-                    <div className="pt-6 border-t border-slate-200 border-dashed">
-                      <p className="text-sm text-slate-500 mb-2">Nama Siswa</p>
-                      <p className="text-2xl font-bold text-slate-800">{currentPreviewStudent.name}</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 pt-4 max-w-md mx-auto">
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Kelas</p>
-                        <p className="font-bold text-slate-700">{currentPreviewStudent.class}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Absen</p>
-                        <p className="font-bold text-slate-700">#{currentPreviewStudent.absentNumber}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SLIDE 2: Etape 1 Part 1 - Pos 1 & 2 */}
-                <div className="ppt-slide aspect-[16/9] w-full bg-slate-50 p-6 sm:p-10 flex flex-col justify-center border-x-0 print:aspect-[16/9] print:h-screen print:w-screen">
-                  <div className="border-b border-slate-200 pb-3 mb-4">
-                    <h2 className="text-base sm:text-lg font-black text-slate-800">Etape 1: Mengenali Diri & Menghadapi Tantangan</h2>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* Pos 1 */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-                      <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
-                        <h3 className="font-extrabold text-sm text-emerald-800 flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs">1</span>
-                          <span>Potret Percaya Diri Saya</span>
-                        </h3>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] text-slate-500 font-bold">Di situasi apa saya merasa kurang percaya diri?</p>
-                        <p className="bg-emerald-50 p-2.5 rounded-xl text-emerald-900 font-medium italic border border-emerald-200 text-xs min-h-[60px]">
-                          "{getStageAnswerLocal(currentPreviewStudent.id, 1, 'situation') || 'Belum diisi'}"
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] text-slate-500 font-bold">Saya berpikir:</p>
-                        <p className="bg-slate-50 p-2 rounded-xl text-slate-800 font-medium text-xs border border-slate-200 min-h-[50px]">
-                          "{getStageAnswerLocal(currentPreviewStudent.id, 1, 'thought') || '-'}"
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] text-slate-500 font-bold">Saya merasa:</p>
-                        <p className="bg-slate-50 p-2 rounded-xl text-slate-800 font-medium text-xs border border-slate-200 min-h-[50px]">
-                          "{getStageAnswerLocal(currentPreviewStudent.id, 1, 'feeling') || '-'}"
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Pos 2 */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-                      <div className="flex items-center justify-between border-b border-teal-100 pb-2">
-                        <h3 className="font-extrabold text-sm text-teal-800 flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center text-xs">2</span>
-                          <span>Tantangan yang Saya Pilih</span>
-                        </h3>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] text-slate-500 font-bold">Satu tantangan yang paling ingin saya taklukkan:</p>
-                        <p className="bg-teal-50 p-2 rounded-xl text-teal-900 font-medium border border-teal-200 text-xs min-h-[60px]">
-                          "{getStageAnswerLocal(currentPreviewStudent.id, 2, 'challenge_target') || 'Belum diisi'}"
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SLIDE 3: Etape 1 Part 2 - Pos 3 & 4 */}
-                <div className="ppt-slide aspect-[16/9] w-full bg-slate-50 p-6 sm:p-10 flex flex-col justify-center border-x-0 print:aspect-[16/9] print:h-screen print:w-screen">
-                  <div className="border-b border-slate-200 pb-3 mb-4">
-                    <h2 className="text-base sm:text-lg font-black text-slate-800">Hambatan di Jalan & Langkah Kecil</h2>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* Pos 3 */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-                      <div className="flex items-center justify-between border-b border-sky-100 pb-2">
-                        <h3 className="font-extrabold text-sm text-sky-800 flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-lg bg-sky-600 text-white flex items-center justify-center text-xs">3</span>
-                          <span>Hambatan di Jalan Saya</span>
-                        </h3>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-bold">Hambatan dari dalam diri saya:</p>
-                      <p className="bg-sky-50 p-2 rounded-xl text-sky-900 font-medium text-xs border border-sky-200 min-h-[60px]">
-                        "{getStageAnswerLocal(currentPreviewStudent.id, 3, 'internal_obstacles') || 'Belum diisi'}"
-                      </p>
-                    </div>
-
-                    {/* Pos 4 */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-                      <div className="flex items-center justify-between border-b border-blue-100 pb-2">
-                        <h3 className="font-extrabold text-sm text-blue-800 flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">4</span>
-                          <span>Langkah Kecil Saya</span>
-                        </h3>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-bold">Langkah pertama (paling mudah):</p>
-                      <p className="bg-blue-50 p-2 rounded-xl text-blue-900 font-medium text-xs border border-blue-200 min-h-[60px]">
-                        "{getStageAnswerLocal(currentPreviewStudent.id, 4, 'step_1') || 'Belum diisi'}"
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SLIDE 4: Etape 2 Part 1 - Pos 5 & 6 */}
-                <div className="ppt-slide aspect-[16/9] w-full bg-slate-50 p-6 sm:p-10 flex flex-col justify-center border-x-0 print:aspect-[16/9] print:h-screen print:w-screen">
-                  <div className="border-b border-slate-200 pb-3 mb-4">
-                    <h2 className="text-base sm:text-lg font-black text-slate-800">Saat Dikritik & Belajar dari Orang Lain</h2>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* Pos 5 */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-                      <div className="flex items-center justify-between border-b border-violet-100 pb-2">
-                        <h3 className="font-extrabold text-sm text-violet-800 flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">5</span>
-                          <span>Saat Saya Dikritik</span>
-                        </h3>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-bold">Masukan yang pernah diterima:</p>
-                      <p className="bg-violet-50 p-2 rounded-xl text-violet-900 font-medium text-xs border border-violet-200 min-h-[60px]">
-                        "{getStageAnswerLocal(currentPreviewStudent.id, 5, 'feedback_received') || 'Belum diisi'}"
-                      </p>
-                    </div>
-
-                    {/* Pos 6 */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-                      <div className="flex items-center justify-between border-b border-purple-100 pb-2">
-                        <h3 className="font-extrabold text-sm text-purple-800 flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-lg bg-purple-600 text-white flex items-center justify-center text-xs">6</span>
-                          <span>Belajar dari Orang Lain</span>
-                        </h3>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-bold">Sosok yang dikagumi:</p>
-                      <p className="bg-purple-50 p-2 rounded-xl text-purple-900 font-medium text-xs border border-purple-200 min-h-[60px]">
-                        "{getStageAnswerLocal(currentPreviewStudent.id, 6, 'role_model') || 'Belum diisi'}"
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SLIDE 5: Etape 2 Part 2 + Certificate */}
-                <div className="ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 p-6 sm:p-10 flex flex-col justify-center border-x-0 print:aspect-[16/9] print:h-screen print:w-screen">
-                  <div className="border-b border-amber-300 pb-3 mb-4">
-                    <h2 className="text-base sm:text-lg font-black text-slate-800">Refleksi, Komitmen & Target</h2>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* Pos 7 */}
-                    <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs space-y-3">
-                      <div className="flex items-center justify-between border-b border-amber-100 pb-2">
-                        <h3 className="font-extrabold text-sm text-amber-800 flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center text-xs">7</span>
-                          <span>Melihat Kembali Usaha Saya</span>
-                        </h3>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-bold">Berhasil setelah mencoba seminggu:</p>
-                      <p className="bg-green-50 p-2 rounded-xl text-green-900 font-medium text-xs border border-green-200 min-h-[60px]">
-                        "{getStageAnswerLocal(currentPreviewStudent.id, 7, 'what_succeeded') || 'Belum diisi'}"
-                      </p>
-                    </div>
-
-                    {/* Pos 8 */}
-                    <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs space-y-3">
-                      <div className="flex items-center justify-between border-b border-orange-200 pb-2">
-                        <h3 className="font-extrabold text-sm text-orange-800 flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-lg bg-orange-500 text-white flex items-center justify-center text-xs">8</span>
-                          <span>Komitmen & Target Saya</span>
-                        </h3>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-bold">Target satu minggu ke depan:</p>
-                      <p className="bg-orange-50 p-2 rounded-xl text-orange-900 font-medium text-xs border border-orange-200 min-h-[60px]">
-                        "{getStageAnswerLocal(currentPreviewStudent.id, 8, 'target_week_1') || 'Belum diisi'}"
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Certificate Section */}
-                  <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border-2 border-amber-400 mt-6 mx-6">
-                    <div className="flex items-center justify-center gap-3 mb-3">
-                      <Award className="w-10 h-10 text-amber-600" />
-                      <h3 className="font-extrabold text-xl text-amber-900">SERTIFIKAT KEBERANIAN</h3>
-                      <Award className="w-10 h-10 text-amber-600" />
-                    </div>
-                    <p className="text-center text-sm text-slate-700 font-medium">
-                      Berhasil menyelesaikan Growth Mindset Journey Map Percaya Diri
-                    </p>
-                  </div>
-                </div>
-
-                {/* Close Modal Button */}
-                <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
-                  <button
-                    onClick={() => setShowResultModal(false)}
-                    className="px-6 py-2.5 rounded-xl border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
-                  >
-                    Tutup
-                  </button>
-                  <button
-                    onClick={window.print}
-                    className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-all flex items-center gap-2"
-                  >
-                    <Printer className="w-4 h-4" />
-                    Cetak / Simpan PDF
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
