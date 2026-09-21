@@ -162,7 +162,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 1: COVER PRESENTATION SLIDE (16:9 PPT) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-slate-900 via-teal-950 to-emerald-950 text-white p-6 sm:p-8 md:p-14 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-visible border border-slate-700 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-screen max-h-none print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 1 ? 'hidden' : ''}`}>
+        <div className={`ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-slate-900 via-teal-950 to-emerald-950 text-white p-6 sm:p-8 md:p-14 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-visible border border-slate-700 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 1 ? 'hidden' : ''}`}>
           <div className="absolute -right-20 -top-20 w-96 h-96 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
           <div className="absolute -left-20 -bottom-20 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl pointer-events-none"></div>
 
@@ -212,7 +212,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 2: POS 1 - POTRET PERCAYA DIRI SAYA (TITIK MULAI) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-4 sm:p-6 md:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-screen max-h-none print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 2 ? 'hidden' : ''}`}>
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 2 ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-black text-xs uppercase tracking-wider">
@@ -231,7 +231,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700 text-sm">Di situasi apa saya merasa kurang percaya diri?</p>
-                <div className="bg-emerald-50/70 p-3.5 rounded-xl text-emerald-950 font-medium italic border border-emerald-200 text-sm min-h-[100px] leading-relaxed break-words">
+                <div className="bg-emerald-50/70 p-3.5 rounded-xl text-emerald-950 font-medium italic border border-emerald-200 text-sm min-h-[90px] leading-relaxed break-all">
                   "{getStageAnswer(1, 'situation') || 'Belum diisi'}"
                 </div>
               </div>
@@ -285,7 +285,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 3: POS 2 - TANTANGAN YANG SAYA PILIH (CHALLENGE) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-4 sm:p-6 md:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-screen max-h-none print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 3 ? 'hidden' : ''}`}>
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 3 ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-teal-600 text-white font-black text-xs uppercase tracking-wider">
@@ -304,14 +304,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700 text-sm">Satu tantangan yang paling ingin saya taklukkan:</p>
-                <div className="bg-teal-50/70 p-3.5 rounded-xl text-teal-950 font-bold text-sm border border-teal-200 min-h-[100px] leading-relaxed break-words">
+                <div className="bg-teal-50/70 p-3.5 rounded-xl text-teal-950 font-bold text-sm border border-teal-200 min-h-[90px] leading-relaxed break-all">
                   "{getStageAnswer(2, 'challenge_target') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700">Apa yang membuat terasa berat?</p>
-                <div className="bg-slate-50 p-3 rounded-xl text-slate-800 font-medium italic border border-slate-200 leading-relaxed break-words">
+                <div className="bg-slate-50 p-3 rounded-xl text-slate-800 font-medium italic border border-slate-200 leading-relaxed break-all">
                   "{getStageAnswer(2, 'heavy_reason') || 'Belum diisi'}"
                 </div>
               </div>
@@ -352,7 +352,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 4: POS 3 - HAMBATAN DI JALAN SAYA (OBSTACLES) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-4 sm:p-6 md:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-screen max-h-none print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 4 ? 'hidden' : ''}`}>
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 4 ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-sky-600 text-white font-black text-xs uppercase tracking-wider">
@@ -371,14 +371,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700">Hambatan dari dalam diri saya (pikiran, perasaan):</p>
-                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium italic border border-slate-200 min-h-[85px] leading-relaxed break-words">
+                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium italic border border-slate-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(3, 'internal_obstacles') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700">Hambatan dari luar (lingkungan, orang lain):</p>
-                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium italic border border-slate-200 min-h-[85px] leading-relaxed break-words">
+                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium italic border border-slate-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(3, 'external_obstacles') || 'Belum diisi'}"
                 </div>
               </div>
@@ -387,14 +387,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
               <div className="space-y-1 text-xs">
                 <p className="font-bold text-slate-700">Mengapa hambatan itu muncul?</p>
-                <div className="bg-slate-50 p-3 rounded-xl text-slate-800 font-medium border border-slate-200 leading-relaxed break-words">
+                <div className="bg-slate-50 p-3 rounded-xl text-slate-800 font-medium border border-slate-200 leading-relaxed break-all">
                   "{getStageAnswer(3, 'why_obstacle_arises') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1 text-xs">
                 <p className="font-bold text-slate-700">Cara saya melewatinya:</p>
-                <div className="bg-sky-50 p-3 rounded-xl text-sky-950 font-bold border border-sky-200 leading-relaxed break-words">
+                <div className="bg-sky-50 p-3 rounded-xl text-sky-950 font-bold border border-sky-200 leading-relaxed break-all">
                   "{getStageAnswer(3, 'how_to_overcome') || 'Belum diisi'}"
                 </div>
               </div>
@@ -415,7 +415,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 5: POS 4 - LANGKAH KECIL SAYA (EFFORT) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-4 sm:p-6 md:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-screen max-h-none print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 5 ? 'hidden' : ''}`}>
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 5 ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-blue-600 text-white font-black text-xs uppercase tracking-wider">
@@ -440,21 +440,21 @@ export const ResultView: React.FC<ResultViewProps> = ({
                   <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
                   <div>
                     <span className="text-[10px] font-bold text-blue-800 block">Langkah Pertama (Paling Mudah):</span>
-                    <p className="text-slate-800 font-medium mt-0.5 leading-relaxed break-words">{getStageAnswer(4, 'step_1') || 'Belum diisi'}</p>
+                    <p className="text-slate-800 font-medium mt-0.5 leading-relaxed break-all">{getStageAnswer(4, 'step_1') || 'Belum diisi'}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5 bg-blue-50/70 p-3 rounded-xl border border-blue-200">
                   <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-blue-500 text-white text-xs font-bold flex items-center justify-center">2</span>
                   <div>
                     <span className="text-[10px] font-bold text-blue-800 block">Langkah Kedua:</span>
-                    <p className="text-slate-800 font-medium mt-0.5 leading-relaxed break-words">{getStageAnswer(4, 'step_2') || 'Belum diisi'}</p>
+                    <p className="text-slate-800 font-medium mt-0.5 leading-relaxed break-all">{getStageAnswer(4, 'step_2') || 'Belum diisi'}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5 bg-blue-50/70 p-3 rounded-xl border border-blue-200">
                   <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-blue-400 text-white text-xs font-bold flex items-center justify-center">3</span>
                   <div>
                     <span className="text-[10px] font-bold text-blue-800 block">Langkah Ketiga:</span>
-                    <p className="text-slate-800 font-medium mt-0.5 leading-relaxed break-words">{getStageAnswer(4, 'step_3') || 'Belum diisi'}</p>
+                    <p className="text-slate-800 font-medium mt-0.5 leading-relaxed break-all">{getStageAnswer(4, 'step_3') || 'Belum diisi'}</p>
                   </div>
                 </div>
               </div>
@@ -471,17 +471,17 @@ export const ResultView: React.FC<ResultViewProps> = ({
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
                   <p className="text-[10px] font-bold text-blue-700 mb-1 block uppercase">Agar Konsisten:</p>
-                  <p className="text-slate-800 font-medium leading-relaxed break-words">{getStageAnswer(4, 'consistency_strategy') || '-'}</p>
+                  <p className="text-slate-800 font-medium leading-relaxed break-all">{getStageAnswer(4, 'consistency_strategy') || '-'}</p>
                 </div>
                 <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
                   <p className="text-[10px] font-bold text-blue-700 mb-1 block uppercase">Yang Membantu:</p>
-                  <p className="text-slate-800 font-medium leading-relaxed break-words">{getStageAnswer(4, 'helper_person') || '-'}</p>
+                  <p className="text-slate-800 font-medium leading-relaxed break-all">{getStageAnswer(4, 'helper_person') || '-'}</p>
                 </div>
               </div>
 
               <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 text-xs">
                 <p className="text-[10px] font-bold text-blue-700 mb-0.5 block uppercase">Apresiasi Untuk Diri Sendiri:</p>
-                <p className="font-semibold text-blue-950 italic leading-relaxed break-words">"{getStageAnswer(4, 'step_done_motto') || '-'}"</p>
+                <p className="font-semibold text-blue-950 italic leading-relaxed break-all">"{getStageAnswer(4, 'step_done_motto') || '-'}"</p>
               </div>
             </div>
           </div>
@@ -495,7 +495,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 6: POS 5 - SAAT SAYA DIKRITIK (CRITIQUES) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-4 sm:p-6 md:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-screen max-h-none print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 6 ? 'hidden' : ''}`}>
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 6 ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-wider">
@@ -514,7 +514,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700 text-sm">Masukan yang pernah saya terima:</p>
-                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium italic border border-slate-200 min-h-[85px] leading-relaxed break-words">
+                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium italic border border-slate-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(5, 'received_criticism') || 'Belum diisi'}"
                 </div>
               </div>
@@ -526,7 +526,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
                 </div>
                 <div className="bg-rose-50 p-3 rounded-xl border border-rose-200">
                   <p className="text-[10px] font-bold text-rose-800 mb-1 block uppercase">❌ Menjatuhkan:</p>
-                  <p className="text-slate-800 font-medium leading-relaxed break-words">{getStageAnswer(5, 'destructive_aspect') || '-'}</p>
+                  <p className="text-slate-800 font-medium leading-relaxed break-all">{getStageAnswer(5, 'destructive_aspect') || '-'}</p>
                 </div>
               </div>
             </div>
@@ -534,14 +534,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700">Yang saya ambil dan saya perbaiki:</p>
-                <div className="bg-indigo-50/70 p-3.5 rounded-xl text-indigo-950 font-medium border border-indigo-200 min-h-[85px] leading-relaxed break-words">
+                <div className="bg-indigo-50/70 p-3.5 rounded-xl text-indigo-950 font-medium border border-indigo-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(5, 'what_i_improve') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="bg-indigo-50 p-3.5 rounded-xl border border-indigo-200 text-xs">
                 <p className="text-[10px] font-bold text-indigo-800 mb-1 block uppercase">Mulai sekarang, respons saya terhadap kritik:</p>
-                <p className="font-bold text-indigo-950 italic leading-relaxed break-words">"{getStageAnswer(5, 'response_strategy') || '-'}"</p>
+                <p className="font-bold text-indigo-950 italic leading-relaxed break-all">"{getStageAnswer(5, 'response_strategy') || '-'}"</p>
               </div>
             </div>
           </div>
@@ -555,7 +555,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 7: POS 6 - BELAJAR DARI ORANG LAIN (SUCCESS OF OTHERS) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-4 sm:p-6 md:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-screen max-h-none print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 7 ? 'hidden' : ''}`}>
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 7 ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-violet-600 text-white font-black text-xs uppercase tracking-wider">
@@ -574,14 +574,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700 text-sm">Siapa yang saya kagumi keberaniannya, dan siapa dia bagi saya?</p>
-                <div className="bg-violet-50/70 p-3.5 rounded-xl text-violet-950 font-bold text-sm border border-violet-200 min-h-[85px] leading-relaxed break-words">
+                <div className="bg-violet-50/70 p-3.5 rounded-xl text-violet-950 font-bold text-sm border border-violet-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(6, 'admired_figure') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700">Apa yang ia lakukan sehingga terlihat percaya diri?</p>
-                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium border border-slate-200 min-h-[85px] leading-relaxed break-words">
+                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium border border-slate-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(6, 'confidence_actions') || 'Belum diisi'}"
                 </div>
               </div>
@@ -590,14 +590,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700 text-sm">Satu hal darinya yang bisa saya tiru minggu ini:</p>
-                <div className="bg-emerald-50 p-3.5 rounded-xl text-emerald-950 font-bold text-sm border border-emerald-200 min-h-[95px] leading-relaxed break-words">
+                <div className="bg-emerald-50 p-3.5 rounded-xl text-emerald-950 font-bold text-sm border border-emerald-200 min-h-[95px] leading-relaxed break-all">
                   "{getStageAnswer(6, 'imitation_action') || '-'}"
                 </div>
               </div>
 
               <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 text-xs">
                 <p className="text-[10px] font-bold text-amber-800 mb-1 block uppercase">Prinsip Emas:</p>
-                <p className="font-semibold text-amber-950 italic leading-relaxed break-words">
+                <p className="font-semibold text-amber-950 italic leading-relaxed break-all">
                   "Keberhasilan orang lain bukan ukuran kegagalan saya. Itu bukti bahwa hal itu bisa dicapai."
                 </p>
               </div>
@@ -613,7 +613,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 8: POS 7 - MELIHAT KEMBALI USAHA SAYA (REFLEKSI) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-4 sm:p-6 md:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-screen max-h-none print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 8 ? 'hidden' : ''}`}>
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 8 ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-purple-600 text-white font-black text-xs uppercase tracking-wider">
@@ -632,14 +632,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700">Setelah mencoba langkah saya, apa yang sudah berhasil?</p>
-                <div className="bg-emerald-50 p-3.5 rounded-xl text-emerald-950 font-semibold border border-emerald-200 min-h-[85px] leading-relaxed break-words">
+                <div className="bg-emerald-50 p-3.5 rounded-xl text-emerald-950 font-semibold border border-emerald-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(7, 'what_succeeded') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700">Bagian mana yang masih kurang berhasil, dan mengapa?</p>
-                <div className="bg-amber-50 p-3.5 rounded-xl text-amber-950 font-medium border border-amber-200 min-h-[85px] leading-relaxed break-words">
+                <div className="bg-amber-50 p-3.5 rounded-xl text-amber-950 font-medium border border-amber-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(7, 'what_failed_and_why') || 'Belum diisi'}"
                 </div>
               </div>
@@ -648,14 +648,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700">Hal baru yang saya ketahui tentang diri saya:</p>
-                <div className="bg-purple-50/70 p-3.5 rounded-xl text-purple-950 font-medium border border-purple-200 min-h-[85px] leading-relaxed break-words">
+                <div className="bg-purple-50/70 p-3.5 rounded-xl text-purple-950 font-medium border border-purple-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(7, 'new_self_knowledge') || '-'}"
                 </div>
               </div>
 
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-slate-700">Perubahan kecil yang sudah saya rasakan:</p>
-                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium border border-slate-200 min-h-[85px] leading-relaxed break-words">
+                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium border border-slate-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(7, 'felt_changes') || '-'}"
                 </div>
               </div>
@@ -671,7 +671,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 9: POS 8 - KOMITMEN DAN TARGET SAYA (GARIS AKHIR) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-4 sm:p-6 md:p-10 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-screen max-h-none print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 9 ? 'hidden' : ''}`}>
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 9 ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-amber-500 text-white font-black text-xs uppercase tracking-wider">
@@ -694,15 +694,15 @@ export const ResultView: React.FC<ResultViewProps> = ({
               <div className="space-y-2 text-xs">
                 <div className="flex items-start gap-2 bg-amber-50/70 p-3 rounded-xl border border-amber-200">
                   <span className="w-5 h-5 rounded-md bg-amber-500 text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
-                  <p className="text-slate-800 font-medium leading-relaxed break-words">{getStageAnswer(8, 'target_week_1') || 'Belum diisi'}</p>
+                  <p className="text-slate-800 font-medium leading-relaxed break-all">{getStageAnswer(8, 'target_week_1') || 'Belum diisi'}</p>
                 </div>
                 <div className="flex items-start gap-2 bg-amber-50/70 p-3 rounded-xl border border-amber-200">
                   <span className="w-5 h-5 rounded-md bg-amber-500 text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
-                  <p className="text-slate-800 font-medium leading-relaxed break-words">{getStageAnswer(8, 'target_week_2') || 'Belum diisi'}</p>
+                  <p className="text-slate-800 font-medium leading-relaxed break-all">{getStageAnswer(8, 'target_week_2') || 'Belum diisi'}</p>
                 </div>
                 <div className="flex items-start gap-2 bg-amber-50/70 p-3 rounded-xl border border-amber-200">
                   <span className="w-5 h-5 rounded-md bg-amber-500 text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
-                  <p className="text-slate-800 font-medium leading-relaxed break-words">{getStageAnswer(8, 'target_week_3') || 'Belum diisi'}</p>
+                  <p className="text-slate-800 font-medium leading-relaxed break-all">{getStageAnswer(8, 'target_week_3') || 'Belum diisi'}</p>
                 </div>
               </div>
 
@@ -753,7 +753,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 10: SERTIFIKAT KEBERANIAN GROWTH MINDSET (PIAGAM KELULUSAN 8 POS) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-6 sm:p-8 md:p-12 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-visible border-4 border-amber-400 print:rounded-none print:shadow-none print:border-4 print:aspect-[16/9] min-h-screen max-h-none print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 10 ? 'hidden' : ''}`}>
+        <div className={`ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-6 sm:p-8 md:p-12 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-visible border-4 border-amber-400 print:rounded-none print:shadow-none print:border-4 print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 10 ? 'hidden' : ''}`}>
           {/* Decorative Certificate Corner Accents */}
           <div className="absolute top-3 left-3 w-8 h-8 border-t-4 border-l-4 border-amber-500"></div>
           <div className="absolute top-3 right-3 w-8 h-8 border-t-4 border-r-4 border-amber-500"></div>
@@ -818,3 +818,6 @@ export const ResultView: React.FC<ResultViewProps> = ({
     </div>
   );
 };
+
+
+
