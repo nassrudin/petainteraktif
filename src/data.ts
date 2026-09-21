@@ -62,7 +62,7 @@ export const STAGES_DATA: StageDefinition[] = [
       },
       {
         id: 'confidence_scale',
-        label: 'Percaya diri saya hari ini ada di angka:',
+        label: 'Percaya diri saya sebelum layanan bimbingan klasikal ada di angka:',
         type: 'slider',
         min: 1,
         max: 5,
@@ -267,19 +267,6 @@ export const STAGES_DATA: StageDefinition[] = [
         placeholder: 'Tuliskan masukan atau kritik yang pernah kamu terima...',
       },
       {
-        id: 'constructive_aspect',
-        sectionHeader: 'Evaluasi masukan tersebut:',
-        label: 'Membangun:',
-        type: 'textarea',
-        placeholder: 'Bagian apa yang membangun atau memberi pelajaran berharga...',
-      },
-      {
-        id: 'destructive_aspect',
-        label: 'Menjatuhkan:',
-        type: 'textarea',
-        placeholder: 'Bagian apa yang terasa menjatuhkan atau kurang tepat...',
-      },
-      {
         id: 'what_i_improve',
         label: 'Yang saya ambil dan saya perbaiki:',
         type: 'textarea',
@@ -447,3 +434,4 @@ export const ADMIN_PASSWORD_HASH = '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjAG.iHvQiM5ZlW
 export const INITIAL_STUDENTS: ActiveStudent[] = [];
 
 export const INITIAL_JOURNEYS: Record<string, StudentJourney> = {};
+

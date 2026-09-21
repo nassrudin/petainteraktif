@@ -518,17 +518,6 @@ export const ResultView: React.FC<ResultViewProps> = ({
                   "{getStageAnswer(5, 'received_criticism') || 'Belum diisi'}"
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200">
-                  <p className="text-[10px] font-bold text-emerald-800 mb-1 block uppercase">✅ Membangun:</p>
-                  <p className="text-slate-800 font-medium leading-relaxed">{getStageAnswer(5, 'constructive_aspect') || '-'}</p>
-                </div>
-                <div className="bg-rose-50 p-3 rounded-xl border border-rose-200">
-                  <p className="text-[10px] font-bold text-rose-800 mb-1 block uppercase">❌ Menjatuhkan:</p>
-                  <p className="text-slate-800 font-medium leading-relaxed break-all">{getStageAnswer(5, 'destructive_aspect') || '-'}</p>
-                </div>
-              </div>
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
