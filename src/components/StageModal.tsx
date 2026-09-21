@@ -1,30 +1,41 @@
-import React, { useState } from 'react';
-import { StageDefinition, StageAnswer } from '../types';
-import { useApp } from '../context';
-import { 
-  X, Sparkles, ArrowRight, Award, Lightbulb, BookmarkCheck
-} from 'lucide-react';
-import confetti from 'canvas-confetti';
-
-interface StageModalProps {
-  stage: StageDefinition;
-  initialData?: StageAnswer;
-  onClose: () => void;
-  onCompletedNext?: (nextStageId: number) => void;
-}
-
-export const StageModal: React.FC<StageModalProps> = ({
-  stage,
-  initialData,
-  onClose,
-  onCompletedNext,
-}) => {
-  const { activeStudent, saveStageAnswer } = useApp();
-  const [formData, setFormData] = useState<Record<string, any>>(() => {
-    return initialData?.answers || {};
-  });
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+import React, { useState, useEffect } from 'react';
+  import { StageDefinition, StageAnswer } from '../types';
+  import { useApp } from '../context';
+  import { 
+    X, Sparkles, ArrowRight, Award, Lightbulb, BookmarkCheck
+  } from 'lucide-react';
+  import confetti from 'canvas-confetti';
+  
+  interface StageModalProps {
+    stage: StageDefinition;
+    initialData?: StageAnswer;
+    onClose: () => void;
+    onCompletedNext?: (nextStageId: number) => void;
+  }
+  
+  export const StageModal: React.FC<StageModalProps> = ({
+    stage,
+    initialData,
+    onClose,
+    onCompletedNext,
+  }) => {
+    const { activeStudent, saveStageAnswer } = useApp();
+    
+    // Initialize formData from initialData answers or empty object
+    const [formData, setFormData] = useState<Record<string, any>>({});
+    
+    // Sync formData with initialData when initialData changes
+    useEffect(() => {
+      if (initialData && initialData.answers) {
+        setFormData(initialData.answers);
+      } else {
+        // Reset to empty object for new stages
+        setFormData({});
+      }
+    }, [initialData, stage.id]);
+    
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (fieldId: string, value: any) => {
     setFormData((prev) => ({

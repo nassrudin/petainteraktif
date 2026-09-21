@@ -3,9 +3,10 @@ import { useApp } from '../context';
 import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA } from '../data';
 import { StageDefinition } from '../types';
 import { StageModal } from './StageModal';
+import { CompletedStagesSummary } from './StageReview';
 import { 
   Sparkles, Award, Lock, CheckCircle2, Trophy, 
-  MapPin, ArrowRight, Play, RefreshCw, Star, Info, Calendar, User, HeartHandshake, Compass
+  MapPin, ArrowRight, Play, RefreshCw, Star, Info, Calendar, User, HeartHandshake, Compass, Trophy as TrophyIcon
 } from 'lucide-react';
 
 interface JourneyMapProps {
@@ -25,6 +26,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
 
   const journey = getStudentJourney(activeStudent.id);
   const [selectedStage, setSelectedStage] = useState<StageDefinition | null>(null);
+  const [showReview, setShowReview] = useState(false);
 
   const completedCount = Object.keys(journey.stages).length;
   const progressPercent = Math.round((completedCount / 8) * 100);
@@ -114,7 +116,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
                 style={{ width: `${progressPercent}%` }}
               ></div>
             </div>
-            <div className="flex justify-between items-center text-[11px] pt-1">
+            <div className="flex flex-wrap justify-between items-center gap-2 text-[11px] pt-1">
               <button
                 onClick={() => resetStudentProgress(activeStudent.id)}
                 className="text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-colors cursor-pointer"
@@ -132,6 +134,15 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
                 </button>
               ) : (
                 <span className="text-slate-400 font-medium">Selesaikan seluruh 8 pos</span>
+              )}
+
+              {completedCount > 0 && (
+                <button
+                  onClick={() => setShowReview(true)}
+                  className="font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-transform hover:scale-105 cursor-pointer ml-auto"
+                >
+                  📋 Lihat Semua Jawaban
+                </button>
               )}
             </div>
           </div>
@@ -360,6 +371,14 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
               setSelectedStage(nextStage);
             }
           }}
+        />
+      )}
+
+      {/* Review All Stages Modal */}
+      {showReview && (
+        <CompletedStagesSummary 
+          journey={journey} 
+          onGoBack={() => setShowReview(false)} 
         />
       )}
     </div>
