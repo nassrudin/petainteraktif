@@ -149,36 +149,38 @@ export const ResultView: React.FC<ResultViewProps> = ({
         </div>
 
         {/* Export Actions */}
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <button
-            onClick={handleUploadPDFToDrive}
-            disabled={isUploading}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-xs font-bold shadow-md shadow-purple-200 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Export dan Upload PDF ke Google Drive"
-          >
-            {isUploading ? (
-              <>
-                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Upload...</span>
-              </>
-            ) : (
-              <>
-                <CloudUpload className="w-4 h-4" />
-                <span>Upload PDF ke Google Drive</span>
-              </>
-            )}
-          </button>
-          <button
-            onClick={handlePrintPdf}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-200 transition-all cursor-pointer"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Cetak / Simpan PDF (Local)</span>
-          </button>
-        </div>
+        {isTeacherView && (
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <button
+              onClick={handleUploadPDFToDrive}
+              disabled={isUploading}
+              className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-xs font-bold shadow-md shadow-purple-200 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Export dan Upload PDF ke Google Drive"
+            >
+              {isUploading ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Upload...</span>
+                </>
+              ) : (
+                <>
+                  <CloudUpload className="w-4 h-4" />
+                  <span>Upload PDF ke Google Drive</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={handlePrintPdf}
+              className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-200 transition-all cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Cetak / Simpan PDF (Local)</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Interactive Slide Navigation Controls (Only visible in 'slides' mode and hidden in print) */}
