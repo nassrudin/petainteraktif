@@ -45,7 +45,7 @@
   animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Custom print style for certificate / PPT landscape presentation */
+/* Custom print style for the landscape journey report */
 @media print {
   @page {
     size: 16in 9in;

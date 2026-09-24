@@ -4,7 +4,7 @@ import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA } from 
 import { ActiveStudent } from '../types';
 import { 
   Printer, ArrowLeft, ChevronLeft, ChevronRight, 
-  MonitorPlay, LayoutGrid, Trophy
+  MonitorPlay, LayoutGrid
 } from 'lucide-react';
 
 interface ResultViewProps {
@@ -32,8 +32,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
   }
 
   const journey = getStudentJourney(activeStudent.id);
-  const isComplete = Array.from({ length: 8 }, (_, i) => i + 1).every(id => journey.stages[id]?.completed);
-  const totalSlides = isComplete ? 10 : 9;
+  const totalSlides = 9;
 
   const [viewMode, setViewMode] = useState<'slides' | 'all'>('slides');
   const [currentSlide, setCurrentSlide] = useState<number>(1);
@@ -733,70 +732,6 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <span>"{PESAN_UNTUK_DIRI_SAYA}"</span>
           </div>
         </div>
-
-        {/* ========================================================================= */}
-        {/* SLIDE 10: SERTIFIKAT KEBERANIAN GROWTH MINDSET (PIAGAM KELULUSAN 8 POS) */}
-        {/* ========================================================================= */}
-        {isComplete && <div className={`ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-6 sm:p-8 md:p-12 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-visible border-4 border-amber-400 print:rounded-none print:shadow-none print:border-4 print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 10 ? 'hidden' : ''}`}>
-          {/* Decorative Certificate Corner Accents */}
-          <div className="absolute top-3 left-3 w-8 h-8 border-t-4 border-l-4 border-amber-500"></div>
-          <div className="absolute top-3 right-3 w-8 h-8 border-t-4 border-r-4 border-amber-500"></div>
-          <div className="absolute bottom-3 left-3 w-8 h-8 border-b-4 border-l-4 border-amber-500"></div>
-          <div className="absolute bottom-3 right-3 w-8 h-8 border-b-4 border-r-4 border-amber-500"></div>
-
-          <div className="flex items-center justify-between relative z-10">
-            <span className="px-4 py-1 rounded-full bg-amber-200/80 text-amber-900 text-xs font-black tracking-wider uppercase">
-              Piagam Penghargaan Refleksi Diri
-            </span>
-            <span className="text-xs text-amber-800 font-mono">
-              Slide 10 / 10 • Sertifikat Keberanian
-            </span>
-          </div>
-
-          <div className="text-center my-auto space-y-3 relative z-10 max-w-3xl mx-auto">
-            <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-amber-500 text-white shadow-md shadow-amber-300">
-              <Trophy className="w-10 h-10" />
-            </div>
-            
-            <h1 className="text-2xl sm:text-4xl font-black font-display text-amber-950 tracking-tight">
-              SERTIFIKAT KEBERANIAN BERTUMBUH
-            </h1>
-            
-            <p className="text-xs sm:text-sm text-amber-900/80 font-medium break-words">
-              Diberikan sebagai pengakuan atas ketulusan, keberanian menghadapi keraguan diri, dan tekad bertumbuh melalui seluruh 8 Pos Media Layanan Bimbingan Klasikal:
-            </p>
-
-            <div className="py-2">
-              <p className="text-2xl sm:text-4xl font-black text-emerald-900 font-display underline decoration-amber-400 decoration-4 underline-offset-8">
-                {activeStudent.name}
-              </p>
-              <p className="text-xs sm:text-sm font-bold text-slate-700 mt-2">
-                Kelas {activeStudent.class} • Nomor Presensi #{activeStudent.absentNumber}
-              </p>
-            </div>
-
-            <p className="text-xs sm:text-sm font-semibold italic text-amber-950 max-w-xl mx-auto leading-relaxed bg-white/60 backdrop-blur-sm p-3 rounded-2xl border border-amber-200/60 break-words">
-              "{PEGANGAN_DI_SEPANJANG_JALAN}"
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 pt-4 border-t border-amber-200/80 relative z-10 text-center">
-            <div>
-              <p className="text-xs text-amber-900 font-medium">Peserta / Siswa</p>
-              <div className="h-10"></div>
-              <p className="text-xs font-bold text-slate-800 uppercase tracking-wide border-t border-slate-400/40 pt-1 inline-block min-w-[160px]">
-                {activeStudent.name}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-amber-900 font-medium">Guru Bimbingan dan Konseling</p>
-              <div className="h-10"></div>
-              <p className="text-xs font-bold text-slate-800 uppercase tracking-wide border-t border-slate-400/40 pt-1 inline-block min-w-[160px]">
-                Guru BK Kelas X
-              </p>
-            </div>
-          </div>
-        </div>}
 
       </div>
     </div>

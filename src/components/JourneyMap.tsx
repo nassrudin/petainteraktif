@@ -4,7 +4,7 @@ import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA } from 
 import { StageDefinition } from '../types';
   import { StageModal } from './StageModal';
   import { 
-    Sparkles, Award, Lock, CheckCircle2, Trophy, 
+    Sparkles, Award, Lock, CheckCircle2,
     MapPin, ArrowRight, Play, RefreshCw, Star, Info, Calendar, User, HeartHandshake, Compass
   } from 'lucide-react';
 
@@ -106,7 +106,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
           {/* Gamification Level status */}
           <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex items-center gap-3.5">
             <div className={`w-11 h-11 rounded-xl bg-gradient-to-tr ${levelColor} flex items-center justify-center text-white shrink-0 shadow-sm`}>
-              <Trophy className="w-6 h-6" />
+              <Sparkles className="w-6 h-6" />
             </div>
             <div className="min-w-0">
               <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-100/60 px-2 py-0.5 rounded-md">
@@ -146,7 +146,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
                   onClick={onGoToResult}
                   className="font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-transform hover:translate-x-0.5 cursor-pointer"
                 >
-                  Lihat Sertifikat Akhir <ArrowRight className="w-3.5 h-3.5" />
+                  Lihat Hasil Akhir <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               ) : (
                 <span className="text-slate-400 font-medium">Selesaikan seluruh 8 pos</span>
@@ -342,12 +342,12 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
           <div className="relative z-20 mt-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white p-4 sm:p-5 rounded-2xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-bottom">
             <div className="flex items-center gap-3 text-center sm:text-left">
               <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-amber-300">
-                <Trophy className="w-7 h-7" />
+                <CheckCircle2 className="w-7 h-7" />
               </div>
               <div>
                 <h3 className="font-extrabold text-base sm:text-lg">Selamat! Semua 8 Pos Telah Dituntaskan!</h3>
                 <p className="text-xs text-emerald-100">
-                  Kamu telah resmi meraih gelar <strong>Growth Master</strong>. Unduh Journey Map dan sertifikatmu sekarang!
+                  Semua jawabanmu sudah tersimpan. Lihat hasil perjalananmu dan simpan sebagai PDF jika diperlukan.
                 </p>
               </div>
             </div>
@@ -355,7 +355,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
               onClick={onGoToResult}
               className="px-5 py-2.5 rounded-xl bg-white text-emerald-800 font-bold text-xs sm:text-sm hover:bg-emerald-50 shadow-md transition-all flex items-center gap-2 shrink-0 cursor-pointer"
             >
-              <span>Buka Dokumen & Unduh</span>
+              <span>Lihat Hasil & Simpan PDF</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

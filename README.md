@@ -22,7 +22,7 @@ Build Vite dapat diterbitkan melalui workflow GitHub Pages di `.github/workflows
 
 ## Hasil dan Google Drive
 
-Siswa dan guru dapat memilih **Cetak / Simpan PDF** pada halaman hasil. Browser membuka dialog cetak; pilih tujuan **Save as PDF**. Sertifikat hanya ditampilkan setelah semua delapan pos selesai. Hasil berisi hingga sepuluh halaman, bukan berkas `.pptx`.
+Siswa dan guru dapat memilih **Cetak / Simpan PDF** pada halaman hasil. Browser membuka dialog cetak; pilih tujuan **Save as PDF**. Hasil berisi sembilan halaman, bukan berkas `.pptx`.
 
 Opsional: `google-apps-script-sync.js` dapat diterbitkan sebagai Google Apps Script Web App. Atur `FOLDER_ID` di skrip ke folder milik guru. Agar semua perangkat siswa mengirim ke endpoint yang sama, isi GitHub Actions repository variable `DRIVE_WEBHOOK_URL` dengan URL `/exec`, kemudian deploy ulang. URL ini akan tertanam dalam build publik. URL yang diatur lewat dashboard hanya berlaku pada browser tersebut. Setelah delapan pos selesai, frontend mencoba mengirim JSON. Google Apps Script memakai respons lintas origin yang tidak dapat diverifikasi dari halaman GitHub Pages; status **Dikirim, cek di Drive** berarti pengiriman telah dicoba, bukan konfirmasi file sudah ada. Periksa folder Drive secara langsung. Link folder di dashboard hanya referensi lokal; tujuan sebenarnya ditentukan oleh `FOLDER_ID` di skrip.
 
@@ -34,5 +34,5 @@ Untuk rekap lintas perangkat, autentikasi guru yang aman, serta konfirmasi sinkr
 - `src/context.tsx`: state dan penyimpanan lokal.
 - `src/components/StudentEntry.tsx`: formulir identitas.
 - `src/components/JourneyMap.tsx` dan `StageModal.tsx`: progres dan pengisian pos.
-- `src/components/ResultView.tsx`: hasil, sertifikat, dan cetak PDF.
+- `src/components/ResultView.tsx`: hasil dan cetak PDF.
 - `src/components/AdminDashboard.tsx`: rekap data di browser setempat.
