@@ -92,13 +92,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     catch { setStorageError(true); }
   };
 
-  // App settings (class configurations)
+  // App settings, including class configurations and phase-two access
   const [appSettings, setAppSettings] = useState<AppSettings>(() => {
-    const saved = readStoredJson(STORAGE_KEY_APP_SETTINGS, { classNames: DEFAULT_CLASS_CONFIGS });
+    const saved = readStoredJson<Partial<AppSettings>>(STORAGE_KEY_APP_SETTINGS, { classNames: DEFAULT_CLASS_CONFIGS });
     return saved && Array.isArray(saved.classNames) && saved.classNames.length &&
       saved.classNames.every(c => c && typeof c.className === 'string' &&
         Number.isInteger(c.absentRangeMin) && Number.isInteger(c.absentRangeMax))
-      ? saved : { classNames: DEFAULT_CLASS_CONFIGS };
+      ? { classNames: saved.classNames, allowEarlyPhaseTwo: saved.allowEarlyPhaseTwo === true }
+      : { classNames: DEFAULT_CLASS_CONFIGS, allowEarlyPhaseTwo: false };
   });
 
   // Google Drive folder URL (configurable by Admin)
@@ -402,11 +403,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const hasValidClasses = settings.classNames.length > 0 && new Set(names).size === names.length &&
       settings.classNames.every(c => c.className.trim() && Number.isInteger(c.absentRangeMin) &&
         Number.isInteger(c.absentRangeMax) && c.absentRangeMin >= 1 && c.absentRangeMax >= c.absentRangeMin);
-    if (!hasValidClasses) {
-      return { success: false, message: 'Konfigurasi kelas tidak valid.' };
+    if (!hasValidClasses || typeof settings.allowEarlyPhaseTwo !== 'boolean') {
+      return { success: false, message: 'Pengaturan tidak valid.' };
     }
-    setAppSettings({ classNames: settings.classNames.map(c => ({ ...c, className: c.className.trim() })) });
-    return { success: true, message: 'Pengaturan kelas berhasil disimpan!' };
+    setAppSettings({
+      classNames: settings.classNames.map(c => ({ ...c, className: c.className.trim() })),
+      allowEarlyPhaseTwo: settings.allowEarlyPhaseTwo,
+    });
+    return { success: true, message: 'Pengaturan berhasil disimpan!' };
   };
 
   const getStudentJourney = (studentId: string): StudentJourney => {

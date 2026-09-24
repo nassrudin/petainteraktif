@@ -67,7 +67,11 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
                 Cara Mengisi Petualangan:
               </p>
               <p className="text-xs text-amber-900/90 leading-relaxed font-medium">
-                Isi pos 1 sampai 4 pada pertemuan ini, lalu coba langkahmu selama satu minggu. Pos 5 sampai 8 diisi setelah kamu mencobanya. Tidak ada jawaban benar atau salah, tulis sejujurnya tentang dirimu.
+                Isi pos 1 sampai 4 pada pertemuan ini, lalu coba langkahmu selama satu minggu.{' '}
+                {appSettings.allowEarlyPhaseTwo
+                  ? 'Admin mengizinkan Pos 5 dibuka setelah Pos 4 selesai, tanpa menunggu satu minggu.'
+                  : 'Pos 5 sampai 8 diisi setelah kamu mencobanya.'}{' '}
+                Tidak ada jawaban benar atau salah, tulis sejujurnya tentang dirimu.
               </p>
             </div>
           </div>

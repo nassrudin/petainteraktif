@@ -1,6 +1,6 @@
 # Growth Mindset Journey Map Percaya Diri
 
-Web refleksi untuk layanan bimbingan klasikal kelas X. Siswa mengisi delapan pos dalam dua etape. Pos 5 terbuka tujuh hari setelah pos 4 disimpan.
+Web refleksi untuk layanan bimbingan klasikal kelas X. Siswa mengisi delapan pos dalam dua etape. Secara standar, Pos 5 terbuka tujuh hari setelah Pos 4 disimpan. Admin dapat mengizinkan akses lebih awal pada browser yang sama.
 
 ## Menjalankan
 
@@ -16,6 +16,7 @@ Build Vite dapat diterbitkan melalui workflow GitHub Pages di `.github/workflows
 ## Cara kerja data
 
 - Identitas siswa, jawaban, pengaturan kelas, dan kredensial guru disimpan di `localStorage` browser yang sedang dipakai. Draf pos juga tersimpan di browser itu.
+- Dashboard admin memiliki tab **Akses Pos**. Jika opsi akses lebih awal diaktifkan, Pos 5 terbuka segera setelah Pos 4 selesai; Pos 6–8 tetap berurutan. Opsi ini mati secara standar dan hanya berlaku pada browser tempat opsi diubah.
 - Dashboard guru hanya menampilkan siswa yang mengisi di browser yang sama. Data tidak otomatis berpindah antara HP siswa dan laptop guru.
 - Login guru pada versi statis adalah kontrol antarmuka lokal, bukan autentikasi server. Jangan gunakan untuk data sensitif yang membutuhkan pembatasan akses nyata.
 - Bila penyimpanan browser dibersihkan, data lokal hilang. Unduh hasil PDF sebelum membersihkan data.

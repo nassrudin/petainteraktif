@@ -17,7 +17,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
   onGoToResult,
   isDarkMode = false 
 }) => {
-  const { activeStudent, getStudentJourney, resetStudentProgress } = useApp();
+  const { activeStudent, getStudentJourney, resetStudentProgress, appSettings } = useApp();
   
   if (!activeStudent) {
     return null;
@@ -32,7 +32,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
   const phaseTwoStart = stageFourCompletedAt
     ? Date.parse(stageFourCompletedAt.replace(' ', 'T') + 'Z') + 7 * 24 * 60 * 60 * 1000
     : 0;
-  const phaseTwoAvailable = !Number.isFinite(phaseTwoStart) || Date.now() >= phaseTwoStart ||
+  const phaseTwoAvailable = appSettings.allowEarlyPhaseTwo || !Number.isFinite(phaseTwoStart) || Date.now() >= phaseTwoStart ||
     Boolean(journey.stages[5]?.completed);
   const canOpenStage = (stage: StageDefinition) =>
     (stage.id === 1 || Boolean(journey.stages[stage.id - 1]?.completed)) &&
@@ -178,7 +178,11 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
             </span>
           </div>
           <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
-            Isi pos 1 sampai 4 pada pertemuan ini, lalu coba langkahmu selama satu minggu. Pos 5 sampai 8 diisi setelah kamu mencobanya. Tidak ada jawaban benar atau salah, tulis sejujurnya tentang dirimu.
+            Isi pos 1 sampai 4 pada pertemuan ini, lalu coba langkahmu selama satu minggu.{' '}
+            {appSettings.allowEarlyPhaseTwo
+              ? 'Admin mengizinkan Pos 5 dibuka segera setelah Pos 4 selesai. Pos berikutnya tetap berurutan.'
+              : 'Pos 5 sampai 8 diisi setelah kamu mencobanya.'}{' '}
+            Tidak ada jawaban benar atau salah, tulis sejujurnya tentang dirimu.
           </p>
         </div>
       </div>

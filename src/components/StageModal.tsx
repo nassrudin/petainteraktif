@@ -19,7 +19,7 @@ import React, { useState, useEffect } from 'react';
     onClose,
     onCompletedNext,
   }) => {
-     const { activeStudent, saveStageAnswer } = useApp();
+     const { activeStudent, saveStageAnswer, appSettings } = useApp();
      const draftKey = activeStudent ? `gm_stage_draft_${activeStudent.id}_${stage.id}` : '';
     
     // Initialize formData from initialData answers or empty object
@@ -87,7 +87,9 @@ import React, { useState, useEffect } from 'react';
       setIsSubmitting(false);
       onClose();
        if (stage.id === 4) {
-         window.alert('Etape 1 selesai. Coba langkah kecilmu selama satu minggu sebelum mengisi pos 5–8.');
+         window.alert(appSettings.allowEarlyPhaseTwo
+           ? 'Etape 1 selesai. Admin mengizinkan Pos 5 dibuka sekarang. Tetap praktikkan langkah kecilmu selama satu minggu.'
+           : 'Etape 1 selesai. Coba langkah kecilmu selama satu minggu sebelum mengisi pos 5–8.');
        } else if (stage.id < 8 && onCompletedNext) {
         onCompletedNext(stage.id + 1);
       }

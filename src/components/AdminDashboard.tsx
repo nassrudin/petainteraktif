@@ -7,7 +7,7 @@ import {
   Users, CheckCircle, BarChart3, 
   ExternalLink, Download, Search, Eye, Filter,
   KeyRound, CheckCircle2, AlertCircle, RefreshCw,
-  CloudUpload, Link as LinkIcon, Plus, Trash2, Save, X, MonitorPlay
+  CloudUpload, Link as LinkIcon, Plus, Trash2, Save, X, MonitorPlay, Clock3
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -35,7 +35,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   const [selectedStudent, setSelectedStudent] = useState<ActiveStudent | null>(null);
   const [filterClass, setFilterClass] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeAdminTab, setActiveAdminTab] = useState<'students' | 'drive' | 'security' | 'classsettings'>('students');
+  const [activeAdminTab, setActiveAdminTab] = useState<'students' | 'drive' | 'security' | 'classsettings' | 'access'>('students');
   const [viewingStudentReport, setViewingStudentReport] = useState<ActiveStudent | null>(null);
 
   // Change password form state
@@ -54,6 +54,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   // Class settings state
   const [editClasses, setEditClasses] = useState(appSettings.classNames);
   const [classSettingsFeedback, setClassSettingsFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [accessFeedback, setAccessFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Available classes
   const classList = Array.from(new Set(allStudents.map((s) => s.class))).sort();
@@ -133,12 +134,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
   const handleSaveClassSettings = (e: React.FormEvent) => {
     e.preventDefault();
-    const res = updateAppSettings({ classNames: editClasses });
+    const res = updateAppSettings({ ...appSettings, classNames: editClasses });
     if (res.success) {
       setClassSettingsFeedback({ type: 'success', text: res.message });
     } else {
       setClassSettingsFeedback({ type: 'error', text: res.message });
     }
+  };
+
+  const handleToggleEarlyAccess = () => {
+    const allowEarlyPhaseTwo = !appSettings.allowEarlyPhaseTwo;
+    const res = updateAppSettings({ ...appSettings, allowEarlyPhaseTwo });
+    setAccessFeedback({
+      type: res.success ? 'success' : 'error',
+      text: res.success
+        ? allowEarlyPhaseTwo
+          ? 'Akses lebih awal diaktifkan pada browser ini.'
+          : 'Aturan standar menunggu satu minggu diaktifkan kembali pada browser ini.'
+        : res.message,
+    });
   };
 
   const handleResetDefaultClasses = () => {
@@ -239,6 +253,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Seting Kelas/Absen</span>
+            </button>
+            <button
+              onClick={() => setActiveAdminTab('access')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeAdminTab === 'access'
+                  ? 'bg-white text-teal-900 shadow-sm'
+                  : 'text-teal-100 hover:text-white'
+              }`}
+            >
+              <Clock3 className="w-3.5 h-3.5" />
+              <span>Akses Pos</span>
             </button>
             <button
               onClick={() => setActiveAdminTab('drive')}
@@ -478,6 +503,54 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* STAGE ACCESS SETTINGS TAB */}
+      {activeAdminTab === 'access' && (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 max-w-3xl mx-auto space-y-5">
+          <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+            <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 shrink-0">
+              <Clock3 className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">Akses Pos 5–8</h2>
+              <p className="text-xs text-slate-500">Aturan standar: Pos 5 dibuka tujuh hari setelah Pos 4 selesai.</p>
+            </div>
+          </div>
+
+          <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={appSettings.allowEarlyPhaseTwo}
+              onChange={handleToggleEarlyAccess}
+              className="mt-0.5 h-5 w-5 accent-emerald-600"
+            />
+            <span className="space-y-1">
+              <span className="block text-sm font-bold text-slate-800">Izinkan melanjutkan tanpa menunggu satu minggu</span>
+              <span className="block text-xs text-slate-600 leading-relaxed">
+                Jika aktif, Pos 5 bisa dibuka segera setelah Pos 4 selesai. Pos 6–8 tetap harus dikerjakan berurutan.
+              </span>
+            </span>
+          </label>
+
+          <p className={`rounded-xl px-4 py-3 text-xs font-semibold ${appSettings.allowEarlyPhaseTwo
+            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+            : 'bg-amber-50 text-amber-900 border border-amber-200'}`}>
+            {appSettings.allowEarlyPhaseTwo
+              ? 'Akses lebih awal aktif pada browser ini.'
+              : 'Aturan standar menunggu satu minggu aktif.'}
+          </p>
+
+          {accessFeedback && (
+            <p role="status" className={`text-xs font-semibold ${accessFeedback.type === 'success' ? 'text-emerald-700' : 'text-red-700'}`}>
+              {accessFeedback.text}
+            </p>
+          )}
+
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Pengaturan ini tersimpan di browser ini saja. GitHub Pages tidak dapat mengirim perubahan admin secara otomatis ke perangkat siswa lain.
+          </p>
+        </div>
       )}
 
       {/* CLASS SETTINGS TAB */}

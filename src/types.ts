@@ -28,6 +28,7 @@ export interface ClassConfig {
 
 export interface AppSettings {
   classNames: ClassConfig[];
+  allowEarlyPhaseTwo: boolean;
 }
 
 export interface StageField {
