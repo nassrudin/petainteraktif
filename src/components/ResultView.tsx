@@ -32,7 +32,12 @@ export const ResultView: React.FC<ResultViewProps> = ({
   }
 
   const journey = getStudentJourney(activeStudent.id);
-  const totalSlides = 9;
+  const completedStageIds = STAGES_DATA
+    .filter((stage) => journey.stages[stage.id]?.completed)
+    .map((stage) => stage.id);
+  const totalSlides = completedStageIds.length + 1;
+  const hasCompletedStage = (stageId: number) => completedStageIds.includes(stageId);
+  const slideNumberForStage = (stageId: number) => completedStageIds.indexOf(stageId) + 2;
 
   const [viewMode, setViewMode] = useState<'slides' | 'all'>('slides');
   const [currentSlide, setCurrentSlide] = useState<number>(1);
@@ -55,6 +60,18 @@ export const ResultView: React.FC<ResultViewProps> = ({
     const val = st.answers[fieldId];
     return typeof val === 'number' ? val : null;
   };
+
+  if (completedStageIds.length === 0) {
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <button onClick={onBackToMap} className="mb-4 flex items-center gap-2 text-sm font-bold text-emerald-700 hover:text-emerald-800">
+          <ArrowLeft className="h-4 w-4" />
+          {isTeacherView ? 'Kembali ke Dashboard Guru BK' : 'Kembali ke Peta Petualangan'}
+        </button>
+        <p className="text-sm text-slate-600">Belum ada pos yang selesai diisi. Hasil akan muncul setelah satu pos disimpan.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -214,7 +231,8 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 2: POS 1 - POTRET PERCAYA DIRI SAYA (TITIK MULAI) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 2 ? 'hidden' : ''}`}>
+        {hasCompletedStage(1) && (
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(1) ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-black text-xs uppercase tracking-wider">
@@ -225,7 +243,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 2 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide {slideNumberForStage(1)} / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -283,11 +301,13 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <span>"{PEGANGAN_DI_SEPANJANG_JALAN}"</span>
           </div>
         </div>
+        )}
 
         {/* ========================================================================= */}
         {/* SLIDE 3: POS 2 - TANTANGAN YANG SAYA PILIH (CHALLENGE) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 3 ? 'hidden' : ''}`}>
+        {hasCompletedStage(2) && (
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(2) ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-teal-600 text-white font-black text-xs uppercase tracking-wider">
@@ -298,7 +318,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 3 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide {slideNumberForStage(2)} / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -350,11 +370,13 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <span>"{PESAN_UNTUK_DIRI_SAYA}"</span>
           </div>
         </div>
+        )}
 
         {/* ========================================================================= */}
         {/* SLIDE 4: POS 3 - HAMBATAN DI JALAN SAYA (OBSTACLES) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 4 ? 'hidden' : ''}`}>
+        {hasCompletedStage(3) && (
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(3) ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-sky-600 text-white font-black text-xs uppercase tracking-wider">
@@ -365,7 +387,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 4 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide {slideNumberForStage(3)} / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -413,11 +435,13 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <span>"Menyadari hambatan adalah setengah jalan dari menemukan jalan keluar."</span>
           </div>
         </div>
+        )}
 
         {/* ========================================================================= */}
         {/* SLIDE 5: POS 4 - LANGKAH KECIL SAYA (EFFORT) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 5 ? 'hidden' : ''}`}>
+        {hasCompletedStage(4) && (
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(4) ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-blue-600 text-white font-black text-xs uppercase tracking-wider">
@@ -428,7 +452,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 5 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide {slideNumberForStage(4)} / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -491,11 +515,13 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <span>"Kamu tidak perlu melihat seluruh anak tangga, cukup ambil langkah pertama."</span>
           </div>
         </div>
+        )}
 
         {/* ========================================================================= */}
         {/* SLIDE 6: POS 5 - SAAT SAYA DIKRITIK (CRITIQUES) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 6 ? 'hidden' : ''}`}>
+        {hasCompletedStage(5) && (
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(5) ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-wider">
@@ -506,7 +532,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 6 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide {slideNumberForStage(5)} / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -541,11 +567,13 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <span>"Kritik bukan penilaian harga dirimu, melainkan petunjuk arah menuju karya yang lebih baik."</span>
           </div>
         </div>
+        )}
 
         {/* ========================================================================= */}
         {/* SLIDE 7: POS 6 - BELAJAR DARI ORANG LAIN (SUCCESS OF OTHERS) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 7 ? 'hidden' : ''}`}>
+        {hasCompletedStage(6) && (
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(6) ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-violet-600 text-white font-black text-xs uppercase tracking-wider">
@@ -556,7 +584,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 7 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide {slideNumberForStage(6)} / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -599,11 +627,13 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <span>Growth Mindset Journey Map</span>
           </div>
         </div>
+        )}
 
         {/* ========================================================================= */}
         {/* SLIDE 8: POS 7 - MELIHAT KEMBALI USAHA SAYA (REFLEKSI) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 8 ? 'hidden' : ''}`}>
+        {hasCompletedStage(7) && (
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(7) ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-purple-600 text-white font-black text-xs uppercase tracking-wider">
@@ -614,7 +644,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 8 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide {slideNumberForStage(7)} / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -650,11 +680,13 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <span>"{PEGANGAN_DI_SEPANJANG_JALAN}"</span>
           </div>
         </div>
+        )}
 
         {/* ========================================================================= */}
         {/* SLIDE 9: POS 8 - KOMITMEN DAN TARGET SAYA (GARIS AKHIR) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 9 ? 'hidden' : ''}`}>
+        {hasCompletedStage(8) && (
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(8) ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-amber-500 text-white font-black text-xs uppercase tracking-wider">
@@ -665,7 +697,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 9 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide {slideNumberForStage(8)} / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -732,6 +764,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
             <span>"{PESAN_UNTUK_DIRI_SAYA}"</span>
           </div>
         </div>
+        )}
 
       </div>
     </div>
