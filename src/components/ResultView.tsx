@@ -13,6 +13,12 @@ interface ResultViewProps {
   isTeacherView?: boolean;
 }
 
+const getFieldLabel = (stageId: number, fieldId: string): string =>
+  STAGES_DATA[stageId - 1]?.fields.find((field) => field.id === fieldId)?.label ?? '';
+
+const getSectionHeader = (stageId: number, fieldId: string): string =>
+  STAGES_DATA[stageId - 1]?.fields.find((field) => field.id === fieldId)?.sectionHeader ?? '';
+
 export const ResultView: React.FC<ResultViewProps> = ({ 
   onBackToMap, 
   targetStudent, 
@@ -50,12 +56,6 @@ export const ResultView: React.FC<ResultViewProps> = ({
     const val = st.answers[fieldId];
     return typeof val === 'number' ? val : null;
   };
-
-  const formattedDate = new Date().toLocaleDateString('id-ID', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
 
   return (
     <div className="space-y-6">
@@ -197,7 +197,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
                 {activeStudent.name}
               </p>
               <p className="text-xs text-teal-200">
-                Kelas: {activeStudent.class} • Absen #{activeStudent.absentNumber} • Tanggal: {formattedDate}
+                Kelas: {activeStudent.class} • Absen #{activeStudent.absentNumber}
               </p>
             </div>
 
@@ -233,14 +233,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700 text-sm">Di situasi apa saya merasa kurang percaya diri?</p>
+                <p className="font-bold text-slate-700 text-sm">{getFieldLabel(1, 'situation')}</p>
                 <div className="bg-emerald-50/70 p-3.5 rounded-xl text-emerald-950 font-medium italic border border-emerald-200 text-sm min-h-[90px] leading-relaxed break-all">
                   "{getStageAnswer(1, 'situation') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="pt-2 flex items-center justify-between text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
-                <span className="font-bold text-slate-700">Skala Percaya Diri Hari Ini:</span>
+                <span className="font-bold text-slate-700 max-w-[55%] leading-snug">{getFieldLabel(1, 'confidence_scale')}</span>
                 <div className="flex items-center gap-1.5 font-bold">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <span
@@ -259,20 +259,20 @@ export const ResultView: React.FC<ResultViewProps> = ({
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-              <p className="font-bold text-slate-700 text-xs uppercase tracking-wider text-emerald-800 border-b pb-1">
-                Saat situasi itu terjadi:
+              <p className="font-bold text-slate-700 text-xs tracking-wider text-emerald-800 border-b pb-1">
+                {getSectionHeader(1, 'thought')}
               </p>
               <div className="space-y-2.5 text-xs">
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase">Saya Berpikir:</p>
+                  <p className="text-[10px] font-bold text-slate-500">{getFieldLabel(1, 'thought')}</p>
                   <p className="text-slate-800 font-medium mt-1 leading-relaxed">{getStageAnswer(1, 'thought') || '-'}</p>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase">Saya Merasa:</p>
+                  <p className="text-[10px] font-bold text-slate-500">{getFieldLabel(1, 'feeling')}</p>
                   <p className="text-slate-800 font-medium mt-1 leading-relaxed">{getStageAnswer(1, 'feeling') || '-'}</p>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase">Saya Lalu:</p>
+                  <p className="text-[10px] font-bold text-slate-500">{getFieldLabel(1, 'action')}</p>
                   <p className="text-slate-800 font-medium mt-1 leading-relaxed">{getStageAnswer(1, 'action') || '-'}</p>
                 </div>
               </div>
@@ -306,40 +306,40 @@ export const ResultView: React.FC<ResultViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700 text-sm">Satu tantangan yang paling ingin saya taklukkan:</p>
+                <p className="font-bold text-slate-700 text-sm">{getFieldLabel(2, 'challenge_target')}</p>
                 <div className="bg-teal-50/70 p-3.5 rounded-xl text-teal-950 font-bold text-sm border border-teal-200 min-h-[90px] leading-relaxed break-all">
                   "{getStageAnswer(2, 'challenge_target') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">Apa yang membuat terasa berat?</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(2, 'heavy_reason')}</p>
                 <div className="bg-slate-50 p-3 rounded-xl text-slate-800 font-medium italic border border-slate-200 leading-relaxed break-all">
                   "{getStageAnswer(2, 'heavy_reason') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1 text-xs bg-amber-50 p-3 rounded-xl border border-amber-200">
-                <p className="text-[10px] font-bold text-amber-800 uppercase">Mantra saat takut mencoba:</p>
+                <p className="text-[10px] font-bold text-amber-800">{getFieldLabel(2, 'fear_motto')}</p>
                 <p className="font-bold text-amber-950 italic break-words">"{getStageAnswer(2, 'fear_motto') || '-'}"</p>
               </div>
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-              <p className="font-bold text-xs uppercase tracking-wider text-teal-800 border-b pb-1">
-                Tukar Kalimat Menjadi Growth Mindset:
+              <p className="font-bold text-xs tracking-wider text-teal-800 border-b pb-1">
+                {getSectionHeader(2, 'tidak_bisa')}
               </p>
               <div className="space-y-3 text-xs">
                 <div className="bg-red-50/70 p-3 rounded-xl text-red-950 font-medium border border-red-200">
-                  <span className="text-[10px] font-bold text-red-700 block mb-1">Saya tidak bisa :</span>
+                  <span className="text-[10px] font-bold text-red-700 block mb-1">{getFieldLabel(2, 'tidak_bisa')}</span>
                   {getStageAnswer(2, 'tidak_bisa') || '-'}
                 </div>
                 <div className="bg-teal-50/70 p-3 rounded-xl text-teal-950 font-medium border border-teal-200">
-                  <span className="text-[10px] font-bold text-teal-700 block mb-1">Saya belum bisa :</span>
+                  <span className="text-[10px] font-bold text-teal-700 block mb-1">{getFieldLabel(2, 'belum_bisa')}</span>
                   {getStageAnswer(2, 'belum_bisa') || '-'}
                 </div>
                 <div className="bg-emerald-50/70 p-3 rounded-xl text-emerald-950 font-medium border border-emerald-200">
-                  <span className="text-[10px] font-bold text-emerald-700 block mb-1">Dan saya sedang belajar dengan cara :</span>
+                  <span className="text-[10px] font-bold text-emerald-700 block mb-1">{getFieldLabel(2, 'growth_learning_way')}</span>
                   {getStageAnswer(2, 'growth_learning_way') || '-'}
                 </div>
               </div>
@@ -373,14 +373,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">Hambatan dari dalam diri saya (pikiran, perasaan):</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(3, 'internal_obstacles')}</p>
                 <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium italic border border-slate-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(3, 'internal_obstacles') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">Hambatan dari luar (lingkungan, orang lain):</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(3, 'external_obstacles')}</p>
                 <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium italic border border-slate-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(3, 'external_obstacles') || 'Belum diisi'}"
                 </div>
@@ -389,21 +389,21 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
               <div className="space-y-1 text-xs">
-                <p className="font-bold text-slate-700">Mengapa hambatan itu muncul?</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(3, 'why_obstacle_arises')}</p>
                 <div className="bg-slate-50 p-3 rounded-xl text-slate-800 font-medium border border-slate-200 leading-relaxed break-all">
                   "{getStageAnswer(3, 'why_obstacle_arises') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1 text-xs">
-                <p className="font-bold text-slate-700">Cara saya melewatinya:</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(3, 'how_to_overcome')}</p>
                 <div className="bg-sky-50 p-3 rounded-xl text-sky-950 font-bold border border-sky-200 leading-relaxed break-all">
                   "{getStageAnswer(3, 'how_to_overcome') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="bg-sky-50 p-3 rounded-xl border border-sky-200 text-xs">
-                <p className="text-[10px] font-bold text-sky-700 mb-0.5 block uppercase">Mantra saat ingin menyerah:</p>
+                <p className="text-[10px] font-bold text-sky-700 mb-0.5 block">{getFieldLabel(3, 'giveup_motto')}</p>
                 <p className="font-semibold text-sky-950 italic break-words">"{getStageAnswer(3, 'giveup_motto') || '-'}"</p>
               </div>
             </div>
@@ -435,28 +435,25 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-              <p className="font-bold text-xs uppercase tracking-wider text-blue-800 border-b pb-1">
-                Tiga Langkah Menuju Tantangan (Dari yang Paling Mudah):
+              <p className="font-bold text-xs tracking-wider text-blue-800 border-b pb-1">
+                {getSectionHeader(4, 'step_1')}
               </p>
               <div className="space-y-2.5 text-xs">
                 <div className="flex items-start gap-2.5 bg-blue-50/70 p-3 rounded-xl border border-blue-200">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
+                  <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1.</span>
                   <div>
-                    <span className="text-[10px] font-bold text-blue-800 block">Langkah Pertama (Paling Mudah):</span>
                     <p className="text-slate-800 font-medium mt-0.5 leading-relaxed break-all">{getStageAnswer(4, 'step_1') || 'Belum diisi'}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5 bg-blue-50/70 p-3 rounded-xl border border-blue-200">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-blue-500 text-white text-xs font-bold flex items-center justify-center">2</span>
+                  <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-blue-500 text-white text-xs font-bold flex items-center justify-center">2.</span>
                   <div>
-                    <span className="text-[10px] font-bold text-blue-800 block">Langkah Kedua:</span>
                     <p className="text-slate-800 font-medium mt-0.5 leading-relaxed break-all">{getStageAnswer(4, 'step_2') || 'Belum diisi'}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5 bg-blue-50/70 p-3 rounded-xl border border-blue-200">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-blue-400 text-white text-xs font-bold flex items-center justify-center">3</span>
+                  <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-blue-400 text-white text-xs font-bold flex items-center justify-center">3.</span>
                   <div>
-                    <span className="text-[10px] font-bold text-blue-800 block">Langkah Ketiga:</span>
                     <p className="text-slate-800 font-medium mt-0.5 leading-relaxed break-all">{getStageAnswer(4, 'step_3') || 'Belum diisi'}</p>
                   </div>
                 </div>
@@ -464,8 +461,9 @@ export const ResultView: React.FC<ResultViewProps> = ({
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
+              <p className="font-bold text-xs tracking-wider text-blue-800 border-b pb-1">{getSectionHeader(4, 'start_date')}</p>
               <div className="space-y-1 text-xs">
-                <p className="font-bold text-slate-700">Mulai Tanggal:</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(4, 'start_date')}</p>
                 <div className="bg-slate-50 p-3 rounded-xl text-slate-800 font-bold border border-slate-200 break-words">
                   {getStageAnswer(4, 'start_date') || 'Belum diisi'}
                 </div>
@@ -473,17 +471,17 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
-                  <p className="text-[10px] font-bold text-blue-700 mb-1 block uppercase">Agar Konsisten:</p>
+                  <p className="text-[10px] font-bold text-blue-700 mb-1 block">{getFieldLabel(4, 'consistency_strategy')}</p>
                   <p className="text-slate-800 font-medium leading-relaxed break-all">{getStageAnswer(4, 'consistency_strategy') || '-'}</p>
                 </div>
                 <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
-                  <p className="text-[10px] font-bold text-blue-700 mb-1 block uppercase">Yang Membantu:</p>
+                  <p className="text-[10px] font-bold text-blue-700 mb-1 block">{getFieldLabel(4, 'helper_person')}</p>
                   <p className="text-slate-800 font-medium leading-relaxed break-all">{getStageAnswer(4, 'helper_person') || '-'}</p>
                 </div>
               </div>
 
               <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 text-xs">
-                <p className="text-[10px] font-bold text-blue-700 mb-0.5 block uppercase">Apresiasi Untuk Diri Sendiri:</p>
+                <p className="text-[10px] font-bold text-blue-700 mb-0.5 block">{getFieldLabel(4, 'step_done_motto')}</p>
                 <p className="font-semibold text-blue-950 italic leading-relaxed break-all">"{getStageAnswer(4, 'step_done_motto') || '-'}"</p>
               </div>
             </div>
@@ -516,7 +514,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700 text-sm">Masukan yang pernah saya terima:</p>
+                <p className="font-bold text-slate-700 text-sm">{getFieldLabel(5, 'received_criticism')}</p>
                 <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium italic border border-slate-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(5, 'received_criticism') || 'Belum diisi'}"
                 </div>
@@ -524,15 +522,16 @@ export const ResultView: React.FC<ResultViewProps> = ({
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
+              <p className="font-bold text-xs tracking-wider text-indigo-800 border-b pb-1">{getSectionHeader(5, 'what_i_improve')}</p>
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">Yang saya ambil dan saya perbaiki:</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(5, 'what_i_improve')}</p>
                 <div className="bg-indigo-50/70 p-3.5 rounded-xl text-indigo-950 font-medium border border-indigo-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(5, 'what_i_improve') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="bg-indigo-50 p-3.5 rounded-xl border border-indigo-200 text-xs">
-                <p className="text-[10px] font-bold text-indigo-800 mb-1 block uppercase">Mulai sekarang, respons saya terhadap kritik:</p>
+                <p className="text-[10px] font-bold text-indigo-800 mb-1 block">{getFieldLabel(5, 'response_strategy')}</p>
                 <p className="font-bold text-indigo-950 italic leading-relaxed break-all">"{getStageAnswer(5, 'response_strategy') || '-'}"</p>
               </div>
             </div>
@@ -565,14 +564,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700 text-sm">Siapa yang saya kagumi keberaniannya, dan siapa dia bagi saya?</p>
+                <p className="font-bold text-slate-700 text-sm">{getFieldLabel(6, 'admired_figure')}</p>
                 <div className="bg-violet-50/70 p-3.5 rounded-xl text-violet-950 font-bold text-sm border border-violet-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(6, 'admired_figure') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">Apa yang ia lakukan sehingga terlihat percaya diri?</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(6, 'confidence_actions')}</p>
                 <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium border border-slate-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(6, 'confidence_actions') || 'Belum diisi'}"
                 </div>
@@ -581,16 +580,16 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700 text-sm">Satu hal darinya yang bisa saya tiru minggu ini:</p>
+                <p className="font-bold text-slate-700 text-sm">{getFieldLabel(6, 'imitation_action')}</p>
                 <div className="bg-emerald-50 p-3.5 rounded-xl text-emerald-950 font-bold text-sm border border-emerald-200 min-h-[95px] leading-relaxed break-all">
                   "{getStageAnswer(6, 'imitation_action') || '-'}"
                 </div>
               </div>
 
               <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 text-xs">
-                <p className="text-[10px] font-bold text-amber-800 mb-1 block uppercase">Prinsip Emas:</p>
+                <p className="text-[10px] font-bold text-amber-800 mb-1 block">Ingat:</p>
                 <p className="font-semibold text-amber-950 italic leading-relaxed break-all">
-                  "Keberhasilan orang lain bukan ukuran kegagalan saya. Itu bukti bahwa hal itu bisa dicapai."
+                  "{STAGES_DATA[5].reminderText}"
                 </p>
               </div>
             </div>
@@ -623,14 +622,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">Setelah mencoba langkah saya, apa yang sudah berhasil?</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(7, 'what_succeeded')}</p>
                 <div className="bg-emerald-50 p-3.5 rounded-xl text-emerald-950 font-semibold border border-emerald-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(7, 'what_succeeded') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">Bagian mana yang masih kurang berhasil, dan mengapa?</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(7, 'what_failed_and_why')}</p>
                 <div className="bg-amber-50 p-3.5 rounded-xl text-amber-950 font-medium border border-amber-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(7, 'what_failed_and_why') || 'Belum diisi'}"
                 </div>
@@ -639,14 +638,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">Hal baru yang saya ketahui tentang diri saya:</p>
-                <div className="bg-purple-50/70 p-3.5 rounded-xl text-purple-950 font-medium border border-purple-200 min-h-[75px] leading-relaxed break-all">
-                  "{getStageAnswer(7, 'new_self_knowledge') || '-'}"
-                </div>
-              </div>
-
-              <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">Perubahan kecil yang sudah saya rasakan:</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(7, 'felt_changes')}</p>
                 <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium border border-slate-200 min-h-[75px] leading-relaxed break-all">
                   "{getStageAnswer(7, 'felt_changes') || '-'}"
                 </div>
@@ -680,8 +672,8 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
-              <p className="font-bold text-xs uppercase tracking-wider text-amber-800 border-b pb-1">
-                Target Satu Minggu ke Depan:
+              <p className="font-bold text-xs tracking-wider text-amber-800 border-b pb-1">
+                {getSectionHeader(8, 'target_week_1')}
               </p>
               <div className="space-y-2 text-xs">
                 <div className="flex items-start gap-2 bg-amber-50/70 p-3 rounded-xl border border-amber-200">
@@ -699,7 +691,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </div>
 
               <div className="pt-2 flex items-center justify-between text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
-                <span className="font-bold text-slate-700">Keyakinan Terhadap Perubahan:</span>
+                <span className="font-bold text-slate-700 max-w-[55%] leading-snug">{getFieldLabel(8, 'future_confidence_scale')}</span>
                 <div className="flex items-center gap-1.5 font-bold">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <span
@@ -719,8 +711,8 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
               <div className="space-y-2">
-                <p className="font-bold text-xs uppercase tracking-wider text-amber-800 border-b pb-1">
-                  Ikrar Komitmen Kesungguhan Diri:
+                <p className="font-bold text-xs tracking-wider text-amber-800 border-b pb-1">
+                  {getFieldLabel(8, 'final_commitment')}
                 </p>
               <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-2xl border-2 border-amber-300 text-xs">
                 <p className="text-xs sm:text-sm font-bold text-amber-950 italic leading-relaxed whitespace-pre-wrap break-words">

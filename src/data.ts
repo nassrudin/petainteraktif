@@ -31,7 +31,7 @@ export const STAGES_DATA: StageDefinition[] = [
       'Petakan situasi di mana kamu merasa kurang percaya diri, apa yang kamu pikirkan, rasakan, dan tindakan yang kamu ambil.',
     motivationalQuote: PEGANGAN_DI_SEPANJANG_JALAN,
     exampleText:
-      'Saya tahu jawabannya, tapi tangan saya tidak pernah terangkat saat guru bertanya.',
+      'Saya tahu jawabannya, tetapi tangan saya tidak pernah terangkat saat guru bertanya.',
     fields: [
       {
         id: 'situation',
@@ -103,19 +103,19 @@ export const STAGES_DATA: StageDefinition[] = [
       {
         id: 'tidak_bisa',
         sectionHeader: "Tukar kalimatnya:",
-        label: 'Saya tidak bisa :',
+        label: 'Saya tidak bisa:',
         type: 'textarea',
         placeholder: 'Isi dengan pernyataan yang biasanya muncul saat ragu...',
       },
       {
         id: 'belum_bisa',
-        label: 'Saya belum bisa :',
+        label: 'Saya belum bisa:',
         type: 'textarea',
         placeholder: 'Isi dengan pernyataan bertumbuh tentang hal yang sama...',
       },
       {
         id: 'growth_learning_way',
-        label: 'Dan saya sedang belajar dengan cara :',
+        label: 'Dan saya sedang belajar dengan cara:',
         type: 'textarea',
         placeholder: 'Tuliskan caramu belajar menghadapi hal tersebut...',
       },
@@ -146,15 +146,13 @@ export const STAGES_DATA: StageDefinition[] = [
     fields: [
       {
         id: 'internal_obstacles',
-        sectionHeader: 'Hambatan dari dalam diri saya (pikiran, perasaan):',
-        label: 'Tuliskan hambatan internal:',
+        label: 'Hambatan dari dalam diri saya (pikiran, perasaan):',
         type: 'textarea',
         placeholder: 'Contoh: Takut salah, rasa cemas ditertawakan, suka menunda...',
       },
       {
         id: 'external_obstacles',
-        sectionHeader: 'Hambatan dari luar (lingkungan, orang lain):',
-        label: 'Tuliskan hambatan eksternal:',
+        label: 'Hambatan dari luar (lingkungan, orang lain):',
         type: 'textarea',
         placeholder: 'Contoh: Godaan smartphone, suasana kelas berisik...',
       },
@@ -198,19 +196,19 @@ export const STAGES_DATA: StageDefinition[] = [
       {
         id: 'step_1',
         sectionHeader: 'Tiga langkah menuju tantangan saya, dari yang paling mudah:',
-        label: '1. Langkah pertama (paling mudah):',
+        label: '1.',
         type: 'text',
         placeholder: 'Langkah pertama yang paling ringan dan mudah dimulai...',
       },
       {
         id: 'step_2',
-        label: '2. Langkah kedua:',
+        label: '2.',
         type: 'text',
         placeholder: 'Langkah lanjutan...',
       },
       {
         id: 'step_3',
-        label: '3. Langkah ketiga:',
+        label: '3.',
         type: 'text',
         placeholder: 'Langkah ketiga...',
       },
@@ -255,7 +253,7 @@ export const STAGES_DATA: StageDefinition[] = [
     badgeName: 'Hati Terbuka',
     badgeIcon: 'ShieldCheck',
     missionDescription:
-      'Pilah masukan dari guru, teman, atau keluarga menjadi hal yang membangun dan menjatuhkan, lalu tentukan respons barumu.',
+      'Tuliskan masukan dari guru, teman, atau keluarga, tentukan hal yang ingin kamu perbaiki, lalu pilih cara meresponsnya.',
     motivationalQuote: 'Kritik bukan penilaian harga dirimu, melainkan petunjuk arah menuju karya yang lebih baik.',
     fields: [
       {
@@ -266,6 +264,7 @@ export const STAGES_DATA: StageDefinition[] = [
       },
       {
         id: 'what_i_improve',
+        sectionHeader: 'Pilah masukan tersebut:',
         label: 'Yang saya ambil dan saya perbaiki:',
         type: 'textarea',
         placeholder: 'Poin perbaikan konkret yang kamu jalani...',
@@ -329,7 +328,7 @@ export const STAGES_DATA: StageDefinition[] = [
     islandName: 'Menara Refleksi',
     meetingPhase: 2,
     color: 'purple',
-    badgeName: 'Penghargai Proses',
+    badgeName: 'Menghargai Proses',
     badgeIcon: 'Sparkles',
     missionDescription:
       'Setelah mencoba langkahmu selama satu minggu, refleksikan apa yang sudah berhasil dan bagian yang perlu diperbaiki.',
@@ -346,12 +345,6 @@ export const STAGES_DATA: StageDefinition[] = [
         label: 'Bagian mana yang masih kurang berhasil, dan mengapa?',
         type: 'textarea',
         placeholder: 'Evaluasi bagian yang belum berjalan sesuai rencana...',
-      },
-      {
-        id: 'new_self_knowledge',
-        label: 'Hal baru yang saya ketahui tentang diri saya:',
-        type: 'textarea',
-        placeholder: 'Wawasan atau fakta baru mengenai dirimu...',
       },
       {
         id: 'felt_changes',
@@ -380,7 +373,7 @@ export const STAGES_DATA: StageDefinition[] = [
     fields: [
       {
         id: 'target_week_1',
-        sectionHeader: 'Target satu minggu ke depan:',
+        sectionHeader: 'Target saya satu minggu ke depan:',
         label: 'Target 1:',
         type: 'text',
         placeholder: 'Target konkret 1...',

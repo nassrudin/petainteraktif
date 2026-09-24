@@ -178,7 +178,7 @@ import React, { useState, useEffect } from 'react';
                 {/* Section Header if available */}
                 {field.sectionHeader && (
                   <div className="pt-3 pb-1 border-t border-slate-100">
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-3 py-1 rounded-lg inline-block">
+                    <h4 className="text-xs font-extrabold tracking-wider text-emerald-800 bg-emerald-50 px-3 py-1 rounded-lg inline-block">
                       {field.sectionHeader}
                     </h4>
                   </div>
