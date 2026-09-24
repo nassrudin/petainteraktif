@@ -28,20 +28,32 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
 
   const completedCount = Object.keys(journey.stages).length;
   const progressPercent = Math.round((completedCount / 8) * 100);
+  const stageFourCompletedAt = journey.stages[4]?.completedAt;
+  const phaseTwoStart = stageFourCompletedAt
+    ? Date.parse(stageFourCompletedAt.replace(' ', 'T') + 'Z') + 7 * 24 * 60 * 60 * 1000
+    : 0;
+  const phaseTwoAvailable = !Number.isFinite(phaseTwoStart) || Date.now() >= phaseTwoStart ||
+    Boolean(journey.stages[5]?.completed);
+  const canOpenStage = (stage: StageDefinition) =>
+    (stage.id === 1 || Boolean(journey.stages[stage.id - 1]?.completed)) &&
+    (stage.id < 5 || phaseTwoAvailable || Boolean(journey.stages[stage.id]?.completed));
 
   // Gamified status level
   let levelTitle = 'Level 1: Benih Growth';
   let levelDesc = 'Kamu baru menabur benih kesadaran diri. Teruskan langkah!';
   let levelColor = 'from-lime-500 to-emerald-500';
+  let levelBadgeColor = 'bg-lime-600';
 
   if (completedCount >= 7) {
     levelTitle = 'Level 3: Pohon Percaya Diri';
     levelDesc = 'Luar biasa! Akarmu kokoh, siap menghadapi segala rintangan masa depan.';
     levelColor = 'from-emerald-600 to-teal-700';
+    levelBadgeColor = 'bg-emerald-600';
   } else if (completedCount >= 4) {
     levelTitle = 'Level 2: Tunas Perubahan';
     levelDesc = 'Tunas barumu mulai tumbuh mekar dari langkah-langkah konsisten.';
     levelColor = 'from-teal-500 to-cyan-600';
+    levelBadgeColor = 'bg-teal-600';
   }
 
   // Island coordinates along an adventure S-curve path
@@ -57,9 +69,14 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
   ];
 
   const handleOpenStage = (stage: StageDefinition) => {
-    const isUnlocked = stage.id === 1 || Boolean(journey.stages[stage.id - 1]?.completed);
-    if (isUnlocked) {
+    if (canOpenStage(stage)) {
       setSelectedStage(stage);
+    }
+  };
+
+  const handleReset = () => {
+    if (window.confirm('Hapus seluruh jawaban 8 pos di perangkat ini? Tindakan ini tidak dapat dibatalkan.')) {
+      resetStudentProgress(activeStudent.id);
     }
   };
 
@@ -74,10 +91,11 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
               <div className={`w-14 h-14 rounded-2xl bg-gradient-to-tr ${levelColor} text-white font-extrabold text-xl flex items-center justify-center border-2 border-white dark:border-slate-600 shadow-md`}>
                 {activeStudent.name.charAt(0).toUpperCase()}
               </div>
-              <div className={`absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-${levelColor.split('-')[1]}-600 text-white flex items-center justify-center text-xs font-bold border-2 border-white dark:border-slate-600 shadow-xs`}>
+              <div className={`absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full ${levelBadgeColor} text-white flex items-center justify-center text-xs font-bold border-2 border-white dark:border-slate-600 shadow-xs`}>
                 {completedCount}
-              </div>
-            </div>
+       </div>
+      </div>
+
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Petualang Kelas X</span>
               <h1 className="text-xl font-black text-slate-800 dark:text-slate-100 leading-tight">{activeStudent.name}</h1>
@@ -116,7 +134,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
             </div>
             <div className="flex flex-wrap justify-between items-center gap-2 text-[11px] pt-1">
               <button
-                onClick={() => resetStudentProgress(activeStudent.id)}
+                onClick={handleReset}
                 className="text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-colors cursor-pointer"
                 title="Reset progress untuk mengisi ulang"
               >
@@ -137,6 +155,13 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
           </div>
         </div>
       </div>
+
+      {journey.stages[4]?.completed && !phaseTwoAvailable && (
+        <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-950">
+          Etape 1 selesai. Praktikkan langkah kecilmu selama satu minggu. Pos 5 akan terbuka pada{' '}
+          <strong>{new Date(phaseTwoStart).toLocaleDateString('id-ID', { dateStyle: 'long' })}</strong>.
+        </div>
+      )}
 
        {/* Cara Mengisi Banner */}
       <div className="bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-teal-500/10 dark:from-amber-400/20 dark:via-emerald-400/20 dark:to-teal-400/20 rounded-2xl p-4 sm:p-5 border border-amber-300/80 dark:border-amber-500/60 shadow-xs flex items-start gap-3.5">
@@ -187,8 +212,20 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
         </div>
       </div>
 
+      <div className="sm:hidden space-y-3" aria-label="Daftar pos petualangan">
+        {STAGES_DATA.map(stage => {
+          const completed = Boolean(journey.stages[stage.id]?.completed);
+          const unlocked = canOpenStage(stage);
+          return <button key={stage.id} type="button" disabled={!unlocked} onClick={() => handleOpenStage(stage)}
+            className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left disabled:opacity-60">
+            <span className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center font-bold text-white ${completed ? 'bg-emerald-600' : unlocked ? 'bg-amber-500' : 'bg-slate-400'}`}>{stage.id}</span>
+            <span className="min-w-0"><strong className="block text-sm text-slate-800">{stage.title}</strong><span className="text-xs text-slate-500">{completed ? 'Selesai' : unlocked ? 'Siap diisi' : 'Terkunci'}</span></span>
+          </button>;
+        })}
+      </div>
+
       {/* Interactive Visual Map Section */}
-      <div className={`relative bg-gradient-to-b from-sky-100 dark:from-sky-900/40 via-emerald-50/60 dark:via-emerald-900/40 to-amber-50/50 dark:to-amber-900/40 rounded-3xl p-4 sm:p-8 border border-slate-200 dark:border-slate-700 shadow-md overflow-hidden min-h-[640px] sm:min-h-[720px]`}>
+      <div className={`hidden sm:block relative bg-gradient-to-b from-sky-100 dark:from-sky-900/40 via-emerald-50/60 dark:via-emerald-900/40 to-amber-50/50 dark:to-amber-900/40 rounded-3xl p-4 sm:p-8 border border-slate-200 dark:border-slate-700 shadow-md overflow-hidden min-h-[640px] sm:min-h-[720px]`}>
         {/* Background terrain decorative art */}
         <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20">
           <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 800">
@@ -235,7 +272,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
         <div className="relative z-10 w-full h-[540px] sm:h-[600px]">
           {STAGES_DATA.map((stage, idx) => {
             const isCompleted = Boolean(journey.stages[stage.id]?.completed);
-            const isUnlocked = stage.id === 1 || Boolean(journey.stages[stage.id - 1]?.completed);
+            const isUnlocked = canOpenStage(stage);
             const isCurrentActive = isUnlocked && !isCompleted;
             const pos = stagePositions[idx];
 

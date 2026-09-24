@@ -38,6 +38,8 @@ jobs:
         run: npm ci
       
       - name: Build
+        env:
+          VITE_DRIVE_WEBHOOK_URL: ${{ vars.DRIVE_WEBHOOK_URL }}
         run: npm run build
       
       - name: Upload artifact

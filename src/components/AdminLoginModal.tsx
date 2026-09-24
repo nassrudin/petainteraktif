@@ -40,11 +40,12 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+    <div role="dialog" aria-modal="true" aria-label="Login guru" onKeyDown={(event) => { if (event.key === 'Escape') onClose(); }} className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
       <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden relative">
         <div className="bg-gradient-to-r from-teal-700 via-emerald-800 to-slate-900 text-white p-6 relative">
           <button
             onClick={onClose}
+            aria-label="Tutup login"
             className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -101,9 +102,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
           </div>
 
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-[11px] text-slate-500">
-            <span className="font-bold text-slate-700">Akun Bawaan:</span> username <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">admin</code> / password <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">admin123</code> (dapat diganti di dashboard admin).
-          </div>
+          <p className="text-[11px] text-slate-500">Akses guru pada versi GitHub Pages berlaku untuk data di browser ini saja.</p>
 
           <div className="pt-2 flex items-center justify-end gap-2">
             <button

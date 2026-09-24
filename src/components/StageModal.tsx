@@ -19,29 +19,29 @@ import React, { useState, useEffect } from 'react';
     onClose,
     onCompletedNext,
   }) => {
-    const { activeStudent, saveStageAnswer } = useApp();
+     const { activeStudent, saveStageAnswer } = useApp();
+     const draftKey = activeStudent ? `gm_stage_draft_${activeStudent.id}_${stage.id}` : '';
     
     // Initialize formData from initialData answers or empty object
     const [formData, setFormData] = useState<Record<string, any>>({});
     
-    // Sync formData with initialData when initialData changes
-    useEffect(() => {
-      if (initialData && initialData.answers) {
-        setFormData(initialData.answers);
-      } else {
-        // Reset to empty object for new stages
-        setFormData({});
-      }
-    }, [initialData, stage.id]);
-    
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+     // Sync formData with initialData when initialData changes
+     useEffect(() => {
+       try {
+         const draft = draftKey ? localStorage.getItem(draftKey) : null;
+         setFormData(draft ? JSON.parse(draft) : initialData?.answers || {});
+       } catch { setFormData(initialData?.answers || {}); }
+     }, [initialData, draftKey]);
+
+     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (fieldId: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [fieldId]: value,
-    }));
+    const next = { ...formData, [fieldId]: value };
+    setFormData(next);
+    if (draftKey) {
+      try { localStorage.setItem(draftKey, JSON.stringify(next)); } catch { /* storage unavailable */ }
+    }
     setErrorMsg(null);
   };
 
@@ -59,7 +59,8 @@ import React, { useState, useEffect } from 'react';
     // Basic validation check
     for (const field of stage.fields) {
       const val = formData[field.id];
-      if (val === undefined || val === '' || (Array.isArray(val) && val.length === 0)) {
+       if (val === undefined || (typeof val === 'string' && !val.trim()) ||
+           (Array.isArray(val) && val.length === 0)) {
         setErrorMsg(`Harap lengkapi pertanyaan: "${field.label}"`);
         return;
       }
@@ -79,24 +80,29 @@ import React, { useState, useEffect } from 'react';
     }
 
     setTimeout(() => {
-      if (activeStudent) {
-        saveStageAnswer(activeStudent.id, stage.id, formData);
+       if (activeStudent) {
+         saveStageAnswer(activeStudent.id, stage.id, formData);
+         try { localStorage.removeItem(draftKey); } catch { /* storage unavailable */ }
       }
       setIsSubmitting(false);
       onClose();
-      if (stage.id < 8 && onCompletedNext) {
+       if (stage.id === 4) {
+         window.alert('Etape 1 selesai. Coba langkah kecilmu selama satu minggu sebelum mengisi pos 5–8.');
+       } else if (stage.id < 8 && onCompletedNext) {
         onCompletedNext(stage.id + 1);
       }
     }, 400);
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
+    <div role="dialog" aria-modal="true" aria-label={`Pos ${stage.id}: ${stage.title}`} onKeyDown={(event) => { if (event.key === 'Escape') onClose(); }} className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden relative max-h-[92vh] flex flex-col">
         {/* Header with Stage Island Theme */}
         <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 relative shrink-0">
-          <button
-            onClick={onClose}
+           <button
+             onClick={onClose}
+             aria-label="Tutup pos"
+             autoFocus
             className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -178,13 +184,14 @@ import React, { useState, useEffect } from 'react';
                   </div>
                 )}
 
-                <label className="block text-xs font-bold text-slate-800">
-                  {field.label}
-                </label>
+                {field.type === 'text' || field.type === 'textarea'
+                  ? <label htmlFor={`field-${field.id}`} className="block text-xs font-bold text-slate-800">{field.label}</label>
+                  : <span className="block text-xs font-bold text-slate-800">{field.label}</span>}
 
                 {/* TEXTAREA */}
                 {field.type === 'textarea' && (
-                  <textarea
+                   <textarea
+                     id={`field-${field.id}`}
                     rows={3}
                     value={formData[field.id] || ''}
                     onChange={(e) => handleInputChange(field.id, e.target.value)}
@@ -195,7 +202,8 @@ import React, { useState, useEffect } from 'react';
 
                 {/* SHORT TEXT */}
                 {field.type === 'text' && (
-                  <input
+                   <input
+                     id={`field-${field.id}`}
                     type="text"
                     value={formData[field.id] || ''}
                     onChange={(e) => handleInputChange(field.id, e.target.value)}
@@ -210,19 +218,21 @@ import React, { useState, useEffect } from 'react';
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-slate-600 font-medium">{field.helperText}</span>
                       <span className="text-base font-black text-emerald-700 bg-emerald-100 px-3 py-0.5 rounded-full">
-                        Skor: {formData[field.id] !== undefined ? formData[field.id] : 3}
+                         Skor: {formData[field.id] !== undefined ? formData[field.id] : 'Belum dipilih'}
                       </span>
                     </div>
 
                     {/* Number buttons (1 2 3 4 5) */}
                     <div className="flex justify-center gap-2 sm:gap-4 py-1">
                       {[1, 2, 3, 4, 5].map((num) => {
-                        const isSelected = (formData[field.id] !== undefined ? formData[field.id] : 3) === num;
+                         const isSelected = formData[field.id] === num;
                         return (
                           <button
                             key={num}
                             type="button"
-                            onClick={() => handleInputChange(field.id, num)}
+                             onClick={() => handleInputChange(field.id, num)}
+                             aria-label={`Skor ${num}: ${field.label}`}
+                             aria-pressed={isSelected}
                             className={`w-11 h-11 rounded-2xl font-black text-sm sm:text-base transition-all cursor-pointer ${
                               isSelected
                                 ? 'bg-gradient-to-tr from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-200 scale-110 ring-2 ring-emerald-300'

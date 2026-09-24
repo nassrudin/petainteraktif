@@ -11,9 +11,8 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
   const { startStudentJourney, appSettings } = useApp();
   const [name, setName] = useState('');
   const [gender, setGender] = useState<Gender>('L');
-  const [studentClass, setStudentClass] = useState<string>('X-1');
+  const [studentClass, setStudentClass] = useState<string>(appSettings.classNames[0]?.className || '');
   const [absentNumber, setAbsentNumber] = useState<number>(1);
-  const [customClass, setCustomClass] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -22,14 +21,20 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
       setError('Harap masukkan nama lengkapmu terlebih dahulu.');
       return;
     }
-    const finalClass = studentClass === 'Lainnya' ? customClass.trim() : studentClass;
-    if (!finalClass || absentNumber < 1) {
-      setError('Harap pilih kelas dan nomor absen minimal 1.');
+    const finalClass = studentClass;
+    const selectedConfig = appSettings.classNames.find(c => c.className === finalClass);
+    if (!selectedConfig || !Number.isInteger(absentNumber) ||
+      absentNumber < selectedConfig.absentRangeMin || absentNumber > selectedConfig.absentRangeMax) {
+      setError(selectedConfig
+        ? `Nomor absen kelas ${finalClass} harus ${selectedConfig.absentRangeMin}–${selectedConfig.absentRangeMax}.`
+        : 'Harap pilih kelas dan nomor absen minimal 1.');
       return;
     }
     setError(null);
     startStudentJourney(name, gender, finalClass, absentNumber);
   };
+
+  const selectedConfig = appSettings.classNames.find(c => c.className === studentClass);
 
   return (
     <div className="min-h-[85vh] flex flex-col justify-center items-center py-6 px-4">
@@ -77,7 +82,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
             )}
 
             <div className="space-y-1.5 text-left">
-              <label className="block text-xs font-bold text-slate-700">
+              <label htmlFor="student-name" className="block text-xs font-bold text-slate-700">
                 Nama Lengkap Siswa <span className="text-emerald-600">*</span>
               </label>
               <div className="relative">
@@ -85,6 +90,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
                   <User className="w-4 h-4" />
                 </div>
                 <input
+                  id="student-name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -97,10 +103,11 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5 text-left">
-                <label className="block text-xs font-bold text-slate-700">
+                <label htmlFor="student-gender" className="block text-xs font-bold text-slate-700">
                   Jenis Kelamin <span className="text-emerald-600">*</span>
                 </label>
                 <select
+                  id="student-gender"
                   value={gender}
                   onChange={(e) => setGender(e.target.value as Gender)}
                   className="w-full text-xs sm:text-sm px-3.5 py-3 rounded-2xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all cursor-pointer bg-white"
@@ -111,16 +118,17 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
               </div>
 
               <div className="space-y-1.5 text-left">
-                <label className="block text-xs font-bold text-slate-700">
+                <label htmlFor="student-absent" className="block text-xs font-bold text-slate-700">
                   Nomor Absen <span className="text-emerald-600">*</span>
                 </label>
                 <input
+                  id="student-absent"
                   type="number"
-                  min="1"
-                  max="36"
+                  min={selectedConfig?.absentRangeMin || 1}
+                  max={selectedConfig?.absentRangeMax || 36}
                   value={absentNumber}
-                  onChange={(e) => setAbsentNumber(Math.max(1, Math.min(36, parseInt(e.target.value) || 1)))}
-                  placeholder="1 - 36"
+                  onChange={(e) => setAbsentNumber(Number(e.target.value))}
+                  placeholder={`${selectedConfig?.absentRangeMin || 1} - ${selectedConfig?.absentRangeMax || 36}`}
                   className="w-full text-xs sm:text-sm px-3.5 py-3 rounded-2xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
                 />
               </div>
@@ -131,11 +139,12 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
                 Kelas <span className="text-emerald-600">*</span>
               </label>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                {appSettings.classNames.slice(0, 12).map((cls) => (
+                {appSettings.classNames.map((cls) => (
                   <button
                     key={cls.className}
                     type="button"
-                    onClick={() => setStudentClass(cls.className)}
+                    onClick={() => { setStudentClass(cls.className); setAbsentNumber(cls.absentRangeMin); }}
+                    aria-pressed={studentClass === cls.className}
                     className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                       studentClass === cls.className
                         ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
@@ -145,30 +154,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
                     {cls.className}
                   </button>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => setStudentClass('Lainnya')}
-                  className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                    studentClass === 'Lainnya'
-                      ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  Lainnya
-                </button>
               </div>
-
-              {studentClass === 'Lainnya' && (
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    value={customClass}
-                    onChange={(e) => setCustomClass(e.target.value)}
-                    placeholder="Ketik nama kelasmu (contoh: X PPLG 1)..."
-                    className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
-                  />
-                </div>
-              )}
             </div>
 
             <button

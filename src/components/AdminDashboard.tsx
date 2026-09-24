@@ -24,10 +24,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     driveFolderUrl,
     updateDriveFolderUrl,
     driveWebhookUrl,
+    driveWebhookManagedByBuild,
     updateDriveWebhookUrl,
     appSettings,
     updateAppSettings,
     deleteStudent,
+    retryDriveSync,
   } = useApp();
 
   const [selectedStudent, setSelectedStudent] = useState<ActiveStudent | null>(null);
@@ -67,18 +69,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   const totalStudents = allStudents.length;
   let completedAllCount = 0;
   let totalConfidenceSum = 0;
+  let scoredStudentsCount = 0;
   let totalStagesCompletedSum = 0;
 
   allStudents.forEach((s) => {
     const j = journeys[s.id];
     const completedStages = j ? Object.keys(j.stages).length : 0;
     if (completedStages === 8) completedAllCount++;
-    if (j?.confidenceScore) totalConfidenceSum += j.confidenceScore;
+    if (j?.confidenceScore) { totalConfidenceSum += j.confidenceScore; scoredStudentsCount++; }
     totalStagesCompletedSum += completedStages;
   });
 
   const completionPercentage = totalStudents ? Math.round((completedAllCount / totalStudents) * 100) : 0;
-  const avgConfidence = totalStudents ? Math.round(totalConfidenceSum / totalStudents) : 0;
+  const avgConfidence = scoredStudentsCount ? Math.round(totalConfidenceSum / scoredStudentsCount) : 0;
 
   if (viewingStudentReport) {
     return (
@@ -144,7 +147,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   };
 
   const handleAddClass = () => {
-    const nextNum = editClasses.length + 1;
+    let nextNum = 1;
+    while (editClasses.some(c => c.className === `X-${nextNum}`)) nextNum++;
     setEditClasses([...editClasses, { className: `X-${nextNum}`, absentRangeMin: 1, absentRangeMax: 36 }]);
   };
 
@@ -155,7 +159,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   };
 
   const handleDeleteStudent = (studentId: string) => {
-    if (!confirm('Hapus semua jawaban dan reset progress siswa ini?')) return;
+    if (!confirm('Hapus siswa ini beserta seluruh jawabannya dari browser ini?')) return;
     deleteStudent(studentId);
   };
 
@@ -166,27 +170,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
   const handleExportCSV = () => {
     const headers = ['Nama Siswa', 'Kelas', 'Skor Keyakinan', 'Jumlah Tahap Selesai', 'Terakhir Update', 'Status Google Drive'];
+    const csvCell = (value: string | number) => {
+      const text = String(value);
+      const safe = /^[\s]*[=+@-]/.test(text) ? `'${text}` : text;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
     const rows = allStudents.map((s) => {
       const j = journeys[s.id];
       const count = j ? Object.keys(j.stages).length : 0;
       return [
-        `"${s.name}"`,
-        `"${s.class}"`,
+        s.name,
+        s.class,
         j?.confidenceScore || 0,
         `${count}/8`,
-        `"${j?.updatedAt || s.startedAt}"`,
-        count === 8 ? 'Tersimpan Otomatis' : 'Belum Lengkap'
+        j?.updatedAt || s.startedAt,
+        count === 8 ? (j?.driveSyncStatus || 'Webhook belum diatur') : 'Belum Lengkap'
       ];
     });
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = '\ufeff' + [headers.map(csvCell).join(','), ...rows.map((e) => e.map(csvCell).join(','))].join('\r\n');
+    const blobUrl = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', blobUrl);
     link.setAttribute('download', `rekap_growth_mindset_kelas_X_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
   };
 
   return (
@@ -256,6 +266,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         </div>
       </div>
 
+      <p className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-xs text-amber-950">
+        Rekap ini hanya berisi data yang tersimpan di browser ini. Jawaban dari perangkat siswa lain tidak muncul otomatis.
+      </p>
+
       {/* STUDENTS TAB */}
       {activeAdminTab === 'students' && (
         <>
@@ -277,17 +291,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               </div>
               <p className="text-2xl font-black text-emerald-600">{completionPercentage}%</p>
               <p className="text-[11px] text-slate-400 mt-1">
-                {completedAllCount} dari {totalStudents} otomatis tersimpan ke Drive
+                 {completedAllCount} dari {totalStudents} menyelesaikan semua pos
               </p>
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between text-slate-500 mb-2">
-                <span className="text-xs font-bold uppercase">Rata-rata Skor Usaha</span>
+                 <span className="text-xs font-bold uppercase">Rata-rata Skala Keyakinan</span>
                 <BarChart3 className="w-4 h-4 text-indigo-600" />
               </div>
               <p className="text-2xl font-black text-indigo-600">{avgConfidence} / 100</p>
-              <p className="text-[11px] text-slate-400 mt-1">Indeks keyakinan diri siswa</p>
+               <p className="text-[11px] text-slate-400 mt-1">Skala jawaban terakhir, dikonversi ke 0–100</p>
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -297,9 +311,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               </div>
               <p className="text-sm font-black text-emerald-700 mt-1 flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Otomatis Aktif</span>
+                 <span>{driveWebhookUrl ? 'Webhook diatur' : 'Belum diatur'}</span>
               </p>
-              <p className="text-[10px] text-slate-400 truncate mt-1">Folder BK Terhubung</p>
+              <p className="text-[10px] text-slate-400 truncate mt-1">Pengiriman perlu dicek di Drive</p>
             </div>
           </div>
 
@@ -354,7 +368,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                     <th className="px-5 py-3.5">Kelas</th>
                     <th className="px-5 py-3.5">Absen</th>
                     <th className="px-5 py-3.5">Kemajuan Pos</th>
-                    <th className="px-5 py-3.5">Skor Usaha</th>
+                     <th className="px-5 py-3.5">Skala Keyakinan</th>
                     <th className="px-5 py-3.5">Status Google Drive</th>
                     <th className="px-5 py-3.5 text-right">Aksi</th>
                   </tr>
@@ -370,7 +384,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                     filteredStudents.map((student) => {
                       const j = journeys[student.id];
                       const completedCount = j ? Object.keys(j.stages).length : 0;
-                      const isAllDone = completedCount === 8;
 
                       return (
                         <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
@@ -419,16 +432,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                             </span>
                           </td>
                           <td className="px-5 py-4">
-                            {isAllDone || j?.driveExportedUrl ? (
-                              <span className="text-emerald-700 bg-emerald-50 font-bold px-2 py-1 rounded-lg inline-flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                <span>Tersimpan Otomatis</span>
-                              </span>
-                            ) : (
-                              <span className="text-slate-400">
-                                {completedCount}/8 Pos ({8 - completedCount} lagi)
-                              </span>
-                            )}
+                            <div className="text-slate-600">
+                              {completedCount < 8 ? `${completedCount}/8 Pos` :
+                                j?.driveSyncStatus === 'pending' ? 'Sedang dikirim' :
+                                j?.driveSyncStatus === 'unverified' ? 'Dikirim, cek di Drive' :
+                                j?.driveSyncStatus === 'failed' ? 'Pengiriman gagal' : 'Webhook belum diatur'}
+                              {completedCount === 8 && driveWebhookUrl && j?.driveSyncStatus !== 'pending' && (
+                                <button onClick={() => retryDriveSync(student.id)} className="block text-teal-700 underline mt-1">Kirim ulang</button>
+                              )}
+                            </div>
                           </td>
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
@@ -537,7 +549,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                       <span className="text-xs text-slate-500">-</span>
                       <input
                         type="number"
-                        min={cls.absentRangeMin + 1}
+                        min={cls.absentRangeMin}
                         value={cls.absentRangeMax}
                         onChange={(e) => {
                           const updated = [...editClasses];
@@ -590,9 +602,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               <CloudUpload className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Pengaturan Folder Google Drive</h2>
+              <h2 className="text-lg font-bold text-slate-800">Referensi Folder Google Drive</h2>
               <p className="text-xs text-slate-500">
-                Data seluruh siswa yang telah menyelesaikan 8 pos akan otomatis tersimpan ke folder Drive ini tanpa perlu upload manual oleh siswa.
+                 Link ini disimpan pada browser guru. Untuk mengirim jawaban, webhook harus diatur juga pada browser siswa; pastikan folder target di skrip cocok.
               </p>
             </div>
           </div>
@@ -613,7 +625,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">
-                Folder Google Drive Aktif Saat Ini:
+                Link Folder yang Ditampilkan:
               </span>
               <a
                 href={driveFolderUrl}
@@ -633,7 +645,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
           <form onSubmit={handleSaveDriveUrl} className="space-y-4">
             <div className="space-y-1.5 text-left">
               <label className="block text-xs font-bold text-slate-700">
-                Ubah Tautan Folder Google Drive (URL):
+                Ubah Tautan Referensi Folder (URL):
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -664,7 +676,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                 type="submit"
                 className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
               >
-                Simpan Link Google Drive
+                Simpan Link Referensi
               </button>
             </div>
           </form>
@@ -675,7 +687,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               <div>
                 <h3 className="text-sm font-bold text-slate-800">Koneksi Otomatis Upload Berkas (Google Apps Script)</h3>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Pasang URL Webhook Web App jika ingin berkas JSON jawaban siswa terkirim dan tersimpan otomatis ke folder Drive di atas.
+                  {driveWebhookManagedByBuild
+                    ? 'Webhook berlaku untuk semua perangkat melalui konfigurasi build GitHub Pages. Ubah variabel DRIVE_WEBHOOK_URL lalu deploy ulang untuk menggantinya.'
+                    : 'Pasang URL Webhook Web App di browser ini, atau atur DRIVE_WEBHOOK_URL saat build agar berlaku di semua perangkat siswa.'}
                 </p>
               </div>
             </div>
@@ -705,6 +719,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                 <input
                   type="url"
                   value={webhookInput}
+                  disabled={driveWebhookManagedByBuild}
                   onChange={(e) => setWebhookInput(e.target.value)}
                   placeholder="https://script.google.com/macros/s/.../exec"
                   className="w-full text-xs sm:text-sm pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none transition-all font-mono"
@@ -714,6 +729,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                 <span className="text-[10px] text-slate-400">Skrip: file google-apps-script-sync.js di proyek</span>
                 <button
                   type="submit"
+                  disabled={driveWebhookManagedByBuild}
                   className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition-all cursor-pointer"
                 >
                   Simpan Webhook URL
@@ -725,10 +741,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
           <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-emerald-950 space-y-1">
             <p className="font-bold flex items-center gap-1.5 text-emerald-900">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Sistem Penyimpanan Otomatis Aktif</span>
+              <span>Status pengiriman refleksi</span>
             </p>
             <p className="text-[11px] text-emerald-800 leading-relaxed">
-              Begitu siswa menyelesaikan seluruh 8 pos di halaman mereka, sistem akan secara otomatis menandai dan menghubungkan berkas refleksi ke folder Google Drive di atas. Siswa tidak perlu repot menekan tombol upload manual lagi.
+              Jawaban dikirim sebagai JSON bila webhook telah diatur di browser siswa. Karena respons Google Apps Script tidak dapat diperiksa dari halaman ini, buka folder Drive untuk memastikan berkas tersedia.
             </p>
           </div>
         </div>

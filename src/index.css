@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* Dark mode configuration */
 @theme {
@@ -47,7 +48,7 @@
 /* Custom print style for certificate / PPT landscape presentation */
 @media print {
   @page {
-    size: landscape;
+    size: 16in 9in;
     margin: 0;
   }
   html, body {

@@ -9,13 +9,13 @@ import { AdminLoginModal } from './components/AdminLoginModal';
 import { Moon, Sun } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
-  const { activeStudent, isAdminLoggedIn } = useApp();
+  const { activeStudent, isAdminLoggedIn, storageError } = useApp();
   const [activeTab, setActiveTab] = useState<'map' | 'result' | 'admin'>('map');
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     // Load theme preference from localStorage
-    const saved = localStorage.getItem('gm_theme_preference');
-    return saved ? JSON.parse(saved) : false;
+    try { return localStorage.getItem('gm_theme_preference') === 'true'; }
+    catch { return false; }
   });
 
   const htmlElement = document.getElementById('app');
@@ -30,7 +30,7 @@ const MainLayout: React.FC = () => {
 
   // Save theme preference and apply to document - FIX DARK MODE
   React.useEffect(() => {
-    localStorage.setItem('gm_theme_preference', String(isDarkMode));
+    try { localStorage.setItem('gm_theme_preference', String(isDarkMode)); } catch { /* storage warning shown below */ }
     
     // Apply dark class to the app element
     if (htmlElement) {
@@ -62,6 +62,10 @@ const MainLayout: React.FC = () => {
         isDarkMode={isDarkMode}
         onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
       />
+
+      {storageError && <div role="alert" className="mx-auto max-w-7xl w-full p-3 bg-red-50 text-red-800 text-sm">
+        Penyimpanan browser gagal. Salin jawaban penting sebelum menutup halaman dan kosongkan ruang penyimpanan perangkat.
+      </div>}
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 print:p-0 print:m-0 print:max-w-none print:w-full">
         {isAdminLoggedIn ? (

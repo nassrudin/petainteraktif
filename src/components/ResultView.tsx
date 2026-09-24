@@ -4,9 +4,8 @@ import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA } from 
 import { ActiveStudent } from '../types';
 import { 
   Printer, ArrowLeft, ChevronLeft, ChevronRight, 
-  MonitorPlay, LayoutGrid, Award, CheckCircle2, Trophy, CloudUpload, FileText
+  MonitorPlay, LayoutGrid, Trophy
 } from 'lucide-react';
-import { generateResultPDF, uploadPDFToGoogleDrive } from '../utils/pdf-export';
 
 interface ResultViewProps {
   onBackToMap: () => void;
@@ -27,66 +26,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
   }
 
   const journey = getStudentJourney(activeStudent.id);
-  const totalSlides = 10;
+  const isComplete = Array.from({ length: 8 }, (_, i) => i + 1).every(id => journey.stages[id]?.completed);
+  const totalSlides = isComplete ? 10 : 9;
 
   const [viewMode, setViewMode] = useState<'slides' | 'all'>('slides');
   const [currentSlide, setCurrentSlide] = useState<number>(1);
-  const [isUploading, setIsUploading] = useState(false);
 
   const handlePrintPdf = () => {
     window.print();
-  };
-
-  const handleUploadPDFToDrive = async () => {
-    try {
-      setIsUploading(true);
-      
-      // Generate PDF from all slides view
-      const allSlidesElement = document.getElementById('result-pdf-export');
-      if (!allSlidesElement) {
-        alert('Tidak dapat menemukan element export');
-        return;
-      }
-
-      const pdfBlob = await generateResultPDF('result-pdf-export', {
-        student: activeStudent,
-        journey: journey,
-        format: 'A4',
-        orientation: 'portrait',
-      });
-
-      // Get Google Drive folder ID from context (you may need to pass this as prop)
-      // For now, we'll use a placeholder - in real implementation, get it from localStorage or context
-      const googleApiKey = ''; // User needs to input this
-      const folderId = '';     // User needs to input this
-
-      if (!googleApiKey || !folderId) {
-        alert('Google API Key dan Folder ID diperlukan untuk upload ke Drive. \nSilakan konfigurasi di settings.');
-        
-        // Download locally instead
-        const url = URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Growth_Mindset_${activeStudent.name.replace(/\s+/g, '_')}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        const shareUrl = await uploadPDFToGoogleDrive(
-          pdfBlob, 
-          googleApiKey, 
-          folderId,
-          `Growth_Mindset_${activeStudent.name.replace(/\s+/g, '_')}.pdf`
-        );
-        alert(`PDF berhasil diupload! \nLink: ${shareUrl}`);
-      }
-    } catch (error) {
-      console.error('Error uploading PDF:', error);
-      alert(`Terjadi kesalahan: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   const getStageAnswer = (stageId: number, fieldId: string): string => {
@@ -97,11 +44,11 @@ export const ResultView: React.FC<ResultViewProps> = ({
     return Array.isArray(val) ? val.join(', ') : String(val);
   };
 
-  const getStageScale = (stageId: number, fieldId: string): number => {
+  const getStageScale = (stageId: number, fieldId: string): number | null => {
     const st = journey.stages[stageId];
-    if (!st?.answers) return 3;
+    if (!st?.answers) return null;
     const val = st.answers[fieldId];
-    return typeof val === 'number' ? val : 3;
+    return typeof val === 'number' ? val : null;
   };
 
   const formattedDate = new Date().toLocaleDateString('id-ID', { 
@@ -133,7 +80,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
             }`}
           >
             <MonitorPlay className="w-3.5 h-3.5" />
-            <span>Slide Presentasi PPT (10 Slide)</span>
+            <span>Slide Presentasi ({totalSlides} Slide)</span>
           </button>
           <button
             onClick={() => setViewMode('all')}
@@ -144,40 +91,19 @@ export const ResultView: React.FC<ResultViewProps> = ({
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
-            <span>Semua Slide (10 Lembar)</span>
+            <span>Semua Slide ({totalSlides} Lembar)</span>
           </button>
         </div>
 
         {/* Export Actions */}
-        {isTeacherView && (
+        {(
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <button
-              onClick={handleUploadPDFToDrive}
-              disabled={isUploading}
-              className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-xs font-bold shadow-md shadow-purple-200 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Export dan Upload PDF ke Google Drive"
-            >
-              {isUploading ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Upload...</span>
-                </>
-              ) : (
-                <>
-                  <CloudUpload className="w-4 h-4" />
-                  <span>Upload PDF ke Google Drive</span>
-                </>
-              )}
-            </button>
             <button
               onClick={handlePrintPdf}
               className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-200 transition-all cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak / Simpan PDF (Local)</span>
+              <span>Cetak / Simpan PDF</span>
             </button>
           </div>
         )}
@@ -200,7 +126,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
           </button>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+            {Array.from({ length: totalSlides }, (_, index) => index + 1).map((num) => (
               <button
                 key={num}
                 onClick={() => setCurrentSlide(num)}
@@ -248,7 +174,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               Bimbingan Klasikal Kelas X • Bimbingan dan Konseling
             </span>
             <span className="text-xs text-teal-300 font-mono">
-              Slide 1 / 10 • Lembar Presentasi
+              Slide 1 / {totalSlides} • Lembar Presentasi
             </span>
           </div>
 
@@ -300,7 +226,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 2 / 10 • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide 2 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -373,7 +299,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 3 / 10 • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide 3 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -440,7 +366,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 4 / 10 • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide 4 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -503,7 +429,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 5 / 10 • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide 5 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -583,7 +509,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 6 / 10 • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide 6 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -632,7 +558,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 7 / 10 • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide 7 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -690,7 +616,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 8 / 10 • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide 8 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -748,7 +674,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Slide 9 / 10 • Presenter: {activeStudent.name} ({activeStudent.class})
+              Slide 9 / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
             </span>
           </div>
 
@@ -819,7 +745,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
         {/* ========================================================================= */}
         {/* SLIDE 10: SERTIFIKAT KEBERANIAN GROWTH MINDSET (PIAGAM KELULUSAN 8 POS) */}
         {/* ========================================================================= */}
-        <div className={`ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-6 sm:p-8 md:p-12 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-visible border-4 border-amber-400 print:rounded-none print:shadow-none print:border-4 print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 10 ? 'hidden' : ''}`}>
+        {isComplete && <div className={`ppt-slide aspect-[16/9] w-full bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-6 sm:p-8 md:p-12 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-visible border-4 border-amber-400 print:rounded-none print:shadow-none print:border-4 print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== 10 ? 'hidden' : ''}`}>
           {/* Decorative Certificate Corner Accents */}
           <div className="absolute top-3 left-3 w-8 h-8 border-t-4 border-l-4 border-amber-500"></div>
           <div className="absolute top-3 right-3 w-8 h-8 border-t-4 border-r-4 border-amber-500"></div>
@@ -878,8 +804,8 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </p>
             </div>
           </div>
-        </div>
-        
+        </div>}
+
       </div>
     </div>
   );

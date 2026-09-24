@@ -1,28 +1,34 @@
 function doPost(e) {
   try {
-    var rawData = e.postData.contents;
-    var data = JSON.parse(rawData);
-    
-    // ID Folder Google Drive target (ambil dari URL folder atau pasang di sini)
-    // Contoh URL folder: https://drive.google.com/drive/folders/1Slmi-qS--PbmWZh7KzFoMVG3iE5QqD_Z
+    // Configure the target on the server. Never accept a folder ID from a browser request.
     var FOLDER_ID = "1Slmi-qS--PbmWZh7KzFoMVG3iE5QqD_Z";
-    
-    var folder;
-    if (data.folderId && data.folderId.length > 10) {
-      folder = DriveApp.getFolderById(data.folderId);
-    } else {
-      folder = DriveApp.getFolderById(FOLDER_ID);
+    var data = JSON.parse(e.postData.contents);
+    if (!/^[a-zA-Z0-9_-]{8,100}$/.test(data.studentId || '') ||
+        !data.studentName || !data.studentClass || !data.stages ||
+        !Array.from({ length: 8 }, function (_, i) { return i + 1; })
+          .every(function (id) { return data.stages[id] && data.stages[id].completed && data.stages[id].answers; })) {
+      throw new Error('Data refleksi tidak lengkap.');
     }
+    var folder = DriveApp.getFolderById(FOLDER_ID);
 
-    var studentName = data.studentName || "Siswa";
-    var studentClass = data.studentClass || "X";
-    var absentNumber = data.studentAbsentNumber || "0";
-    var timestamp = Utilities.formatDate(new Date(), "Asia/Jakarta", "yyyy-MM-dd_HH-mm");
-    
-    var fileName = "Refleksi_" + studentClass + "_Absen" + absentNumber + "_" + studentName.replace(/[^a-zA-Z0-9]/g, "_") + "_" + timestamp + ".json";
+    var safeId = data.studentId.replace(/[^a-zA-Z0-9_-]/g, '');
+    var fileName = "Refleksi_" + safeId + ".json";
     
     var fileContent = JSON.stringify(data, null, 2);
-    var file = folder.createFile(fileName, fileContent, MimeType.PLAIN_TEXT);
+    var lock = LockService.getScriptLock();
+    lock.waitLock(20000);
+    var file;
+    try {
+      var existing = folder.getFilesByName(fileName);
+      if (existing.hasNext()) {
+        file = existing.next();
+        file.setContent(fileContent);
+      } else {
+        file = folder.createFile(fileName, fileContent, MimeType.PLAIN_TEXT);
+      }
+    } finally {
+      lock.releaseLock();
+    }
     
     return ContentService.createTextOutput(JSON.stringify({
       status: "success",

@@ -1,6 +1,4 @@
-import { StageDefinition, ActiveStudent, StudentJourney, AdminCredentials, ClassConfig } from './types';
-import { DEFAULT_DRIVE_FOLDER_URL } from './context';
-import { sanitizeTextInput } from './utils/security';
+import { StageDefinition, AdminCredentials, ClassConfig } from './types';
 
 export const PEGANGAN_DI_SEPANJANG_JALAN =
   'Percaya diri bukan bakat yang dimiliki sejak lahir. Ia tumbuh setiap kali kamu berani mencoba sekali lagi.';
@@ -420,18 +418,10 @@ export const STAGES_DATA: StageDefinition[] = [
   },
 ];
 
-// ⚠️ SECURITY FIX: Password harus diubah segera setelah deploy pertama kali
-// Jangan gunakan password default ini di production!
+// Login ini hanya berlaku untuk browser lokal. Frontend statis tidak dapat melindungi kredensial.
 export const DEFAULT_ADMIN: AdminCredentials = {
   username: 'admin_bk_growth2026',
-  password: 'SecureBK$GrowthMindset2026!', // ← GANTI INI SETELAH DEPLOY PERTAMA!
+  password: 'SecureBK$GrowthMindset2026!',
   name: 'Guru Pembimbing BK',
 };
-
-// Hash placeholder untuk future bcrypt implementation
-export const ADMIN_PASSWORD_HASH = '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjAG.iHvQiM5ZlWCzVXm'; 
-
-export const INITIAL_STUDENTS: ActiveStudent[] = [];
-
-export const INITIAL_JOURNEYS: Record<string, StudentJourney> = {};
 

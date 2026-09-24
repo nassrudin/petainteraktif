@@ -82,9 +82,7 @@ export interface StudentJourney {
   stages: Record<number, StageAnswer>;
   lastActiveStage: number;
   updatedAt: string;
-  driveExportedUrl?: string;
-  driveExportedAt?: string;
-  driveSyncStatus?: 'pending' | 'success' | 'failed';
+  driveSyncStatus?: 'pending' | 'unverified' | 'failed';
 }
 
 export interface AchievementBadge {
