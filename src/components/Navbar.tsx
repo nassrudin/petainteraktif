@@ -21,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     activeStudent,
     clearActiveStudent,
     isAdminLoggedIn,
+    adminRole,
     adminLogout,
     getStudentJourney,
   } = useApp();
@@ -61,8 +62,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }`}
               >
                 <Shield className="w-4 h-4" />
-                <span className="hidden sm:inline">Dashboard Guru</span>
-                <span className="sm:hidden">Guru</span>
+                <span className="hidden sm:inline">{adminRole === 'teacher' ? 'Dashboard Guru' : 'Dashboard Admin'}</span>
+                <span className="sm:hidden">{adminRole === 'teacher' ? 'Guru' : 'Admin'}</span>
               </button>
             ) : activeStudent ? (
               <>
@@ -123,10 +124,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <Shield className="w-5 h-5 text-teal-700 dark:text-teal-400" />
                   <div className="flex flex-col">
                     <p className="text-xs sm:text-sm font-bold text-teal-900 dark:text-teal-200 leading-none">
-                      Guru BK
+                      {adminRole === 'teacher' ? 'Guru BK' : 'Admin'}
                     </p>
                     <p className="text-[10px] text-teal-600 dark:text-teal-400 leading-none mt-0.5">
-                      Admin
+                      {adminRole === 'teacher' ? 'Akun Guru' : 'Akun Admin'}
                     </p>
                   </div>
                 </div>

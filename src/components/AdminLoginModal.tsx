@@ -44,7 +44,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
     if (!bootstrapLogin) return;
     const success = await bootstrapLogin();
     if (success) { setError(null); onSuccess(); onClose(); }
-    else setError('Login Google untuk pembuatan superadmin gagal.');
+    else setError('Login Google untuk pembuatan akun admin gagal.');
   };
 
   return (
@@ -88,7 +88,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                 autoComplete="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Contoh: superadmin"
+                placeholder="Contoh: admin"
                 className="w-full text-xs sm:text-sm pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none transition-all placeholder:text-slate-400"
                 autoFocus
               />
@@ -113,7 +113,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
           </div>
 
           <p className="text-[11px] text-slate-500">{firebaseEnabled
-            ? 'Gunakan nama pengguna dan kata sandi yang diberikan superadmin. Email pribadi tidak diperlukan.'
+            ? 'Gunakan nama pengguna dan kata sandi dari admin. Email pribadi tidak diperlukan.'
             : 'Akses guru pada versi GitHub Pages berlaku untuk data di browser ini saja.'}</p>
 
           <div className="pt-2 flex items-center justify-end gap-2">
@@ -137,7 +137,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             onClick={() => void handleBootstrap()}
             className="w-full text-xs font-semibold text-teal-800 underline underline-offset-2 cursor-pointer"
           >
-            Pengaturan pertama: masuk Google sekali untuk membuat superadmin
+            Pengaturan pertama: masuk Google sekali untuk membuat admin
           </button>}
         </form>
       </div>

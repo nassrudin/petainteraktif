@@ -21,6 +21,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     allStudents, 
     journeys, 
     adminCredentials, 
+    adminRole,
     updateAdminCredentials,
     adminLogout,
     driveFolderUrl,
@@ -222,7 +223,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div className="max-w-2xl">
             <span className="px-3 py-1 rounded-full bg-teal-500/30 text-teal-200 text-xs font-bold uppercase tracking-wider">
-              Portal Monitoring Guru BK
+              {adminRole === 'admin' ? 'Portal Admin' : 'Portal Monitoring Guru BK'}
             </span>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-2 font-display">
               Dashboard Analitik & Refleksi Siswa
@@ -287,7 +288,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               }`}
             >
               <KeyRound className="w-3.5 h-3.5" />
-              <span>{firebaseEnabled ? 'Akun Guru' : 'Ganti Password'}</span>
+              <span>{firebaseEnabled ? 'Akun Admin & Guru' : 'Ganti Password'}</span>
             </button>
           </div>
         </div>

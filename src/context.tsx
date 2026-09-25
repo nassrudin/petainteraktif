@@ -13,7 +13,7 @@ export interface StaffAccount {
   active: boolean;
 }
 
-export type AdminRole = 'legacy' | 'superadmin' | 'teacher' | null;
+export type AdminRole = 'legacy' | 'admin' | 'teacher' | null;
 
 export interface AppContextType {
   activeStudent: ActiveStudent | null;
@@ -27,7 +27,7 @@ export interface AppContextType {
   adminCredentials: AdminCredentials;
   adminRole?: AdminRole;
   staffAccounts?: StaffAccount[];
-  createSuperadmin?: (password: string) => Promise<{ success: boolean; message: string }>;
+  createAdmin?: (password: string) => Promise<{ success: boolean; message: string }>;
   createTeacherAccount?: (username: string, password: string) => Promise<{ success: boolean; message: string }>;
   setTeacherActive?: (uid: string, active: boolean) => Promise<{ success: boolean; message: string }>;
   changeOwnPassword?: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;

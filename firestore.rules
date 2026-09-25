@@ -17,7 +17,7 @@ service cloud.firestore {
         && !exists(rootPath());
     }
 
-    function superadmin() {
+    function mainAdmin() {
       return signedIn()
         && request.auth.token.firebase.sign_in_provider == 'password'
         && exists(rootPath())
@@ -37,32 +37,32 @@ service cloud.firestore {
     }
 
     function admin() {
-      return legacyTeacher() || superadmin() || teacher();
+      return legacyTeacher() || mainAdmin() || teacher();
     }
 
     match /config/adminRoot {
       allow get: if true;
       allow list: if false;
-      // The existing Google admin can create the first superadmin once.
+      // The existing Google admin can create the first admin account once.
       // After creation, its old Google access ends automatically.
       allow create: if legacyTeacher()
         && request.resource.data.keys().hasOnly(['uid', 'username', 'email'])
         && request.resource.data.uid is string
-        && request.resource.data.username == 'superadmin'
+        && request.resource.data.username == 'admin'
         && request.resource.data.email is string;
       allow update, delete: if false;
     }
 
     match /staff/{staffId} {
-      allow get: if superadmin() || (signedIn() && request.auth.uid == staffId);
-      allow list: if superadmin();
-      allow create: if superadmin()
+      allow get: if mainAdmin() || (signedIn() && request.auth.uid == staffId);
+      allow list: if mainAdmin();
+      allow create: if mainAdmin()
         && request.resource.data.keys().hasOnly(['username', 'email', 'role', 'active'])
         && request.resource.data.username is string
         && request.resource.data.email is string
         && request.resource.data.role == 'teacher'
         && request.resource.data.active == true;
-      allow update: if superadmin()
+      allow update: if mainAdmin()
         && resource.data.role == 'teacher'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active'])
         && request.resource.data.active is bool;
@@ -72,7 +72,7 @@ service cloud.firestore {
     match /staffUsernames/{username} {
       allow get: if true;
       allow list: if false;
-      allow create: if superadmin()
+      allow create: if mainAdmin()
         && request.resource.data.keys().hasOnly(['uid', 'email'])
         && request.resource.data.uid is string
         && request.resource.data.email is string;

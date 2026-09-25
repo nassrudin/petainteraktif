@@ -119,7 +119,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const adminRole: AdminRole = !rootLoaded || !teacherUser ? null
     : !rootAccount && isLegacyTeacher(teacherUser) ? 'legacy'
-    : rootAccount?.uid === teacherUser.uid && hasPasswordProvider(teacherUser) ? 'superadmin'
+    : rootAccount?.uid === teacherUser.uid && hasPasswordProvider(teacherUser) ? 'admin'
     : teacherAccount?.role === 'teacher' && teacherAccount.active && teacherAccount.email === teacherUser.email && hasPasswordProvider(teacherUser) ? 'teacher'
     : null;
   const isAdminLoggedIn = adminRole !== null;
@@ -175,7 +175,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [teacherUser]);
 
   useEffect(() => {
-    if (adminRole !== 'superadmin' || !teacherDb) {
+    if (adminRole !== 'admin' || !teacherDb) {
       setStaffAccounts([]);
       return;
     }
@@ -312,15 +312,15 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return false;
     }
     try {
-      const account = normalized === 'superadmin'
+      const account = normalized === 'admin'
         ? await getDoc(doc(teacherDb, 'config', 'adminRoot'))
         : await getDoc(doc(teacherDb, 'staffUsernames', normalized));
       if (!account.exists()) throw new Error('Nama pengguna atau kata sandi salah.');
       const email = account.data().email;
-      if (typeof email !== 'string') throw new Error('Akun belum siap. Hubungi superadmin.');
+      if (typeof email !== 'string') throw new Error('Akun belum siap. Hubungi admin.');
       const { user } = await signInWithEmailAndPassword(teacherAuth, email, password);
       const currentRoot = await getDoc(doc(teacherDb, 'config', 'adminRoot'));
-      const isRoot = normalized === 'superadmin' && currentRoot.exists() && currentRoot.data().uid === user.uid;
+      const isRoot = normalized === 'admin' && currentRoot.exists() && currentRoot.data().uid === user.uid;
       const staff = isRoot ? null : await getDoc(doc(teacherDb, 'staff', user.uid));
       const isActiveTeacher = staff?.exists() && staff.data().role === 'teacher' &&
         staff.data().active === true && staff.data().username === normalized;
@@ -346,7 +346,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return true;
       }
       await signOut(teacherAuth);
-      setCloudError(`Hanya akun Google lama (${teacherEmail}) yang dapat membuat superadmin pertama.`);
+      setCloudError(`Hanya akun Google lama (${teacherEmail}) yang dapat membuat akun admin pertama.`);
       return false;
     } catch (error) {
       try { await signOut(teacherAuth); } catch { /* no active session */ }
@@ -355,24 +355,24 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const createSuperadmin = async (password: string) => {
+  const createAdmin = async (password: string) => {
     if (adminRole !== 'legacy' || !teacherDb || !teacherAuth || !provisioningAuth) {
-      return { success: false, message: 'Hanya guru lama yang dapat membuat superadmin pertama.' };
+      return { success: false, message: 'Hanya guru lama yang dapat membuat akun admin pertama.' };
     }
     if (password.length < 12) return { success: false, message: 'Kata sandi minimal 12 karakter.' };
     let createdUser: User | null = null;
     let rootSaved = false;
     try {
       const reference = doc(teacherDb, 'config', 'adminRoot');
-      if ((await getDoc(reference)).exists()) throw new Error('Superadmin sudah dibuat. Muat ulang halaman.');
+      if ((await getDoc(reference)).exists()) throw new Error('Akun admin sudah dibuat. Muat ulang halaman.');
       await setPersistence(provisioningAuth, inMemoryPersistence);
       const email = internalEmail();
       createdUser = (await createUserWithEmailAndPassword(provisioningAuth, email, password)).user;
-      await setDoc(reference, { uid: createdUser.uid, username: 'superadmin', email });
+      await setDoc(reference, { uid: createdUser.uid, username: 'admin', email });
       rootSaved = true;
       try { await signOut(teacherAuth); } catch { /* root has already been created */ }
       setCloudError(null);
-      return { success: true, message: 'Superadmin dibuat. Sekarang masuk dengan nama pengguna superadmin dan kata sandi tadi.' };
+      return { success: true, message: 'Akun admin dibuat. Sekarang masuk dengan nama pengguna admin dan kata sandi tadi.' };
     } catch (error) {
       if (createdUser && !rootSaved) { try { await deleteUser(createdUser); } catch { /* account can be removed in Firebase Console */ } }
       return { success: false, message: readableError(error) };
@@ -380,11 +380,11 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const createTeacherAccount = async (username: string, password: string) => {
-    if (adminRole !== 'superadmin' || !teacherDb || !provisioningAuth) {
-      return { success: false, message: 'Hanya superadmin yang dapat membuat akun guru.' };
+    if (adminRole !== 'admin' || !teacherDb || !provisioningAuth) {
+      return { success: false, message: 'Hanya admin yang dapat membuat akun guru.' };
     }
     const normalized = username.trim().toLowerCase();
-    if (!validUsername.test(normalized) || normalized === 'superadmin') {
+    if (!validUsername.test(normalized) || normalized === 'admin') {
       return { success: false, message: 'Nama pengguna harus 3–32 karakter: huruf kecil, angka, titik, garis bawah, atau tanda hubung; diawali huruf.' };
     }
     if (password.length < 12) return { success: false, message: 'Kata sandi minimal 12 karakter.' };
@@ -408,7 +408,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const setTeacherActive = async (uid: string, active: boolean) => {
-    if (adminRole !== 'superadmin' || !teacherDb) return { success: false, message: 'Hanya superadmin yang dapat mengatur akses guru.' };
+    if (adminRole !== 'admin' || !teacherDb) return { success: false, message: 'Hanya admin yang dapat mengatur akses guru.' };
     try {
       await updateDoc(doc(teacherDb, 'staff', uid), { active });
       return { success: true, message: active ? 'Akses guru diaktifkan.' : 'Akses guru dinonaktifkan.' };
@@ -417,7 +417,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const changeOwnPassword = async (oldPassword: string, newPassword: string) => {
     if (!teacherUser || !teacherUser.email || !hasPasswordProvider(teacherUser) || !isAdminLoggedIn) {
-      return { success: false, message: 'Masuk dahulu dengan akun guru atau superadmin.' };
+      return { success: false, message: 'Masuk dahulu dengan akun guru atau admin.' };
     }
     if (newPassword.length < 12) return { success: false, message: 'Kata sandi baru minimal 12 karakter.' };
     try {
@@ -470,8 +470,8 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const contextValue: AppContextType = {
     activeStudent, startStudentJourney, clearActiveStudent,
     isAdminLoggedIn, adminLogin, bootstrapLogin, bootstrapNeeded: rootLoaded && !rootAccount, adminLogout,
-    adminRole, staffAccounts, createSuperadmin, createTeacherAccount, setTeacherActive, changeOwnPassword,
-    adminCredentials: { username: adminRole === 'superadmin' ? 'superadmin' : teacherAccount?.username || '', password: '' },
+    adminRole, staffAccounts, createAdmin, createTeacherAccount, setTeacherActive, changeOwnPassword,
+    adminCredentials: { username: adminRole === 'admin' ? 'admin' : teacherAccount?.username || '', password: '' },
     updateAdminCredentials: unavailable,
     allStudents, journeys, saveStageAnswer, getStudentJourney,
     retryDriveSync: () => {}, resetStudentProgress, deleteStudent,

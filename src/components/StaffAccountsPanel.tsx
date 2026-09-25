@@ -5,7 +5,7 @@ type Feedback = { success: boolean; message: string } | null;
 
 export const StaffAccountsPanel: React.FC = () => {
   const {
-    adminRole, adminCredentials, staffAccounts = [], createSuperadmin,
+    adminRole, adminCredentials, staffAccounts = [], createAdmin,
     createTeacherAccount, setTeacherActive, changeOwnPassword,
   } = useApp();
   const [setupPassword, setSetupPassword] = useState('');
@@ -22,9 +22,9 @@ export const StaffAccountsPanel: React.FC = () => {
   const setupRoot = async (event: React.FormEvent) => {
     event.preventDefault();
     if (setupPassword !== setupConfirm) return setFeedback({ success: false, message: 'Konfirmasi kata sandi tidak cocok.' });
-    if (!createSuperadmin) return;
+    if (!createAdmin) return;
     setBusy(true);
-    const result = await createSuperadmin(setupPassword);
+    const result = await createAdmin(setupPassword);
     setBusy(false);
     setFeedback(result);
     if (result.success) {
@@ -73,20 +73,20 @@ export const StaffAccountsPanel: React.FC = () => {
       : 'border-red-200 bg-red-50 text-red-800'}`}>{feedback.message}</p>}
 
     {adminRole === 'legacy' && <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-bold text-slate-800">Buat akun superadmin</h2>
-      <p className="mt-2 text-sm text-slate-600">Nama pengguna pertama adalah <strong>superadmin</strong>. Tentukan kata sandinya sendiri. Setelah akun dibuat, akses Google lama berhenti dan Anda masuk memakai akun baru.</p>
+      <h2 className="text-lg font-bold text-slate-800">Buat akun admin</h2>
+      <p className="mt-2 text-sm text-slate-600">Nama pengguna pertama adalah <strong>admin</strong>. Tentukan kata sandinya sendiri. Setelah akun dibuat, akses Google lama berhenti dan Anda masuk memakai akun baru.</p>
       <form onSubmit={(event) => void setupRoot(event)} className="mt-5 space-y-3">
-        <label className="block text-sm font-semibold text-slate-700">Kata sandi superadmin
+        <label className="block text-sm font-semibold text-slate-700">Kata sandi admin
           <input className={`${inputClass} mt-1`} type="password" autoComplete="new-password" minLength={12} value={setupPassword} onChange={(event) => setSetupPassword(event.target.value)} required />
         </label>
         <label className="block text-sm font-semibold text-slate-700">Ulangi kata sandi
           <input className={`${inputClass} mt-1`} type="password" autoComplete="new-password" minLength={12} value={setupConfirm} onChange={(event) => setSetupConfirm(event.target.value)} required />
         </label>
-        <button className={buttonClass} disabled={busy} type="submit">Buat superadmin</button>
+        <button className={buttonClass} disabled={busy} type="submit">Buat admin</button>
       </form>
     </section>}
 
-    {adminRole === 'superadmin' && <>
+    {adminRole === 'admin' && <>
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-bold text-slate-800">Buat akun guru</h2>
         <p className="mt-2 text-sm text-slate-600">Guru masuk dengan nama pengguna dan kata sandi. Mereka tidak memerlukan akun Google atau alamat email pribadi.</p>
@@ -118,7 +118,7 @@ export const StaffAccountsPanel: React.FC = () => {
       </section>
     </>}
 
-    {(adminRole === 'superadmin' || adminRole === 'teacher') && <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    {(adminRole === 'admin' || adminRole === 'teacher') && <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-lg font-bold text-slate-800">Ubah kata sandi sendiri</h2>
       <p className="mt-1 text-sm text-slate-600">Akun: <strong>{adminCredentials.username}</strong>. Simpan kata sandi baru di tempat yang aman.</p>
       <form onSubmit={(event) => void updateOwnPassword(event)} className="mt-5 space-y-3">
@@ -133,7 +133,7 @@ export const StaffAccountsPanel: React.FC = () => {
         </label>
         <button className={buttonClass} disabled={busy} type="submit">Simpan kata sandi baru</button>
       </form>
-      <p className="mt-4 text-xs text-slate-500">Jika seorang guru lupa kata sandinya, superadmin dapat menonaktifkan akun lama dan membuat akun pengganti.</p>
+      <p className="mt-4 text-xs text-slate-500">Jika seorang guru lupa kata sandinya, admin dapat menonaktifkan akun lama dan membuat akun pengganti.</p>
     </section>}
   </div>;
 };
