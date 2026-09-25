@@ -330,7 +330,11 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       setCloudError(null);
       return true;
-    } catch (error) { setCloudError(readableError(error)); return false; }
+    } catch (error) {
+      try { await signOut(teacherAuth); } catch { /* no active session */ }
+      setCloudError(readableError(error));
+      return false;
+    }
   };
 
   const bootstrapLogin = async (): Promise<boolean> => {
@@ -344,7 +348,11 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await signOut(teacherAuth);
       setCloudError(`Hanya akun Google lama (${teacherEmail}) yang dapat membuat superadmin pertama.`);
       return false;
-    } catch (error) { setCloudError(readableError(error)); return false; }
+    } catch (error) {
+      try { await signOut(teacherAuth); } catch { /* no active session */ }
+      setCloudError(readableError(error));
+      return false;
+    }
   };
 
   const createSuperadmin = async (password: string) => {
