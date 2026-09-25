@@ -3,7 +3,8 @@ import { useApp } from '../context';
 import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA, DEFAULT_CLASS_CONFIGS } from '../data';
 import { ActiveStudent } from '../types';
 import { ResultView } from './ResultView';
-import { firebaseEnabled, teacherEmail } from '../firebase-config';
+import { firebaseEnabled } from '../firebase-config';
+import { StaffAccountsPanel } from './StaffAccountsPanel';
 import { 
   Users, CheckCircle, BarChart3, 
   ExternalLink, Download, Search, Eye, Filter,
@@ -829,7 +830,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       )}
 
       {/* CHANGE PASSWORD / SECURITY TAB */}
-      {activeAdminTab === 'security' && (
+      {activeAdminTab === 'security' && (firebaseEnabled ? <StaffAccountsPanel /> : (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 max-w-xl mx-auto">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
             <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700">
@@ -858,11 +859,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             </div>
           )}
 
-          {firebaseEnabled ? (
-            <p className="text-sm text-slate-700 leading-relaxed">
-              Akses guru memakai akun Google <strong>{teacherEmail}</strong>. Kelola keamanan dan sandi akun melalui pengaturan akun Google Anda.
-            </p>
-          ) : <form onSubmit={handleUpdatePassword} className="space-y-4">
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
             <div className="space-y-1.5 text-left">
               <label className="block text-xs font-bold text-slate-700">Username Guru / Admin</label>
               <input
@@ -918,9 +915,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                 Simpan Perubahan Username & Password
               </button>
             </div>
-          </form>}
+          </form>
         </div>
-      )}
+      ))}
 
       {/* Selected Student Detail Modal */}
       {selectedStudent && (

@@ -7,14 +7,30 @@ import { sanitizeTextInput } from './utils/security';
 export const DEFAULT_DRIVE_FOLDER_URL =
   'https://drive.google.com/drive/folders/1Slmi-qS--PbmWZh7KzFoMVG3iE5QqD_Z?usp=sharing';
 
+export interface StaffAccount {
+  uid: string;
+  username: string;
+  active: boolean;
+}
+
+export type AdminRole = 'legacy' | 'superadmin' | 'teacher' | null;
+
 export interface AppContextType {
   activeStudent: ActiveStudent | null;
   startStudentJourney: (name: string, gender: Gender, studentClass: string, absentNumber: number) => void | Promise<void>;
   clearActiveStudent: () => void;
   isAdminLoggedIn: boolean;
   adminLogin: (user: string, pass: string) => boolean | Promise<boolean>;
+  bootstrapLogin?: () => Promise<boolean>;
+  bootstrapNeeded?: boolean;
   adminLogout: () => void;
   adminCredentials: AdminCredentials;
+  adminRole?: AdminRole;
+  staffAccounts?: StaffAccount[];
+  createSuperadmin?: (password: string) => Promise<{ success: boolean; message: string }>;
+  createTeacherAccount?: (username: string, password: string) => Promise<{ success: boolean; message: string }>;
+  setTeacherActive?: (uid: string, active: boolean) => Promise<{ success: boolean; message: string }>;
+  changeOwnPassword?: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
   updateAdminCredentials: (
     oldPass: string,
     newUsername: string,

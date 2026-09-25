@@ -14,7 +14,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { adminLogin, cloudError } = useApp();
+  const { adminLogin, bootstrapLogin, bootstrapNeeded, cloudError } = useApp();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -23,8 +23,8 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firebaseEnabled && (!username.trim() || !password.trim())) {
-      setError('Harap masukkan username dan password.');
+    if (!username.trim() || !password.trim()) {
+      setError('Harap masukkan nama pengguna dan kata sandi.');
       return;
     }
 
@@ -36,8 +36,15 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
       onSuccess();
       onClose();
     } else {
-      setError(firebaseEnabled ? 'Login Google gagal atau akun ini tidak diberi akses guru.' : 'Username atau password salah. Silakan coba lagi.');
+      setError('Nama pengguna atau kata sandi salah, atau akun belum aktif.');
     }
+  };
+
+  const handleBootstrap = async () => {
+    if (!bootstrapLogin) return;
+    const success = await bootstrapLogin();
+    if (success) { setError(null); onSuccess(); onClose(); }
+    else setError('Login Google untuk pembuatan superadmin gagal.');
   };
 
   return (
@@ -70,17 +77,18 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
           )}
 
-          {!firebaseEnabled && <><div className="space-y-1.5 text-left">
-            <label className="block text-xs font-bold text-slate-700">Username Guru / Admin</label>
+          <div className="space-y-1.5 text-left">
+            <label className="block text-xs font-bold text-slate-700">Nama pengguna</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                 <User className="w-4 h-4" />
               </div>
               <input
                 type="text"
+                autoComplete="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Masukkan username admin..."
+                placeholder="Contoh: superadmin"
                 className="w-full text-xs sm:text-sm pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none transition-all placeholder:text-slate-400"
                 autoFocus
               />
@@ -95,6 +103,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
               </div>
               <input
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Masukkan password..."
@@ -103,10 +112,8 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
           </div>
 
-          </>}
-
           <p className="text-[11px] text-slate-500">{firebaseEnabled
-            ? 'Masuk memakai akun Google guru yang telah diizinkan. Jawaban siswa dibaca dari Firebase.'
+            ? 'Gunakan nama pengguna dan kata sandi yang diberikan superadmin. Email pribadi tidak diperlukan.'
             : 'Akses guru pada versi GitHub Pages berlaku untuk data di browser ini saja.'}</p>
 
           <div className="pt-2 flex items-center justify-end gap-2">
@@ -122,9 +129,16 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
               className="px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <KeyRound className="w-4 h-4" />
-              <span>{firebaseEnabled ? 'Masuk dengan Google' : 'Masuk Dashboard'}</span>
+              <span>Masuk Dashboard</span>
             </button>
           </div>
+          {firebaseEnabled && bootstrapNeeded && <button
+            type="button"
+            onClick={() => void handleBootstrap()}
+            className="w-full text-xs font-semibold text-teal-800 underline underline-offset-2 cursor-pointer"
+          >
+            Pengaturan pertama: masuk Google sekali untuk membuat superadmin
+          </button>}
         </form>
       </div>
     </div>

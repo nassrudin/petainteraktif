@@ -5,17 +5,84 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function teacher() {
+    function rootPath() {
+      return /databases/$(database)/documents/config/adminRoot;
+    }
+
+    function legacyTeacher() {
       return signedIn()
         && request.auth.token.email == 'andy.wbowo@gmail.com'
         && request.auth.token.email_verified == true
-        && request.auth.token.firebase.sign_in_provider == 'google.com';
+        && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && !exists(rootPath());
+    }
+
+    function superadmin() {
+      return signedIn()
+        && request.auth.token.firebase.sign_in_provider == 'password'
+        && exists(rootPath())
+        && get(rootPath()).data.uid == request.auth.uid;
+    }
+
+    function staffPath() {
+      return /databases/$(database)/documents/staff/$(request.auth.uid);
+    }
+
+    function teacher() {
+      return signedIn()
+        && request.auth.token.firebase.sign_in_provider == 'password'
+        && exists(staffPath())
+        && get(staffPath()).data.role == 'teacher'
+        && get(staffPath()).data.active == true;
+    }
+
+    function admin() {
+      return legacyTeacher() || superadmin() || teacher();
+    }
+
+    match /config/adminRoot {
+      allow get: if true;
+      allow list: if false;
+      // The existing Google admin can create the first superadmin once.
+      // After creation, its old Google access ends automatically.
+      allow create: if legacyTeacher()
+        && request.resource.data.keys().hasOnly(['uid', 'username', 'email'])
+        && request.resource.data.uid is string
+        && request.resource.data.username == 'superadmin'
+        && request.resource.data.email is string;
+      allow update, delete: if false;
+    }
+
+    match /staff/{staffId} {
+      allow get: if superadmin() || (signedIn() && request.auth.uid == staffId);
+      allow list: if superadmin();
+      allow create: if superadmin()
+        && request.resource.data.keys().hasOnly(['username', 'email', 'role', 'active'])
+        && request.resource.data.username is string
+        && request.resource.data.email is string
+        && request.resource.data.role == 'teacher'
+        && request.resource.data.active == true;
+      allow update: if superadmin()
+        && resource.data.role == 'teacher'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active'])
+        && request.resource.data.active is bool;
+      allow delete: if false;
+    }
+
+    match /staffUsernames/{username} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if superadmin()
+        && request.resource.data.keys().hasOnly(['uid', 'email'])
+        && request.resource.data.uid is string
+        && request.resource.data.email is string;
+      allow update, delete: if false;
     }
 
     match /settings/public {
       allow get: if true;
       allow list: if false;
-      allow create, update: if teacher()
+      allow create, update: if admin()
         && request.resource.data.keys().hasOnly(['classNames', 'allowEarlyPhaseTwo'])
         && request.resource.data.classNames is list
         && request.resource.data.classNames.size() > 0
@@ -24,7 +91,7 @@ service cloud.firestore {
     }
 
     match /students/{studentId} {
-      allow get, list: if teacher() ||
+      allow get, list: if admin() ||
         (signedIn() && resource.data.ownerUid == request.auth.uid);
 
       allow create: if signedIn()
@@ -34,14 +101,14 @@ service cloud.firestore {
         && request.resource.data.student.id == studentId
         && request.resource.data.journey.studentId == studentId;
 
-      allow update: if teacher() ||
+      allow update: if admin() ||
         (signedIn()
           && resource.data.ownerUid == request.auth.uid
           && request.resource.data.ownerUid == request.auth.uid
           && request.resource.data.student == resource.data.student
           && request.resource.data.journey.studentId == studentId);
 
-      allow delete: if teacher();
+      allow delete: if admin();
     }
   }
 }

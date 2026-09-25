@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { GoogleAuthProvider, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, User } from 'firebase/auth';
-import { collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, setDoc, updateDoc, where } from 'firebase/firestore';
-import { AppContext, AppContextType, DEFAULT_DRIVE_FOLDER_URL } from './context';
+import { createUserWithEmailAndPassword, deleteUser, EmailAuthProvider, GoogleAuthProvider, inMemoryPersistence, onAuthStateChanged, reauthenticateWithCredential, setPersistence, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signOut, updatePassword, User } from 'firebase/auth';
+import { collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { AdminRole, AppContext, AppContextType, DEFAULT_DRIVE_FOLDER_URL, StaffAccount } from './context';
 import { DEFAULT_CLASS_CONFIGS } from './data';
-import { studentAuth, studentDb, teacherAuth, teacherDb } from './firebase';
+import { provisioningAuth, studentAuth, studentDb, teacherAuth, teacherDb } from './firebase';
 import { firebaseConfig, teacherEmail } from './firebase-config';
 import { ActiveStudent, AppSettings, Gender, StudentJourney } from './types';
 import { sanitizeTextInput } from './utils/security';
@@ -14,10 +14,32 @@ interface CloudStudentRecord {
   journey: StudentJourney;
 }
 
+interface RootAccount {
+  uid: string;
+  username: string;
+  email: string;
+}
+
+interface TeacherAccount {
+  username: string;
+  email: string;
+  role: 'teacher';
+  active: boolean;
+}
+
 const defaultSettings: AppSettings = { classNames: DEFAULT_CLASS_CONFIGS, allowEarlyPhaseTwo: false };
 const studentCollection = 'students';
 const activeStudentKey = 'gm_active_student_v2';
+const validUsername = /^[a-z][a-z0-9._-]{2,31}$/;
 let anonymousSignIn: Promise<unknown> | null = null;
+
+function internalEmail(): string {
+  return `staff-${crypto.randomUUID()}@${firebaseConfig.authDomain}`;
+}
+
+function hasPasswordProvider(user: User | null): boolean {
+  return Boolean(user?.providerData.some((provider) => provider.providerId === 'password'));
+}
 
 function readLegacyStudents(): ActiveStudent[] {
   try {
@@ -60,7 +82,7 @@ function confidenceScore(stages: StudentJourney['stages']): number {
   return typeof answer === 'number' && answer >= 1 && answer <= 5 ? answer * 20 : 0;
 }
 
-function isTeacher(user: User | null): boolean {
+function isLegacyTeacher(user: User | null): boolean {
   return Boolean(user && user.email?.toLowerCase() === teacherEmail && user.emailVerified &&
     user.providerData.some((provider) => provider.providerId === 'google.com'));
 }
@@ -69,7 +91,11 @@ function readableError(error: unknown): string {
   const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : '';
   if (code === 'permission-denied') return 'Akses Firebase ditolak. Periksa Firestore Rules dan akun guru.';
   if (code === 'auth/unauthorized-domain') return 'Domain website belum diizinkan di Firebase Authentication.';
-  if (code === 'auth/operation-not-allowed') return 'Metode login Anonymous atau Google belum diaktifkan di Firebase.';
+  if (code === 'auth/operation-not-allowed') return 'Metode login Anonymous, Email/Password, atau Google untuk pengaturan pertama belum diaktifkan di Firebase.';
+  if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') return 'Nama pengguna atau kata sandi salah.';
+  if (code === 'auth/weak-password') return 'Kata sandi terlalu lemah. Gunakan minimal 12 karakter.';
+  if (code === 'auth/email-already-in-use') return 'Akun internal sudah digunakan. Coba lagi.';
+  if (code === 'auth/too-many-requests') return 'Terlalu banyak percobaan login. Tunggu sebentar lalu coba lagi.';
   if (code === 'auth/popup-closed-by-user') return 'Jendela login Google ditutup sebelum selesai.';
   return error instanceof Error ? error.message : 'Koneksi Firebase gagal. Coba lagi saat internet tersedia.';
 }
@@ -77,6 +103,10 @@ function readableError(error: unknown): string {
 export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [studentUid, setStudentUid] = useState<string | null>(null);
   const [teacherUser, setTeacherUser] = useState<User | null>(null);
+  const [rootAccount, setRootAccount] = useState<RootAccount | null>(null);
+  const [rootLoaded, setRootLoaded] = useState(false);
+  const [teacherAccount, setTeacherAccount] = useState<TeacherAccount | null>(null);
+  const [staffAccounts, setStaffAccounts] = useState<StaffAccount[]>([]);
   const [studentRecords, setStudentRecords] = useState<Record<string, CloudStudentRecord>>({});
   const [teacherRecords, setTeacherRecords] = useState<Record<string, CloudStudentRecord>>({});
   const studentRecordsRef = useRef(studentRecords);
@@ -87,7 +117,12 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [storageError, setStorageError] = useState(false);
   const [studentReady, setStudentReady] = useState(false);
 
-  const isAdminLoggedIn = isTeacher(teacherUser);
+  const adminRole: AdminRole = !rootLoaded || !teacherUser ? null
+    : !rootAccount && isLegacyTeacher(teacherUser) ? 'legacy'
+    : rootAccount?.uid === teacherUser.uid && hasPasswordProvider(teacherUser) ? 'superadmin'
+    : teacherAccount?.role === 'teacher' && teacherAccount.active && teacherAccount.email === teacherUser.email && hasPasswordProvider(teacherUser) ? 'teacher'
+    : null;
+  const isAdminLoggedIn = adminRole !== null;
   const visibleRecords = isAdminLoggedIn ? teacherRecords : studentRecords;
   const allStudents = useMemo(() => Object.values(visibleRecords)
     .map((record) => record.student)
@@ -116,11 +151,42 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         anonymousSignIn.catch((error) => { setCloudError(readableError(error)); setCloudLoading(false); });
       }
     }, (error) => { setCloudError(readableError(error)); setCloudLoading(false); });
-    const unsubscribeTeacher = onAuthStateChanged(teacherAuth, (user) => {
-      setTeacherUser(isTeacher(user) ? user : null);
-    }, (error) => setCloudError(readableError(error)));
+    const unsubscribeTeacher = onAuthStateChanged(teacherAuth, setTeacherUser,
+      (error) => setCloudError(readableError(error)));
     return () => { unsubscribeStudent(); unsubscribeTeacher(); };
   }, []);
+
+  useEffect(() => {
+    if (!teacherDb) return;
+    return onSnapshot(doc(teacherDb, 'config', 'adminRoot'), (snapshot) => {
+      setRootAccount(snapshot.exists() ? snapshot.data() as RootAccount : null);
+      setRootLoaded(true);
+    }, (error) => { setCloudError(readableError(error)); setRootLoaded(true); });
+  }, []);
+
+  useEffect(() => {
+    if (!teacherUser || !teacherDb || !hasPasswordProvider(teacherUser)) {
+      setTeacherAccount(null);
+      return;
+    }
+    return onSnapshot(doc(teacherDb, 'staff', teacherUser.uid), (snapshot) => {
+      setTeacherAccount(snapshot.exists() ? snapshot.data() as TeacherAccount : null);
+    }, (error) => { setTeacherAccount(null); setCloudError(readableError(error)); });
+  }, [teacherUser]);
+
+  useEffect(() => {
+    if (adminRole !== 'superadmin' || !teacherDb) {
+      setStaffAccounts([]);
+      return;
+    }
+    return onSnapshot(collection(teacherDb, 'staff'), (snapshot) => {
+      setStaffAccounts(snapshot.docs.map((item) => ({
+        uid: item.id,
+        username: String(item.data().username || ''),
+        active: item.data().active === true,
+      })).sort((a, b) => a.username.localeCompare(b.username)));
+    }, (error) => setCloudError(readableError(error)));
+  }, [adminRole]);
 
   useEffect(() => {
     if (!studentDb) return;
@@ -238,15 +304,119 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setStudentRecords(studentRecordsRef.current);
   };
 
-  const adminLogin: AppContextType['adminLogin'] = async () => {
-    if (!teacherAuth) return false;
+  const adminLogin: AppContextType['adminLogin'] = async (username, password) => {
+    if (!teacherAuth || !teacherDb) return false;
+    const normalized = username.trim().toLowerCase();
+    if (!validUsername.test(normalized) || !password) {
+      setCloudError('Isi nama pengguna dan kata sandi yang benar.');
+      return false;
+    }
+    try {
+      const account = normalized === 'superadmin'
+        ? await getDoc(doc(teacherDb, 'config', 'adminRoot'))
+        : await getDoc(doc(teacherDb, 'staffUsernames', normalized));
+      if (!account.exists()) throw new Error('Nama pengguna atau kata sandi salah.');
+      const email = account.data().email;
+      if (typeof email !== 'string') throw new Error('Akun belum siap. Hubungi superadmin.');
+      const { user } = await signInWithEmailAndPassword(teacherAuth, email, password);
+      const currentRoot = await getDoc(doc(teacherDb, 'config', 'adminRoot'));
+      const isRoot = normalized === 'superadmin' && currentRoot.exists() && currentRoot.data().uid === user.uid;
+      const staff = isRoot ? null : await getDoc(doc(teacherDb, 'staff', user.uid));
+      const isActiveTeacher = staff?.exists() && staff.data().role === 'teacher' &&
+        staff.data().active === true && staff.data().username === normalized;
+      if (!isRoot && !isActiveTeacher) {
+        await signOut(teacherAuth);
+        throw new Error('Akun guru ini tidak aktif atau tidak diberi akses.');
+      }
+      setCloudError(null);
+      return true;
+    } catch (error) { setCloudError(readableError(error)); return false; }
+  };
+
+  const bootstrapLogin = async (): Promise<boolean> => {
+    if (!teacherAuth || rootAccount) return false;
     try {
       const { user } = await signInWithPopup(teacherAuth, new GoogleAuthProvider());
-      if (isTeacher(user)) { setCloudError(null); return true; }
+      if (isLegacyTeacher(user) && !(await getDoc(doc(teacherDb!, 'config', 'adminRoot'))).exists()) {
+        setCloudError(null);
+        return true;
+      }
       await signOut(teacherAuth);
-      setCloudError(`Akun ini bukan akun guru yang diizinkan (${teacherEmail}).`);
+      setCloudError(`Hanya akun Google lama (${teacherEmail}) yang dapat membuat superadmin pertama.`);
       return false;
     } catch (error) { setCloudError(readableError(error)); return false; }
+  };
+
+  const createSuperadmin = async (password: string) => {
+    if (adminRole !== 'legacy' || !teacherDb || !teacherAuth || !provisioningAuth) {
+      return { success: false, message: 'Hanya guru lama yang dapat membuat superadmin pertama.' };
+    }
+    if (password.length < 12) return { success: false, message: 'Kata sandi minimal 12 karakter.' };
+    let createdUser: User | null = null;
+    let rootSaved = false;
+    try {
+      const reference = doc(teacherDb, 'config', 'adminRoot');
+      if ((await getDoc(reference)).exists()) throw new Error('Superadmin sudah dibuat. Muat ulang halaman.');
+      await setPersistence(provisioningAuth, inMemoryPersistence);
+      const email = internalEmail();
+      createdUser = (await createUserWithEmailAndPassword(provisioningAuth, email, password)).user;
+      await setDoc(reference, { uid: createdUser.uid, username: 'superadmin', email });
+      rootSaved = true;
+      try { await signOut(teacherAuth); } catch { /* root has already been created */ }
+      setCloudError(null);
+      return { success: true, message: 'Superadmin dibuat. Sekarang masuk dengan nama pengguna superadmin dan kata sandi tadi.' };
+    } catch (error) {
+      if (createdUser && !rootSaved) { try { await deleteUser(createdUser); } catch { /* account can be removed in Firebase Console */ } }
+      return { success: false, message: readableError(error) };
+    } finally { try { await signOut(provisioningAuth); } catch { /* no session */ } }
+  };
+
+  const createTeacherAccount = async (username: string, password: string) => {
+    if (adminRole !== 'superadmin' || !teacherDb || !provisioningAuth) {
+      return { success: false, message: 'Hanya superadmin yang dapat membuat akun guru.' };
+    }
+    const normalized = username.trim().toLowerCase();
+    if (!validUsername.test(normalized) || normalized === 'superadmin') {
+      return { success: false, message: 'Nama pengguna harus 3–32 karakter: huruf kecil, angka, titik, garis bawah, atau tanda hubung; diawali huruf.' };
+    }
+    if (password.length < 12) return { success: false, message: 'Kata sandi minimal 12 karakter.' };
+    let createdUser: User | null = null;
+    try {
+      if ((await getDoc(doc(teacherDb, 'staffUsernames', normalized))).exists()) {
+        throw new Error('Nama pengguna sudah digunakan.');
+      }
+      await setPersistence(provisioningAuth, inMemoryPersistence);
+      const email = internalEmail();
+      createdUser = (await createUserWithEmailAndPassword(provisioningAuth, email, password)).user;
+      const batch = writeBatch(teacherDb);
+      batch.set(doc(teacherDb, 'staff', createdUser.uid), { username: normalized, email, role: 'teacher', active: true });
+      batch.set(doc(teacherDb, 'staffUsernames', normalized), { uid: createdUser.uid, email });
+      await batch.commit();
+      return { success: true, message: `Akun guru ${normalized} dibuat. Sampaikan nama pengguna dan kata sandinya langsung kepada guru tersebut.` };
+    } catch (error) {
+      if (createdUser) { try { await deleteUser(createdUser); } catch { /* account can be removed in Firebase Console */ } }
+      return { success: false, message: readableError(error) };
+    } finally { try { await signOut(provisioningAuth); } catch { /* no session */ } }
+  };
+
+  const setTeacherActive = async (uid: string, active: boolean) => {
+    if (adminRole !== 'superadmin' || !teacherDb) return { success: false, message: 'Hanya superadmin yang dapat mengatur akses guru.' };
+    try {
+      await updateDoc(doc(teacherDb, 'staff', uid), { active });
+      return { success: true, message: active ? 'Akses guru diaktifkan.' : 'Akses guru dinonaktifkan.' };
+    } catch (error) { return { success: false, message: readableError(error) }; }
+  };
+
+  const changeOwnPassword = async (oldPassword: string, newPassword: string) => {
+    if (!teacherUser || !teacherUser.email || !hasPasswordProvider(teacherUser) || !isAdminLoggedIn) {
+      return { success: false, message: 'Masuk dahulu dengan akun guru atau superadmin.' };
+    }
+    if (newPassword.length < 12) return { success: false, message: 'Kata sandi baru minimal 12 karakter.' };
+    try {
+      await reauthenticateWithCredential(teacherUser, EmailAuthProvider.credential(teacherUser.email, oldPassword));
+      await updatePassword(teacherUser, newPassword);
+      return { success: true, message: 'Kata sandi berhasil diganti.' };
+    } catch (error) { return { success: false, message: readableError(error) }; }
   };
 
   const adminLogout = () => { if (teacherAuth) void signOut(teacherAuth).catch((error) => setCloudError(readableError(error))); };
@@ -291,8 +461,9 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const unavailable = () => ({ success: false, message: 'Fitur Google Drive tidak digunakan dalam mode Firebase.' });
   const contextValue: AppContextType = {
     activeStudent, startStudentJourney, clearActiveStudent,
-    isAdminLoggedIn, adminLogin, adminLogout,
-    adminCredentials: { username: teacherEmail, password: '' },
+    isAdminLoggedIn, adminLogin, bootstrapLogin, bootstrapNeeded: rootLoaded && !rootAccount, adminLogout,
+    adminRole, staffAccounts, createSuperadmin, createTeacherAccount, setTeacherActive, changeOwnPassword,
+    adminCredentials: { username: adminRole === 'superadmin' ? 'superadmin' : teacherAccount?.username || '', password: '' },
     updateAdminCredentials: unavailable,
     allStudents, journeys, saveStageAnswer, getStudentJourney,
     retryDriveSync: () => {}, resetStudentProgress, deleteStudent,
