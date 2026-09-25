@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useApp } from '../context';
 import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA } from '../data';
 import { StageDefinition } from '../types';
+import { firebaseEnabled } from '../firebase-config';
+import { getPhaseTwoStart } from '../utils/phaseAccess';
   import { StageModal } from './StageModal';
   import { 
     Sparkles, Award, Lock, CheckCircle2,
@@ -28,11 +30,8 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
 
   const completedCount = Object.keys(journey.stages).length;
   const progressPercent = Math.round((completedCount / 8) * 100);
-  const stageFourCompletedAt = journey.stages[4]?.completedAt;
-  const phaseTwoStart = stageFourCompletedAt
-    ? Date.parse(stageFourCompletedAt.replace(' ', 'T') + 'Z') + 7 * 24 * 60 * 60 * 1000
-    : 0;
-  const phaseTwoAvailable = appSettings.allowEarlyPhaseTwo || !Number.isFinite(phaseTwoStart) || Date.now() >= phaseTwoStart ||
+  const phaseTwoStart = getPhaseTwoStart(journey.stages[4]?.completedAt);
+  const phaseTwoAvailable = appSettings.allowEarlyPhaseTwo || (phaseTwoStart !== null && Date.now() >= phaseTwoStart) ||
     Boolean(journey.stages[5]?.completed);
   const canOpenStage = (stage: StageDefinition) =>
     (stage.id === 1 || Boolean(journey.stages[stage.id - 1]?.completed)) &&
@@ -74,9 +73,12 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
     }
   };
 
-  const handleReset = () => {
-    if (window.confirm('Hapus seluruh jawaban 8 pos di perangkat ini? Tindakan ini tidak dapat dibatalkan.')) {
-      resetStudentProgress(activeStudent.id);
+  const handleReset = async () => {
+    if (window.confirm(firebaseEnabled
+      ? 'Hapus seluruh jawaban 8 pos dari Firebase? Tindakan ini tidak dapat dibatalkan.'
+      : 'Hapus seluruh jawaban 8 pos di perangkat ini? Tindakan ini tidak dapat dibatalkan.')) {
+      try { await resetStudentProgress(activeStudent.id); }
+      catch (error) { window.alert(error instanceof Error ? error.message : 'Gagal menghapus jawaban.'); }
     }
   };
 
@@ -156,10 +158,15 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
         </div>
       </div>
 
-      {journey.stages[4]?.completed && !phaseTwoAvailable && (
+      {journey.stages[4]?.completed && !phaseTwoAvailable && phaseTwoStart !== null && (
         <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-950">
           Etape 1 selesai. Praktikkan langkah kecilmu selama satu minggu. Pos 5 akan terbuka pada{' '}
           <strong>{new Date(phaseTwoStart).toLocaleDateString('id-ID', { dateStyle: 'long' })}</strong>.
+        </div>
+      )}
+      {journey.stages[4]?.completed && !phaseTwoAvailable && phaseTwoStart === null && (
+        <div role="alert" className="rounded-2xl bg-red-50 border border-red-200 p-4 text-sm text-red-800">
+          Tanggal penyelesaian Pos 4 tidak valid. Hubungi guru sebelum melanjutkan ke Pos 5.
         </div>
       )}
 

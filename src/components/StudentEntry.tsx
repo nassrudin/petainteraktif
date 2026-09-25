@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../context';
 import { Compass, Shield, User, BookOpen, CheckCircle2 } from 'lucide-react';
 import { Gender } from '../types';
+import { firebaseEnabled } from '../firebase-config';
 
 interface StudentEntryProps {
   onAdminClick: () => void;
@@ -15,7 +16,16 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
   const [absentNumber, setAbsentNumber] = useState<number>(1);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!appSettings.classNames.some((item) => item.className === studentClass)) {
+      setStudentClass(appSettings.classNames[0]?.className || '');
+      setAbsentNumber(appSettings.classNames[0]?.absentRangeMin || 1);
+    }
+  }, [appSettings.classNames, studentClass]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Harap masukkan nama lengkapmu terlebih dahulu.');
@@ -31,7 +41,14 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
       return;
     }
     setError(null);
-    startStudentJourney(name, gender, finalClass, absentNumber);
+    setIsSubmitting(true);
+    try {
+      await startStudentJourney(name, gender, finalClass, absentNumber);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Gagal menyimpan data siswa. Coba lagi.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const selectedConfig = appSettings.classNames.find(c => c.className === studentClass);
@@ -163,9 +180,10 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
 
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full mt-6 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
             >
-              <span>Mulai Petualangan Refleksi</span>
+              <span>{isSubmitting ? 'Menyimpan...' : 'Mulai Petualangan Refleksi'}</span>
               <BookOpen className="w-4 h-4" />
             </button>
           </form>
@@ -173,7 +191,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
           {/* Guidance note */}
           <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-500">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Data petualangan tersimpan otomatis di perangkat ini</span>
+            <span>{firebaseEnabled ? 'Jawaban tersimpan di Firebase; lanjutkan di browser perangkat ini.' : 'Data petualangan tersimpan otomatis di perangkat ini'}</span>
           </div>
         </div>
       </div>

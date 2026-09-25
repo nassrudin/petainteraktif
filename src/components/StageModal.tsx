@@ -53,7 +53,7 @@ import React, { useState, useEffect } from 'react';
     handleInputChange(fieldId, updated);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Basic validation check
@@ -79,21 +79,24 @@ import React, { useState, useEffect } from 'react';
       // ignore
     }
 
-    setTimeout(() => {
-       if (activeStudent) {
-         saveStageAnswer(activeStudent.id, stage.id, formData);
-         try { localStorage.removeItem(draftKey); } catch { /* storage unavailable */ }
-      }
-      setIsSubmitting(false);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      if (!activeStudent) throw new Error('Sesi siswa tidak ditemukan.');
+      await saveStageAnswer(activeStudent.id, stage.id, formData);
+      try { localStorage.removeItem(draftKey); } catch { /* storage unavailable */ }
       onClose();
        if (stage.id === 4) {
          window.alert(appSettings.allowEarlyPhaseTwo
            ? 'Etape 1 selesai. Admin mengizinkan Pos 5 dibuka sekarang. Tetap praktikkan langkah kecilmu selama satu minggu.'
            : 'Etape 1 selesai. Coba langkah kecilmu selama satu minggu sebelum mengisi pos 5–8.');
-       } else if (stage.id < 8 && onCompletedNext) {
+      } else if (stage.id < 8 && onCompletedNext) {
         onCompletedNext(stage.id + 1);
       }
-    }, 400);
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : 'Jawaban belum tersimpan. Periksa koneksi dan coba lagi.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

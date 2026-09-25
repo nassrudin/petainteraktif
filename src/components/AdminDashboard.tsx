@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../context';
 import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA, DEFAULT_CLASS_CONFIGS } from '../data';
 import { ActiveStudent } from '../types';
 import { ResultView } from './ResultView';
+import { firebaseEnabled, teacherEmail } from '../firebase-config';
 import { 
   Users, CheckCircle, BarChart3, 
   ExternalLink, Download, Search, Eye, Filter,
@@ -53,6 +54,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
   // Class settings state
   const [editClasses, setEditClasses] = useState(appSettings.classNames);
+  useEffect(() => { setEditClasses(appSettings.classNames); }, [appSettings.classNames]);
   const [classSettingsFeedback, setClassSettingsFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [accessFeedback, setAccessFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -132,9 +134,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     }
   };
 
-  const handleSaveClassSettings = (e: React.FormEvent) => {
+  const handleSaveClassSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = updateAppSettings({ ...appSettings, classNames: editClasses });
+    const res = await updateAppSettings({ ...appSettings, classNames: editClasses });
     if (res.success) {
       setClassSettingsFeedback({ type: 'success', text: res.message });
     } else {
@@ -142,16 +144,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     }
   };
 
-  const handleToggleEarlyAccess = () => {
+  const handleToggleEarlyAccess = async () => {
     const allowEarlyPhaseTwo = !appSettings.allowEarlyPhaseTwo;
-    const res = updateAppSettings({ ...appSettings, allowEarlyPhaseTwo });
+    const res = await updateAppSettings({ ...appSettings, allowEarlyPhaseTwo });
     setAccessFeedback({
       type: res.success ? 'success' : 'error',
-      text: res.success
-        ? allowEarlyPhaseTwo
-          ? 'Akses lebih awal diaktifkan pada browser ini.'
-          : 'Aturan standar menunggu satu minggu diaktifkan kembali pada browser ini.'
-        : res.message,
+      text: res.message,
     });
   };
 
@@ -172,9 +170,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     }
   };
 
-  const handleDeleteStudent = (studentId: string) => {
-    if (!confirm('Hapus siswa ini beserta seluruh jawabannya dari browser ini?')) return;
-    deleteStudent(studentId);
+  const handleDeleteStudent = async (studentId: string) => {
+    if (!confirm(firebaseEnabled
+      ? 'Hapus siswa ini beserta seluruh jawabannya dari Firebase?'
+      : 'Hapus siswa ini beserta seluruh jawabannya dari browser ini?')) return;
+    try { await deleteStudent(studentId); }
+    catch (error) { alert(error instanceof Error ? error.message : 'Gagal menghapus data siswa.'); }
   };
 
   const handleDownloadStudentResult = (studentId: string, name: string, studentClass: string) => {
@@ -183,7 +184,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Nama Siswa', 'Kelas', 'Skor Keyakinan', 'Jumlah Tahap Selesai', 'Terakhir Update', 'Status Google Drive'];
+    const headers = ['Nama Siswa', 'Kelas', 'Skor Keyakinan', 'Jumlah Tahap Selesai', 'Terakhir Update', firebaseEnabled ? 'Penyimpanan' : 'Status Google Drive'];
     const csvCell = (value: string | number) => {
       const text = String(value);
       const safe = /^[\s]*[=+@-]/.test(text) ? `'${text}` : text;
@@ -198,7 +199,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         j?.confidenceScore || 0,
         `${count}/8`,
         j?.updatedAt || s.startedAt,
-        count === 8 ? (j?.driveSyncStatus || 'Webhook belum diatur') : 'Belum Lengkap'
+        firebaseEnabled ? 'Firebase' : count === 8 ? (j?.driveSyncStatus || 'Webhook belum diatur') : 'Belum Lengkap'
       ];
     });
 
@@ -265,7 +266,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               <Clock3 className="w-3.5 h-3.5" />
               <span>Akses Pos</span>
             </button>
-            <button
+            {!firebaseEnabled && <button
               onClick={() => setActiveAdminTab('drive')}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeAdminTab === 'drive'
@@ -275,7 +276,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             >
               <CloudUpload className="w-3.5 h-3.5" />
               <span>Pengaturan Drive</span>
-            </button>
+            </button>}
             <button
               onClick={() => setActiveAdminTab('security')}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -285,14 +286,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               }`}
             >
               <KeyRound className="w-3.5 h-3.5" />
-              <span>Ganti Password</span>
+              <span>{firebaseEnabled ? 'Akun Guru' : 'Ganti Password'}</span>
             </button>
           </div>
         </div>
       </div>
 
       <p className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-xs text-amber-950">
-        Rekap ini hanya berisi data yang tersimpan di browser ini. Jawaban dari perangkat siswa lain tidak muncul otomatis.
+        {firebaseEnabled
+          ? 'Rekap ini dibaca dari Firebase. Jawaban siswa dari perangkat lain akan muncul setelah tersimpan dan tersinkron.'
+          : 'Rekap ini hanya berisi data yang tersimpan di browser ini. Jawaban dari perangkat siswa lain tidak muncul otomatis.'}
       </p>
 
       {/* STUDENTS TAB */}
@@ -331,14 +334,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between text-slate-500 mb-2">
-                <span className="text-xs font-bold uppercase">Auto-Sync Google Drive</span>
+                <span className="text-xs font-bold uppercase">{firebaseEnabled ? 'Penyimpanan Firebase' : 'Auto-Sync Google Drive'}</span>
                 <CloudUpload className="w-4 h-4 text-sky-600" />
               </div>
               <p className="text-sm font-black text-emerald-700 mt-1 flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                 <span>{driveWebhookUrl ? 'Webhook diatur' : 'Belum diatur'}</span>
+                 <span>{firebaseEnabled ? 'Aktif' : driveWebhookUrl ? 'Webhook diatur' : 'Belum diatur'}</span>
               </p>
-              <p className="text-[10px] text-slate-400 truncate mt-1">Pengiriman perlu dicek di Drive</p>
+              <p className="text-[10px] text-slate-400 truncate mt-1">{firebaseEnabled ? 'Jawaban dibaca dari Firestore' : 'Pengiriman perlu dicek di Drive'}</p>
             </div>
           </div>
 
@@ -394,7 +397,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                     <th className="px-5 py-3.5">Absen</th>
                     <th className="px-5 py-3.5">Kemajuan Pos</th>
                      <th className="px-5 py-3.5">Skala Keyakinan</th>
-                    <th className="px-5 py-3.5">Status Google Drive</th>
+                    <th className="px-5 py-3.5">{firebaseEnabled ? 'Penyimpanan' : 'Status Google Drive'}</th>
                     <th className="px-5 py-3.5 text-right">Aksi</th>
                   </tr>
                 </thead>
@@ -458,11 +461,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                           </td>
                           <td className="px-5 py-4">
                             <div className="text-slate-600">
-                              {completedCount < 8 ? `${completedCount}/8 Pos` :
+                              {firebaseEnabled ? 'Firebase' : completedCount < 8 ? `${completedCount}/8 Pos` :
                                 j?.driveSyncStatus === 'pending' ? 'Sedang dikirim' :
                                 j?.driveSyncStatus === 'unverified' ? 'Dikirim, cek di Drive' :
                                 j?.driveSyncStatus === 'failed' ? 'Pengiriman gagal' : 'Webhook belum diatur'}
-                              {completedCount === 8 && driveWebhookUrl && j?.driveSyncStatus !== 'pending' && (
+                              {!firebaseEnabled && completedCount === 8 && driveWebhookUrl && j?.driveSyncStatus !== 'pending' && (
                                 <button onClick={() => retryDriveSync(student.id)} className="block text-teal-700 underline mt-1">Kirim ulang</button>
                               )}
                             </div>
@@ -537,7 +540,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
             : 'bg-amber-50 text-amber-900 border border-amber-200'}`}>
             {appSettings.allowEarlyPhaseTwo
-              ? 'Akses lebih awal aktif pada browser ini.'
+              ? `Akses lebih awal aktif${firebaseEnabled ? ' untuk semua perangkat.' : ' pada browser ini.'}`
               : 'Aturan standar menunggu satu minggu aktif.'}
           </p>
 
@@ -548,7 +551,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
           )}
 
           <p className="text-xs text-slate-600 leading-relaxed">
-            Pengaturan ini tersimpan di browser ini saja. GitHub Pages tidak dapat mengirim perubahan admin secara otomatis ke perangkat siswa lain.
+            {firebaseEnabled
+              ? 'Pengaturan disimpan di Firebase dan berlaku untuk semua perangkat siswa.'
+              : 'Pengaturan ini tersimpan di browser ini saja. GitHub Pages tidak dapat mengirim perubahan admin secara otomatis ke perangkat siswa lain.'}
           </p>
         </div>
       )}
@@ -853,7 +858,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             </div>
           )}
 
-          <form onSubmit={handleUpdatePassword} className="space-y-4">
+          {firebaseEnabled ? (
+            <p className="text-sm text-slate-700 leading-relaxed">
+              Akses guru memakai akun Google <strong>{teacherEmail}</strong>. Kelola keamanan dan sandi akun melalui pengaturan akun Google Anda.
+            </p>
+          ) : <form onSubmit={handleUpdatePassword} className="space-y-4">
             <div className="space-y-1.5 text-left">
               <label className="block text-xs font-bold text-slate-700">Username Guru / Admin</label>
               <input
@@ -909,7 +918,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                 Simpan Perubahan Username & Password
               </button>
             </div>
-          </form>
+          </form>}
         </div>
       )}
 

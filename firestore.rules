@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function teacher() {
+      return signedIn()
+        && request.auth.token.email == 'andy.wbowo@gmail.com'
+        && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+
+    match /settings/public {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if teacher()
+        && request.resource.data.keys().hasOnly(['classNames', 'allowEarlyPhaseTwo'])
+        && request.resource.data.classNames is list
+        && request.resource.data.classNames.size() > 0
+        && request.resource.data.allowEarlyPhaseTwo is bool;
+      allow delete: if false;
+    }
+
+    match /students/{studentId} {
+      allow get, list: if teacher() ||
+        (signedIn() && resource.data.ownerUid == request.auth.uid);
+
+      allow create: if signedIn()
+        && request.auth.token.firebase.sign_in_provider == 'anonymous'
+        && request.resource.data.keys().hasOnly(['ownerUid', 'student', 'journey'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.student.id == studentId
+        && request.resource.data.journey.studentId == studentId;
+
+      allow update: if teacher() ||
+        (signedIn()
+          && resource.data.ownerUid == request.auth.uid
+          && request.resource.data.ownerUid == request.auth.uid
+          && request.resource.data.student == resource.data.student
+          && request.resource.data.journey.studentId == studentId);
+
+      allow delete: if teacher();
+    }
+  }
+}

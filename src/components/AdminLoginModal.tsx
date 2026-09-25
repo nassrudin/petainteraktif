@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context';
 import { Shield, X, Lock, User, KeyRound, AlertCircle } from 'lucide-react';
+import { firebaseEnabled } from '../firebase-config';
 
 interface AdminLoginModalProps {
   isOpen: boolean;
@@ -13,21 +14,21 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { adminLogin } = useApp();
+  const { adminLogin, cloudError } = useApp();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
+    if (!firebaseEnabled && (!username.trim() || !password.trim())) {
       setError('Harap masukkan username dan password.');
       return;
     }
 
-    const success = adminLogin(username, password);
+    const success = await adminLogin(username, password);
     if (success) {
       setError(null);
       setUsername('');
@@ -35,7 +36,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
       onSuccess();
       onClose();
     } else {
-      setError('Username atau password salah. Silakan coba lagi.');
+      setError(firebaseEnabled ? 'Login Google gagal atau akun ini tidak diberi akses guru.' : 'Username atau password salah. Silakan coba lagi.');
     }
   };
 
@@ -62,14 +63,14 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
+          {(error || cloudError) && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-semibold flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
+              <span>{cloudError || error}</span>
             </div>
           )}
 
-          <div className="space-y-1.5 text-left">
+          {!firebaseEnabled && <><div className="space-y-1.5 text-left">
             <label className="block text-xs font-bold text-slate-700">Username Guru / Admin</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -102,7 +103,11 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
           </div>
 
-          <p className="text-[11px] text-slate-500">Akses guru pada versi GitHub Pages berlaku untuk data di browser ini saja.</p>
+          </>}
+
+          <p className="text-[11px] text-slate-500">{firebaseEnabled
+            ? 'Masuk memakai akun Google guru yang telah diizinkan. Jawaban siswa dibaca dari Firebase.'
+            : 'Akses guru pada versi GitHub Pages berlaku untuk data di browser ini saja.'}</p>
 
           <div className="pt-2 flex items-center justify-end gap-2">
             <button
@@ -117,7 +122,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
               className="px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <KeyRound className="w-4 h-4" />
-              <span>Masuk Dashboard</span>
+              <span>{firebaseEnabled ? 'Masuk dengan Google' : 'Masuk Dashboard'}</span>
             </button>
           </div>
         </form>

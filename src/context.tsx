@@ -7,12 +7,12 @@ import { sanitizeTextInput } from './utils/security';
 export const DEFAULT_DRIVE_FOLDER_URL =
   'https://drive.google.com/drive/folders/1Slmi-qS--PbmWZh7KzFoMVG3iE5QqD_Z?usp=sharing';
 
-interface AppContextType {
+export interface AppContextType {
   activeStudent: ActiveStudent | null;
-  startStudentJourney: (name: string, gender: Gender, studentClass: string, absentNumber: number) => void;
+  startStudentJourney: (name: string, gender: Gender, studentClass: string, absentNumber: number) => void | Promise<void>;
   clearActiveStudent: () => void;
   isAdminLoggedIn: boolean;
-  adminLogin: (user: string, pass: string) => boolean;
+  adminLogin: (user: string, pass: string) => boolean | Promise<boolean>;
   adminLogout: () => void;
   adminCredentials: AdminCredentials;
   updateAdminCredentials: (
@@ -22,19 +22,21 @@ interface AppContextType {
   ) => { success: boolean; message: string };
   allStudents: ActiveStudent[];
   journeys: Record<string, StudentJourney>;
-  saveStageAnswer: (studentId: string, stageId: number, answers: Record<string, any>) => void;
+  saveStageAnswer: (studentId: string, stageId: number, answers: Record<string, any>) => void | Promise<void>;
   getStudentJourney: (studentId: string) => StudentJourney;
   retryDriveSync: (studentId: string) => void;
-  resetStudentProgress: (studentId: string) => void;
-  deleteStudent: (studentId: string) => void;
+  resetStudentProgress: (studentId: string) => void | Promise<void>;
+  deleteStudent: (studentId: string) => void | Promise<void>;
   driveFolderUrl: string;
   updateDriveFolderUrl: (url: string) => { success: boolean; message: string };
   driveWebhookUrl: string;
   driveWebhookManagedByBuild: boolean;
   updateDriveWebhookUrl: (url: string) => { success: boolean; message: string };
   appSettings: AppSettings;
-  updateAppSettings: (settings: AppSettings) => { success: boolean; message: string };
+  updateAppSettings: (settings: AppSettings) => { success: boolean; message: string } | Promise<{ success: boolean; message: string }>;
   storageError: boolean;
+  cloudLoading?: boolean;
+  cloudError?: string | null;
 }
 
 const STORAGE_KEY_ACTIVE_STUDENT = 'gm_active_student_v2';
@@ -45,7 +47,7 @@ const STORAGE_KEY_DRIVE_FOLDER = 'gm_drive_folder_url_v2';
 const STORAGE_KEY_DRIVE_WEBHOOK = 'gm_drive_webhook_url_v2';
 const STORAGE_KEY_APP_SETTINGS = 'gm_app_settings_v2';
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 function readStoredJson<T>(key: string, fallback: T): T {
   try {

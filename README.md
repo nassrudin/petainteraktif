@@ -1,6 +1,6 @@
 # Growth Mindset Journey Map Percaya Diri
 
-Web refleksi untuk layanan bimbingan klasikal kelas X. Siswa mengisi delapan pos dalam dua etape. Secara standar, Pos 5 terbuka tujuh hari setelah Pos 4 disimpan. Admin dapat mengizinkan akses lebih awal pada browser yang sama.
+Web refleksi untuk layanan bimbingan klasikal kelas X. Siswa mengisi delapan pos dalam dua etape. Secara standar, Pos 5 terbuka tujuh hari setelah Pos 4 disimpan. Guru dapat mengizinkan akses lebih awal.
 
 ## Menjalankan
 
@@ -11,29 +11,42 @@ npm run build
 npm test
 ```
 
-Build Vite dapat diterbitkan melalui workflow GitHub Pages di `.github/workflows/deploy.yml`.
+Website Vite diterbitkan melalui GitHub Pages di `.github/workflows/deploy.yml`. Hosting tetap di GitHub Pages; Firebase Authentication dan Cloud Firestore menyediakan login dan data bersama.
+
+## Mengaktifkan Firebase
+
+Tanpa konfigurasi Firebase, aplikasi tetap berjalan dalam mode lokal lama untuk uji coba. Mode lokal tidak cocok untuk mengumpulkan jawaban pribadi seluruh kelas karena data dan login guru hanya ada pada browser tersebut.
+
+1. Buat proyek paket Spark di [Firebase Console](https://console.firebase.google.com/), lalu daftarkan aplikasi Web. Salin `apiKey`, `authDomain`, `projectId`, dan `appId` dari konfigurasi Web ke `.env` lokal berdasarkan [.env.example](.env.example).
+2. Di **Authentication → Sign-in method**, aktifkan **Anonymous** untuk siswa dan **Google** untuk guru. Tambahkan `nassrudin.github.io` di **Authentication → Settings → Authorized domains**. Guru masuk memakai akun Google `andy.wbowo@gmail.com`; email itu tidak perlu didaftarkan sebagai akun baru.
+3. Buat database **Cloud Firestore**. Terapkan [firestore.rules](firestore.rules) sebelum memasukkan jawaban sungguhan: tempel aturan di **Firestore Database → Rules**, lalu **Publish**. Alternatif Firebase CLI: `firebase deploy --only firestore:rules --project PROJECT_ID`. Aturan membatasi siswa ke data miliknya dan hanya akun Google guru tersebut dapat membaca seluruh rekap atau mengubah pengaturan.
+4. Di repositori GitHub, buka **Settings → Secrets and variables → Actions → Variables**. Tambahkan `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, dan `FIREBASE_APP_ID` dari konfigurasi Web. Workflow memasukkannya ke build sebagai `VITE_FIREBASE_*`. Nilai konfigurasi Web terlihat di browser; keamanan jawaban bergantung pada Authentication dan Firestore Rules.
+5. Jalankan ulang workflow **Deploy to GitHub Pages**. Uji di dua browser: isi satu pos sebagai siswa pada browser pertama, lalu masuk Google sebagai guru pada browser kedua dan pastikan jawaban muncul. Coba akun Google lain untuk memastikan akses guru ditolak.
+
+Saat Firebase pertama kali aktif di suatu browser, data siswa lama yang tersimpan di browser itu dicoba diimpor satu kali tanpa menghapus salinan lokal. Perangkat lain perlu membuka situs lagi agar data lokalnya ikut diimpor. Siswa memakai sesi anonim yang melekat pada browser/perangkat; jika penyimpanan browser dihapus atau perangkat diganti, siswa tidak dapat melanjutkan jawaban lama. Nama, kelas, dan nomor absen yang diketik siswa bukan bukti identitas, sehingga guru perlu memeriksa entri ganda.
 
 ## Cara kerja data
 
-- Identitas siswa, jawaban, pengaturan kelas, dan kredensial guru disimpan di `localStorage` browser yang sedang dipakai. Draf pos juga tersimpan di browser itu.
-- Dashboard admin memiliki tab **Akses Pos**. Jika opsi akses lebih awal diaktifkan, Pos 5 terbuka segera setelah Pos 4 selesai; Pos 6–8 tetap berurutan. Opsi ini mati secara standar dan hanya berlaku pada browser tempat opsi diubah.
-- Dashboard guru hanya menampilkan siswa yang mengisi di browser yang sama. Data tidak otomatis berpindah antara HP siswa dan laptop guru.
-- Login guru pada versi statis adalah kontrol antarmuka lokal, bukan autentikasi server. Jangan gunakan untuk data sensitif yang membutuhkan pembatasan akses nyata.
-- Bila penyimpanan browser dibersihkan, data lokal hilang. Unduh hasil PDF sebelum membersihkan data.
+- Dalam mode Firebase, identitas siswa, jawaban, serta pengaturan kelas dan akses pos disimpan di Firestore. Draf yang belum dikirim dan penanda siswa aktif tetap disimpan di browser.
+- Dashboard guru membaca jawaban dari semua perangkat melalui Firestore. Login guru memakai Firebase Authentication dengan Google; aturan Firestore membatasi akses data.
+- Opsi **Akses Pos** berlaku untuk semua perangkat. Standarnya Pos 5 terbuka tujuh hari setelah Pos 4; guru dapat mengizinkan akses lebih awal.
+- Dalam mode lokal tanpa Firebase, data dan kredensial guru tetap disimpan di `localStorage` seperti versi sebelumnya. Dashboard lokal hanya melihat data di browser itu.
 
 ## Hasil dan Google Drive
 
-Siswa dan guru dapat memilih **Cetak / Simpan PDF** pada halaman hasil. Browser membuka dialog cetak; pilih tujuan **Save as PDF**. Hasil berisi sampul dan hanya pos yang sudah selesai diisi (maksimal sembilan halaman), bukan berkas `.pptx`.
+Siswa dan guru dapat memilih **Cetak / Simpan PDF** pada halaman hasil. Browser membuka dialog cetak; pilih tujuan **Save as PDF**. Hasil berisi sampul dan hanya pos yang sudah selesai diisi. Jawaban panjang dapat menambah halaman PDF agar teks tidak terpotong.
 
-Opsional: `google-apps-script-sync.js` dapat diterbitkan sebagai Google Apps Script Web App. Atur `FOLDER_ID` di skrip ke folder milik guru. Agar semua perangkat siswa mengirim ke endpoint yang sama, isi GitHub Actions repository variable `DRIVE_WEBHOOK_URL` dengan URL `/exec`, kemudian deploy ulang. URL ini akan tertanam dalam build publik. URL yang diatur lewat dashboard hanya berlaku pada browser tersebut. Setelah delapan pos selesai, frontend mencoba mengirim JSON. Google Apps Script memakai respons lintas origin yang tidak dapat diverifikasi dari halaman GitHub Pages; status **Dikirim, cek di Drive** berarti pengiriman telah dicoba, bukan konfirmasi file sudah ada. Periksa folder Drive secara langsung. Link folder di dashboard hanya referensi lokal; tujuan sebenarnya ditentukan oleh `FOLDER_ID` di skrip.
+PDF dibuat di browser dan tidak diunggah ke Firebase. Dalam mode Firebase, jawaban tersimpan dan dibaca dari Firestore sehingga fitur sinkronisasi Google Drive disembunyikan. Dalam mode lokal lama, `google-apps-script-sync.js` masih dapat dipakai sebagai opsi pengiriman ke Drive.
 
-Untuk rekap lintas perangkat, autentikasi guru yang aman, serta konfirmasi sinkronisasi, aplikasi memerlukan backend bersama. GitHub Pages saja tidak menyediakan komponen tersebut. Jangan menerbitkan data refleksi pribadi siswa dengan mengandalkan login lokal ini.
+Jangan menerbitkan data refleksi pribadi siswa dengan hanya mengandalkan login lokal. Aktifkan Firebase dan terapkan aturan akses sebelum penggunaan kelas.
 
 ## Struktur
 
 - `src/data.ts`: definisi pertanyaan delapan pos.
 - `src/context.tsx`: state dan penyimpanan lokal.
+- `src/cloud-context.tsx`: sesi anonim siswa, login Google guru, migrasi data lama, dan sinkronisasi Firestore.
+- `src/firebase.ts`, `src/firebase-config.ts`, dan `firestore.rules`: koneksi serta aturan akses Firebase.
 - `src/components/StudentEntry.tsx`: formulir identitas.
 - `src/components/JourneyMap.tsx` dan `StageModal.tsx`: progres dan pengisian pos.
 - `src/components/ResultView.tsx`: hasil dan cetak PDF.
-- `src/components/AdminDashboard.tsx`: rekap data di browser setempat.
+- `src/components/AdminDashboard.tsx`: rekap data siswa.

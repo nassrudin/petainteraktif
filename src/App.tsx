@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AppProvider, useApp } from './context';
+import { AppProvider as LocalAppProvider, useApp } from './context';
+import { firebaseConfigIncomplete, firebaseEnabled } from './firebase-config';
 import { Navbar } from './components/Navbar';
 import { JourneyMap } from './components/JourneyMap';
 import { ResultView } from './components/ResultView';
@@ -9,7 +10,7 @@ import { AdminLoginModal } from './components/AdminLoginModal';
 import { Moon, Sun } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
-  const { activeStudent, isAdminLoggedIn, storageError } = useApp();
+  const { activeStudent, isAdminLoggedIn, storageError, cloudLoading, cloudError } = useApp();
   const [activeTab, setActiveTab] = useState<'map' | 'result' | 'admin'>('map');
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -66,9 +67,14 @@ const MainLayout: React.FC = () => {
       {storageError && <div role="alert" className="mx-auto max-w-7xl w-full p-3 bg-red-50 text-red-800 text-sm">
         Penyimpanan browser gagal. Salin jawaban penting sebelum menutup halaman dan kosongkan ruang penyimpanan perangkat.
       </div>}
+      {cloudError && <div role="alert" className="mx-auto max-w-7xl w-full p-3 bg-red-50 text-red-800 text-sm">
+        {cloudError}
+      </div>}
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 print:p-0 print:m-0 print:max-w-none print:w-full">
-        {isAdminLoggedIn ? (
+        {cloudLoading ? (
+          <div role="status" className="rounded-2xl bg-white p-6 text-center text-slate-700">Menghubungkan ke Firebase...</div>
+        ) : isAdminLoggedIn ? (
           <AdminDashboard />
         ) : !activeStudent ? (
           <StudentEntry onAdminClick={() => setShowAdminModal(true)} />
@@ -98,9 +104,14 @@ const MainLayout: React.FC = () => {
 };
 
 export default function App() {
-  return (
-    <AppProvider>
-      <MainLayout />
-    </AppProvider>
-  );
+  if (firebaseConfigIncomplete) return <div role="alert" className="m-6 rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800">
+    Konfigurasi Firebase belum lengkap. Isi API key, auth domain, project ID, dan app ID sebelum menggunakan situs.
+  </div>;
+  return firebaseEnabled ? (
+    <React.Suspense fallback={<div role="status" className="p-6 text-center">Memuat Firebase...</div>}>
+      <CloudAppProvider><MainLayout /></CloudAppProvider>
+    </React.Suspense>
+  ) : <LocalAppProvider><MainLayout /></LocalAppProvider>;
 }
+
+const CloudAppProvider = React.lazy(() => import('./cloud-context').then((module) => ({ default: module.CloudAppProvider })));
