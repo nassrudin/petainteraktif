@@ -1,4 +1,4 @@
-# Growth Mindset Journey Map Percaya Diri
+# Journey Map Percaya Diri Berbasis Growth Mindset
 
 Web refleksi untuk layanan bimbingan klasikal kelas X. Siswa mengisi delapan pos dalam dua etape. Secara standar, Pos 5 terbuka tujuh hari setelah Pos 4 disimpan. Guru dapat mengizinkan akses lebih awal.
 

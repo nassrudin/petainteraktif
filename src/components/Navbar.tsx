@@ -42,10 +42,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-base sm:text-lg text-slate-800 dark:text-slate-100 tracking-tight leading-tight">
-                Growth Mindset
+                Journey Map Percaya Diri Berbasis Growth Mindset
               </span>
               <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 hidden md:block max-w-md truncate leading-relaxed">
-                Journey Map Percaya Diri, Kelas X
+                Media Layanan Bimbingan Klasikal Kelas X
               </p>
             </div>
           </div>

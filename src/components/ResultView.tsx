@@ -196,7 +196,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
           <div className="space-y-4 my-auto relative z-10 max-w-4xl">
             <h1 className="text-3xl sm:text-5xl font-black font-display tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-emerald-100 to-teal-200">
-              Growth Mindset Journey Map Percaya Diri
+              Journey Map Percaya Diri Berbasis Growth Mindset
             </h1>
             <p className="text-base sm:text-xl text-teal-100/90 font-medium leading-relaxed">
               Delapan pos untuk mengubah rasa ragu menjadi keberanian bertumbuh, media layanan bimbingan klasikal kelas X
@@ -677,7 +677,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
           <div className="text-[11px] text-slate-400 italic pt-2 flex justify-between border-t border-slate-200">
             <span>Media Layanan Bimbingan Klasikal Kelas X</span>
-            <span>Growth Mindset Journey Map</span>
+            <span>Journey Map Percaya Diri Berbasis Growth Mindset</span>
           </div>
         </div>
         )}

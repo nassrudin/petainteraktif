@@ -260,7 +260,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-4 rounded-2xl border border-white/60 dark:border-slate-700 shadow-xs">
           <div>
             <h2 className="text-base sm:text-lg font-extrabold text-slate-800 dark:text-slate-100 font-display flex items-center gap-2">
-              <span>🗺️ Peta Petualangan Growth Mindset Percaya Diri</span>
+              <span>🗺️ Journey Map Percaya Diri Berbasis Growth Mindset</span>
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400">
               Klik setiap pulau pos refleksi untuk membuka misi belajarmu secara bertahap.
