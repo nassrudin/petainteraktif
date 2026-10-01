@@ -273,6 +273,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
                   ))}
                 </div>
               </div>
+              <p className="text-[10px] text-slate-500 mt-1">{STAGES_DATA[0].fields.find(field => field.id === 'confidence_scale')?.helperText}</p>
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
@@ -518,17 +519,17 @@ export const ResultView: React.FC<ResultViewProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SLIDE 6: POS 5 - SAAT SAYA DIKRITIK (CRITIQUES) */}
+        {/* SLIDE 6: POS 5 - MELIHAT KEMBALI USAHA SAYA (REFLEKSI) */}
         {/* ========================================================================= */}
         {hasCompletedStage(5) && (
         <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(5) ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
-              <span className="px-3 py-1 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-wider">
-                Etape 2 • Critiques
+              <span className="px-3 py-1 rounded-xl bg-purple-600 text-white font-black text-xs uppercase tracking-wider">
+                Etape 2 • Refleksi
               </span>
               <h2 className="text-base sm:text-lg font-black text-slate-800">
-                Pos 5: Saat Saya Dikritik
+                Pos 5: Melihat Kembali Usaha Saya
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
@@ -539,25 +540,77 @@ export const ResultView: React.FC<ResultViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700 text-sm">{getFieldLabel(5, 'received_criticism')}</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(5, 'what_succeeded')}</p>
+                <div className="bg-emerald-50 p-3.5 rounded-xl text-emerald-950 font-semibold border border-emerald-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
+                  "{getStageAnswer(5, 'what_succeeded') || 'Belum diisi'}"
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-xs">
+                <p className="font-bold text-slate-700">{getFieldLabel(5, 'what_failed_and_why')}</p>
+                <div className="bg-amber-50 p-3.5 rounded-xl text-amber-950 font-medium border border-amber-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
+                  "{getStageAnswer(5, 'what_failed_and_why') || 'Belum diisi'}"
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+              <div className="space-y-1.5 text-xs">
+                <p className="font-bold text-slate-700">{getFieldLabel(5, 'felt_changes')}</p>
+                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium border border-slate-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
+                  "{getStageAnswer(5, 'felt_changes') || '-'}"
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-[11px] text-slate-400 italic pt-2 flex justify-between border-t border-slate-200">
+            <span>Media Layanan Bimbingan Klasikal Kelas X</span>
+            <span>"{PEGANGAN_DI_SEPANJANG_JALAN}"</span>
+          </div>
+        </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SLIDE 7: POS 6 - SAAT SAYA DIKRITIK (CRITIQUES) */}
+        {/* ========================================================================= */}
+        {hasCompletedStage(6) && (
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(6) ? 'hidden' : ''}`}>
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-wider">
+                Etape 2 • Critiques
+              </span>
+              <h2 className="text-base sm:text-lg font-black text-slate-800">
+                Pos 6: Saat Saya Dikritik
+              </h2>
+            </div>
+            <span className="text-xs text-slate-400 font-mono">
+              Slide {slideNumberForStage(6)} / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+              <div className="space-y-1.5 text-xs">
+                <p className="font-bold text-slate-700 text-sm">{getFieldLabel(6, 'received_criticism')}</p>
                 <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium italic border border-slate-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
-                  "{getStageAnswer(5, 'received_criticism') || 'Belum diisi'}"
+                  "{getStageAnswer(6, 'received_criticism') || 'Belum diisi'}"
                 </div>
               </div>
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
-              <p className="font-bold text-xs tracking-wider text-indigo-800 border-b pb-1">{getSectionHeader(5, 'what_i_improve')}</p>
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">{getFieldLabel(5, 'what_i_improve')}</p>
+                <p className="font-bold text-slate-700">{getFieldLabel(6, 'what_i_improve')}</p>
                 <div className="bg-indigo-50/70 p-3.5 rounded-xl text-indigo-950 font-medium border border-indigo-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
-                  "{getStageAnswer(5, 'what_i_improve') || 'Belum diisi'}"
+                  "{getStageAnswer(6, 'what_i_improve') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="bg-indigo-50 p-3.5 rounded-xl border border-indigo-200 text-xs">
-                <p className="text-[10px] font-bold text-indigo-800 mb-1 block">{getFieldLabel(5, 'response_strategy')}</p>
-                <p className="font-bold text-indigo-950 italic leading-relaxed whitespace-pre-wrap break-words">"{getStageAnswer(5, 'response_strategy') || '-'}"</p>
+                <p className="text-[10px] font-bold text-indigo-800 mb-1 block">{getFieldLabel(6, 'response_strategy')}</p>
+                <p className="font-bold text-indigo-950 italic leading-relaxed whitespace-pre-wrap break-words">"{getStageAnswer(6, 'response_strategy') || '-'}"</p>
               </div>
             </div>
           </div>
@@ -570,77 +623,17 @@ export const ResultView: React.FC<ResultViewProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* SLIDE 7: POS 6 - BELAJAR DARI ORANG LAIN (SUCCESS OF OTHERS) */}
+        {/* SLIDE 8: POS 7 - BELAJAR DARI ORANG LAIN (SUCCESS OF OTHERS) */}
         {/* ========================================================================= */}
-        {hasCompletedStage(6) && (
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(6) ? 'hidden' : ''}`}>
+        {hasCompletedStage(7) && (
+        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(7) ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-xl bg-violet-600 text-white font-black text-xs uppercase tracking-wider">
                 Etape 2 • Success of Others
               </span>
               <h2 className="text-base sm:text-lg font-black text-slate-800">
-                Pos 6: Belajar dari Orang Lain
-              </h2>
-            </div>
-            <span className="text-xs text-slate-400 font-mono">
-              Slide {slideNumberForStage(6)} / {totalSlides} • Presenter: {activeStudent.name} ({activeStudent.class})
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-              <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700 text-sm">{getFieldLabel(6, 'admired_figure')}</p>
-                <div className="bg-violet-50/70 p-3.5 rounded-xl text-violet-950 font-bold text-sm border border-violet-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
-                  "{getStageAnswer(6, 'admired_figure') || 'Belum diisi'}"
-                </div>
-              </div>
-
-              <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">{getFieldLabel(6, 'confidence_actions')}</p>
-                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium border border-slate-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
-                  "{getStageAnswer(6, 'confidence_actions') || 'Belum diisi'}"
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-              <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700 text-sm">{getFieldLabel(6, 'imitation_action')}</p>
-                <div className="bg-emerald-50 p-3.5 rounded-xl text-emerald-950 font-bold text-sm border border-emerald-200 min-h-[95px] leading-relaxed whitespace-pre-wrap break-words">
-                  "{getStageAnswer(6, 'imitation_action') || '-'}"
-                </div>
-              </div>
-
-              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 text-xs">
-                <p className="text-[10px] font-bold text-amber-800 mb-1 block">Ingat:</p>
-                <p className="font-semibold text-amber-950 italic leading-relaxed whitespace-pre-wrap break-words">
-                  "{STAGES_DATA[5].reminderText}"
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-[11px] text-slate-400 italic pt-2 flex justify-between border-t border-slate-200">
-            <span>Media Layanan Bimbingan Klasikal Kelas X</span>
-            <span>Growth Mindset Journey Map</span>
-          </div>
-        </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SLIDE 8: POS 7 - MELIHAT KEMBALI USAHA SAYA (REFLEKSI) */}
-        {/* ========================================================================= */}
-        {hasCompletedStage(7) && (
-        <div className={`ppt-slide aspect-[16/9] w-full bg-slate-50 p-3 sm:p-5 md:p-8 rounded-3xl shadow-xl flex flex-col justify-between border border-slate-200 print:rounded-none print:shadow-none print:border-none print:aspect-[16/9] min-h-[70vh] max-h-[95vh] print:h-screen print:w-screen print:break-after-page ${viewMode === 'slides' && currentSlide !== slideNumberForStage(7) ? 'hidden' : ''}`}>
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 rounded-xl bg-purple-600 text-white font-black text-xs uppercase tracking-wider">
-                Etape 2 • Refleksi
-              </span>
-              <h2 className="text-base sm:text-lg font-black text-slate-800">
-                Pos 7: Melihat Kembali Usaha Saya
+                Pos 7: Belajar dari Orang Lain
               </h2>
             </div>
             <span className="text-xs text-slate-400 font-mono">
@@ -651,33 +644,40 @@ export const ResultView: React.FC<ResultViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">{getFieldLabel(7, 'what_succeeded')}</p>
-                <div className="bg-emerald-50 p-3.5 rounded-xl text-emerald-950 font-semibold border border-emerald-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
-                  "{getStageAnswer(7, 'what_succeeded') || 'Belum diisi'}"
+                <p className="font-bold text-slate-700 text-sm">{getFieldLabel(7, 'admired_figure')}</p>
+                <div className="bg-violet-50/70 p-3.5 rounded-xl text-violet-950 font-bold text-sm border border-violet-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
+                  "{getStageAnswer(7, 'admired_figure') || 'Belum diisi'}"
                 </div>
               </div>
 
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">{getFieldLabel(7, 'what_failed_and_why')}</p>
-                <div className="bg-amber-50 p-3.5 rounded-xl text-amber-950 font-medium border border-amber-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
-                  "{getStageAnswer(7, 'what_failed_and_why') || 'Belum diisi'}"
+                <p className="font-bold text-slate-700">{getFieldLabel(7, 'confidence_actions')}</p>
+                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium border border-slate-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
+                  "{getStageAnswer(7, 'confidence_actions') || 'Belum diisi'}"
                 </div>
               </div>
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <div className="space-y-1.5 text-xs">
-                <p className="font-bold text-slate-700">{getFieldLabel(7, 'felt_changes')}</p>
-                <div className="bg-slate-50 p-3.5 rounded-xl text-slate-800 font-medium border border-slate-200 min-h-[75px] leading-relaxed whitespace-pre-wrap break-words">
-                  "{getStageAnswer(7, 'felt_changes') || '-'}"
+                <p className="font-bold text-slate-700 text-sm">{getFieldLabel(7, 'imitation_action')}</p>
+                <div className="bg-emerald-50 p-3.5 rounded-xl text-emerald-950 font-bold text-sm border border-emerald-200 min-h-[95px] leading-relaxed whitespace-pre-wrap break-words">
+                  "{getStageAnswer(7, 'imitation_action') || '-'}"
                 </div>
+              </div>
+
+              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 text-xs">
+                <p className="text-[10px] font-bold text-amber-800 mb-1 block">Ingat:</p>
+                <p className="font-semibold text-amber-950 italic leading-relaxed whitespace-pre-wrap break-words">
+                  "{STAGES_DATA[6].reminderText}"
+                </p>
               </div>
             </div>
           </div>
 
           <div className="text-[11px] text-slate-400 italic pt-2 flex justify-between border-t border-slate-200">
             <span>Media Layanan Bimbingan Klasikal Kelas X</span>
-            <span>"{PEGANGAN_DI_SEPANJANG_JALAN}"</span>
+            <span>Growth Mindset Journey Map</span>
           </div>
         </div>
         )}
@@ -722,6 +722,24 @@ export const ResultView: React.FC<ResultViewProps> = ({
               </div>
 
               <div className="pt-2 flex items-center justify-between text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span className="font-bold text-slate-700 max-w-[55%] leading-snug">{getFieldLabel(8, 'after_confidence_scale')}</span>
+                <div className="flex items-center gap-1.5 font-bold">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <span
+                      key={n}
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs ${
+                        getStageScale(8, 'after_confidence_scale') === n
+                          ? 'bg-amber-500 text-white font-black ring-2 ring-amber-300'
+                          : 'bg-white text-slate-400 border border-slate-200'
+                      }`}
+                    >
+                      {n}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1">{STAGES_DATA[7].fields.find(field => field.id === 'after_confidence_scale')?.helperText}{getStageScale(8, 'after_confidence_scale') === null && ' ? Belum diisi; lengkapi melalui Pos 8.'}</p>
+              <div className="pt-2 flex items-center justify-between text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <span className="font-bold text-slate-700 max-w-[55%] leading-snug">{getFieldLabel(8, 'future_confidence_scale')}</span>
                 <div className="flex items-center gap-1.5 font-bold">
                   {[1, 2, 3, 4, 5].map((n) => (
@@ -738,6 +756,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
                   ))}
                 </div>
               </div>
+              <p className="text-[10px] text-slate-500 mt-1">{STAGES_DATA[7].fields.find(field => field.id === 'future_confidence_scale')?.helperText}</p>
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">

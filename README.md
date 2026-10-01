@@ -30,6 +30,8 @@ Saat Firebase pertama kali aktif di suatu browser, data siswa lama yang tersimpa
 
 ## Cara kerja data
 
+- Urutan Etape 2: Pos 5 **Melihat kembali usaha saya**, Pos 6 **Saat saya dikritik**, Pos 7 **Belajar dari orang lain**, dan Pos 8 **Komitmen dan target saya**. Jawaban serta draf lama dikenali berdasarkan pertanyaannya agar tetap masuk ke pos yang sesuai.
+- Pos 8 memisahkan skala percaya diri sesudah layanan dari skala keyakinan terhadap perubahan diri ke depan. Jawaban lama tidak otomatis mengisi skala baru; siswa dapat melengkapinya dengan membuka kembali Pos 8.
 - Dalam mode Firebase, identitas siswa, jawaban, serta pengaturan kelas dan akses pos disimpan di Firestore. Draf yang belum dikirim dan penanda siswa aktif tetap disimpan di browser.
 - Dashboard guru membaca jawaban dari semua perangkat melalui Firestore. Guru dan admin masuk dengan nama pengguna serta kata sandi; di belakang layar Firebase Authentication memakai alamat internal acak. Firestore Rules membatasi akses sesuai peran.
 - Opsi **Akses Pos** berlaku untuk semua perangkat. Standarnya Pos 5 terbuka tujuh hari setelah Pos 4; guru dapat mengizinkan akses lebih awal.
@@ -54,3 +56,5 @@ Jangan menerbitkan data refleksi pribadi siswa dengan hanya mengandalkan login l
 - `src/components/JourneyMap.tsx` dan `StageModal.tsx`: progres dan pengisian pos.
 - `src/components/ResultView.tsx`: hasil dan cetak PDF.
 - `src/components/AdminDashboard.tsx`: rekap data siswa.
+
+Skor percaya diri pada rekap memakai skala sesudah layanan di Pos 8 jika sudah diisi, atau skala awal di Pos 1. Skala keyakinan terhadap perubahan diri ke depan tidak digunakan sebagai skor percaya diri.

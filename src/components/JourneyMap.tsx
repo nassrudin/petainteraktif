@@ -32,9 +32,9 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
   const progressPercent = Math.round((completedCount / 8) * 100);
   const phaseTwoStart = getPhaseTwoStart(journey.stages[4]?.completedAt);
   const phaseTwoAvailable = appSettings.allowEarlyPhaseTwo || (phaseTwoStart !== null && Date.now() >= phaseTwoStart) ||
-    Boolean(journey.stages[5]?.completed);
+    [5, 6, 7, 8].some(id => journey.stages[id]?.completed);
   const canOpenStage = (stage: StageDefinition) =>
-    (stage.id === 1 || Boolean(journey.stages[stage.id - 1]?.completed)) &&
+    (Boolean(journey.stages[stage.id]?.completed) || stage.id === 1 || Boolean(journey.stages[stage.id - 1]?.completed)) &&
     (stage.id < 5 || phaseTwoAvailable || Boolean(journey.stages[stage.id]?.completed));
 
   // Gamified status level
@@ -218,7 +218,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
             <span className="text-xs font-bold text-indigo-950 dark:text-indigo-100">Belajar dari sekitar dan bertumbuh</span>
           </div>
           <p className="text-[11px] text-indigo-800/80 dark:text-indigo-300 mt-1">
-            Pos 5 (Critiques) • Pos 6 (Success of others) • Pos 7 (Refleksi) • Pos 8 (Garis akhir)
+            Pos 5 (Refleksi) • Pos 6 (Critiques) • Pos 7 (Success of others) • Pos 8 (Garis akhir)
           </p>
         </div>
       </div>

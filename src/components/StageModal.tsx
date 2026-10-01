@@ -1,3 +1,4 @@
+import { readRevisedDraft } from '../utils/journeyRevision';
 import React, { useState, useEffect } from 'react';
   import { StageDefinition, StageAnswer } from '../types';
   import { useApp } from '../context';
@@ -20,7 +21,7 @@ import React, { useState, useEffect } from 'react';
     onCompletedNext,
   }) => {
      const { activeStudent, saveStageAnswer, appSettings } = useApp();
-     const draftKey = activeStudent ? `gm_stage_draft_${activeStudent.id}_${stage.id}` : '';
+     const draftKey = activeStudent ? `gm_stage_draft_v3_${activeStudent.id}_${stage.id}` : '';
     
     // Initialize formData from initialData answers or empty object
     const [formData, setFormData] = useState<Record<string, any>>({});
@@ -29,7 +30,7 @@ import React, { useState, useEffect } from 'react';
      useEffect(() => {
        try {
          const draft = draftKey ? localStorage.getItem(draftKey) : null;
-         setFormData(draft ? JSON.parse(draft) : initialData?.answers || {});
+         setFormData(draft ? JSON.parse(draft) : initialData?.answers || (activeStudent ? readRevisedDraft(localStorage, activeStudent.id, stage.id) : null) || {});
        } catch { setFormData(initialData?.answers || {}); }
      }, [initialData, draftKey]);
 

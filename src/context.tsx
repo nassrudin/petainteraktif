@@ -1,3 +1,5 @@
+import { getJourneyConfidenceScore } from './utils/journeyRevision';
+import { reviseJourney } from './utils/journeyRevision';
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { ActiveStudent, StudentJourney, AdminCredentials, Gender, AppSettings, ClassConfig } from './types';
 import { DEFAULT_ADMIN, DEFAULT_CLASS_CONFIGS } from './data';
@@ -91,8 +93,7 @@ const buildWebhookUrl = import.meta.env.VITE_DRIVE_WEBHOOK_URL || '';
 const driveWebhookManagedByBuild = isValidWebhookUrl(buildWebhookUrl);
 
 function getConfidenceScore(stages: StudentJourney['stages']): number {
-  const answer = stages[8]?.answers?.future_confidence_scale ?? stages[1]?.answers?.confidence_scale;
-  return typeof answer === 'number' && answer >= 1 && answer <= 5 ? answer * 20 : 0;
+  return getJourneyConfidenceScore(stages);
 }
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -150,8 +151,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = readStoredJson<Record<string, StudentJourney>>(STORAGE_KEY_JOURNEYS, {});
     if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return {};
     return Object.fromEntries(Object.entries(saved).filter(([, journey]) => journey && typeof journey === 'object').map(([id, journey]) => [id, {
-      ...journey,
-      stages: journey.stages && typeof journey.stages === 'object' ? journey.stages : {},
+      ...reviseJourney(journey),
       confidenceScore: getConfidenceScore(journey.stages || {}),
       driveSyncStatus: journey.driveSyncStatus ||
         (driveWebhookUrl && Array.from({ length: 8 }, (_, i) => i + 1)
@@ -483,7 +483,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         [studentId]: {
           ...current,
           stages: updatedStages,
-          lastActiveStage: Math.min(8, stageId + 1),
+          lastActiveStage: Array.from({ length: 8 }, (_, i) => i + 1).find(id => !updatedStages[id]?.completed) ?? 8,
           confidenceScore: getConfidenceScore(updatedStages),
           updatedAt: nowTime,
           driveSyncStatus: isAllCompleted && driveWebhookUrl ? 'pending' : undefined,
@@ -509,7 +509,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetStudentProgress = (studentId: string) => {
     for (let stageId = 1; stageId <= 8; stageId++) {
-      try { localStorage.removeItem(`gm_stage_draft_${studentId}_${stageId}`); } catch { setStorageError(true); }
+      try { localStorage.removeItem(`gm_stage_draft_${studentId}_${stageId}`); localStorage.removeItem(`gm_stage_draft_v3_${studentId}_${stageId}`); } catch { setStorageError(true); }
     }
     setJourneys((prev) => {
       const student = allStudents.find((s) => s.id === studentId);
@@ -533,7 +533,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteStudent = (studentId: string) => {
     for (let stageId = 1; stageId <= 8; stageId++) {
-      try { localStorage.removeItem(`gm_stage_draft_${studentId}_${stageId}`); } catch { setStorageError(true); }
+      try { localStorage.removeItem(`gm_stage_draft_${studentId}_${stageId}`); localStorage.removeItem(`gm_stage_draft_v3_${studentId}_${stageId}`); } catch { setStorageError(true); }
     }
     setJourneys((prev) => {
       const next = { ...prev };

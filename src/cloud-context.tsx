@@ -1,3 +1,5 @@
+import { getJourneyConfidenceScore } from './utils/journeyRevision';
+import { reviseJourney } from './utils/journeyRevision';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createUserWithEmailAndPassword, deleteUser, EmailAuthProvider, GoogleAuthProvider, inMemoryPersistence, onAuthStateChanged, reauthenticateWithCredential, setPersistence, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signOut, updatePassword, User } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
@@ -12,6 +14,10 @@ interface CloudStudentRecord {
   ownerUid: string;
   student: ActiveStudent;
   journey: StudentJourney;
+}
+
+function reviseRecord(record: CloudStudentRecord): CloudStudentRecord {
+  return { ...record, journey: reviseJourney(record.journey) };
 }
 
 interface RootAccount {
@@ -78,8 +84,7 @@ function makeJourney(student: ActiveStudent): StudentJourney {
 }
 
 function confidenceScore(stages: StudentJourney['stages']): number {
-  const answer = stages[8]?.answers?.future_confidence_scale ?? stages[1]?.answers?.confidence_scale;
-  return typeof answer === 'number' && answer >= 1 && answer <= 5 ? answer * 20 : 0;
+  return getJourneyConfidenceScore(stages);
 }
 
 function isLegacyTeacher(user: User | null): boolean {
@@ -232,7 +237,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (cancelled) return;
         unsubscribe = onSnapshot(query(collection(db, studentCollection), where('ownerUid', '==', studentUid)),
           (snapshot) => {
-            const records = Object.fromEntries(snapshot.docs.map((item) => [item.id, item.data() as CloudStudentRecord]));
+            const records = Object.fromEntries(snapshot.docs.map((item) => [item.id, reviseRecord(item.data() as CloudStudentRecord)]));
             studentRecordsRef.current = records;
             setStudentRecords(records);
             setActiveStudent((current) => current && !records[current.id] ? null : current);
@@ -263,7 +268,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     void migrateSettings();
     return onSnapshot(collection(db, studentCollection), (snapshot) => {
-      setTeacherRecords(Object.fromEntries(snapshot.docs.map((item) => [item.id, item.data() as CloudStudentRecord])));
+      setTeacherRecords(Object.fromEntries(snapshot.docs.map((item) => [item.id, reviseRecord(item.data() as CloudStudentRecord)])));
       setCloudError(null);
     }, (error) => setCloudError(readableError(error)));
   }, [isAdminLoggedIn]);
@@ -295,7 +300,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const now = new Date().toISOString();
     const stages = { ...record.journey.stages, [stageId]: { completed: true, completedAt: now, answers } };
     const journey: StudentJourney = {
-      ...record.journey, stages, lastActiveStage: Math.min(8, stageId + 1),
+      ...record.journey, stages, lastActiveStage: Array.from({ length: 8 }, (_, i) => i + 1).find(id => !stages[id]?.completed) ?? 8,
       confidenceScore: confidenceScore(stages), updatedAt: now,
     };
     await updateDoc(doc(studentDb, studentCollection, studentId), { journey: JSON.parse(JSON.stringify(journey)) });
@@ -440,7 +445,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!record || !db || (!isAdminLoggedIn && record.ownerUid !== studentUid)) throw new Error('Akses ditolak.');
     await updateDoc(doc(db, studentCollection, studentId), { journey: makeJourney(record.student) });
     for (let stageId = 1; stageId <= 8; stageId++) {
-      try { localStorage.removeItem(`gm_stage_draft_${studentId}_${stageId}`); } catch { setStorageError(true); }
+      try { localStorage.removeItem(`gm_stage_draft_${studentId}_${stageId}`); localStorage.removeItem(`gm_stage_draft_v3_${studentId}_${stageId}`); } catch { setStorageError(true); }
     }
   };
 
