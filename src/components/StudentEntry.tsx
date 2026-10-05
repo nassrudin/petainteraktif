@@ -121,7 +121,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
 
           {loginMode === 'access' && <form onSubmit={handleResume} className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 space-y-3">
             <h2 className="text-sm font-bold text-blue-900">Lanjutkan dengan kode akses</h2>
-            <p className="text-xs text-blue-900">Login kembali ke jawaban lama dari HP atau browser lain. Masukkan kode dari halaman siswa atau minta kode rekaman lama kepada guru.</p>
+            <p className="text-xs text-blue-900">Masukkan kode dari halaman siswa atau minta kode rekaman lama kepada guru.</p>
             <label htmlFor="student-access-code" className="block text-xs font-bold text-blue-900">Kode akses siswa</label>
             <input id="student-access-code" value={accessCode} onChange={event => setAccessCode(event.target.value)} required autoFocus autoComplete="off" spellCheck={false} placeholder="Tempel kode akses siswa" className="w-full rounded-xl border border-blue-200 bg-white p-3 text-xs font-mono" />
             <button type="submit" disabled={resuming || isSubmitting} className="w-full rounded-xl bg-blue-700 text-white py-2.5 text-xs font-bold cursor-pointer disabled:opacity-50">{resuming ? 'Membuka jawaban...' : 'Buka Jawaban Sebelumnya'}</button>
@@ -131,7 +131,6 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
           {/* Entry Form */}
           {loginMode === 'new' && <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <h2 className="text-sm font-bold text-slate-800">Login Baru</h2>
-            <p className="text-xs text-slate-500">Buat jawaban baru atau masuk kembali ke jawaban sebelumnya pada HP dan browser yang sama. Untuk masuk kembali, isi nama, kelas, nomor absen, dan jenis kelamin yang sama seperti sebelumnya.</p>
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-semibold flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
