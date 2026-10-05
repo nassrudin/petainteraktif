@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Upload, Trash2 } from 'lucide-react';
+import { Download, Upload, Trash2 } from 'lucide-react';
 import { useApp } from '../context';
 import { MaintenancePlan } from '../utils/databaseMaintenance';
 
 interface Props {
   backupBusy: boolean;
+  onBackup: () => Promise<void>;
   onBusyChange: (busy: boolean) => void;
 }
 
-export function DatabaseMaintenancePanel({ backupBusy, onBusyChange }: Props) {
+export function DatabaseMaintenancePanel({ backupBusy, onBackup, onBusyChange }: Props) {
   const { prepareRestoreBackup, prepareDeleteAllStudents, applyDatabaseMaintenance } = useApp();
   const [plan, setPlan] = useState<MaintenancePlan | null>(null);
   const [fileName, setFileName] = useState('');
@@ -71,6 +72,17 @@ export function DatabaseMaintenancePanel({ backupBusy, onBusyChange }: Props) {
         <p className="text-xs text-slate-500 mt-1">Berlaku untuk semua kelas. Gunakan Backup Data untuk menyimpan cadangan sebelum mengganti atau menghapus data.</p>
       </div>
       <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onBackup}
+          disabled={disabled}
+          aria-busy={backupBusy}
+          className="px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+          title="Backup semua siswa, seluruh jawaban, dan pengaturan kelas dari Firebase ke JSON"
+        >
+          <Download className="w-4 h-4" />
+          <span>{backupBusy ? 'Membuat Backup...' : 'Backup Data'}</span>
+        </button>
         <label className={`relative px-3 py-2 text-xs font-bold rounded-xl bg-blue-50 text-blue-800 flex items-center gap-1.5 ${disabled ? 'opacity-50' : 'hover:bg-blue-100 cursor-pointer'}`}>
           <Upload className="w-4 h-4" /> Restore Backup
           <input aria-label="Pilih backup JSON untuk restore" type="file" accept=".json,application/json" onChange={selectFile} disabled={disabled} className="absolute inset-0 w-full opacity-0 cursor-pointer disabled:cursor-wait" />

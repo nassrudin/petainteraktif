@@ -316,7 +316,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       {/* STUDENTS TAB */}
       {activeAdminTab === 'students' && (
         <>
-          <DatabaseMaintenancePanel backupBusy={isBackingUp} onBusyChange={setIsMaintaining} />
+          <DatabaseMaintenancePanel backupBusy={isBackingUp} onBackup={handleBackup} onBusyChange={setIsMaintaining} />
           {/* Analytics KPI Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -395,17 +395,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                 >
                   <Download className="w-3.5 h-3.5 text-slate-600" />
                   <span>Unduh CSV</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBackup}
-                  disabled={isBackingUp || isMaintaining}
-                  aria-busy={isBackingUp}
-                  className="px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
-                  title="Backup semua siswa, seluruh jawaban, dan pengaturan kelas dari Firebase ke JSON"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>{isBackingUp ? 'Membuat Backup...' : 'Backup Data'}</span>
                 </button>
               </div>
 
