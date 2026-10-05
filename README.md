@@ -45,7 +45,23 @@ Backup ini mencadangkan data siswa dan pengaturan aplikasi, bukan akun/kata sand
 
 Siswa dan guru dapat memilih **Cetak / Simpan PDF** pada halaman hasil. Browser membuka dialog cetak; pilih tujuan **Save as PDF**. Hasil berisi sampul dan hanya pos yang sudah selesai diisi. Jawaban panjang dapat menambah halaman PDF agar teks tidak terpotong.
 
-PDF dibuat di browser dari jawaban Firebase yang sudah dimuat dan tidak diunggah ke Firebase. Sinkronisasi data lokal ke Google Drive sudah tidak digunakan.
+PDF dibuat di browser dari jawaban Firebase yang sudah dimuat dan tidak diunggah ke Firebase. Backup otomatis Google Drive mengambil data dari server Firebase, tanpa membaca data lokal/browser.
+
+### Backup otomatis setelah Pos 4 dan Pos 8
+
+Di **Pengaturan Drive**, simpan folder tujuan. Siswa yang menyelesaikan Pos 1–4 atau Pos 1–8 akan memicu backup **seluruh data siswa dari semua kelas dan pengaturan `settings/public`**, bukan hanya siswa pemicu. Menyimpan ulang Pos 4/8 yang lengkap juga membuat backup baru. Format JSON versi 1 sama dengan Backup Data dan dapat digunakan pada Restore Backup. Akun login, konfigurasi staf, aturan, antrean, dan konfigurasi koneksi Drive tidak termasuk isi backup.
+
+Jawaban dan permintaan `driveBackupJobs` disimpan dalam satu transaksi Firestore, sehingga antrean tetap tersedia setelah halaman siswa ditutup. Permintaan tidak memuat jawaban maupun token akun. Pemroses Google Apps Script membaca semua halaman koleksi siswa dan pengaturan dengan `readTime` yang sama, sesuai timestamp server transaksi pemicu. ID, ownerUid, jawaban, dan penomoran asli dipertahankan. Berkas diberi nama unik per permintaan; backup lama tidak ditimpa. Status **Berhasil** dicatat hanya sesudah berkas tersimpan di Drive. Jika pencatatan status gagal, percobaan ulang memakai berkas yang sama. Kegagalan pembacaan Firebase tidak membuat berkas sebagian.
+
+Pemasangan awal (sekali, memakai akun Google yang memiliki akses pengelola Firebase dan akses tulis folder):
+
+1. Terapkan aturan dan indeks: `firebase deploy --only firestore --project growth-mindset-percaya-diri`.
+2. Simpan folder tujuan pada dashboard, dengan backup otomatis belum diaktifkan.
+3. Pada Google Apps Script, buat proyek khusus pemroses backup. Unduh skrip dan manifest dari **Pengaturan Drive**. Isi Code.gs dengan skrip tersebut. Aktifkan tampilan manifest melalui pengaturan proyek, lalu isi appsscript.json dengan manifest unduhan. Build menyertakan ID proyek, definisi pertanyaan, serta pengaturan bawaan yang sesuai aplikasi. Untuk proyek Apps Script yang sudah ada, gunakan unduhan terbaru dan perbarui manifest. Pemroses ini menggantikan webhook lama, tanpa endpoint publik.
+4. Jalankan `installBackupTrigger` satu kali, lalu berikan izin Google. Fungsi memeriksa akses Firebase/folder, memasang trigger tiap menit tanpa menduplikasi trigger, serta mencatat status pemeriksaan ke Firebase. Jangan menyalin token atau kata sandi ke skrip.
+5. Setelah dashboard menampilkan pemroses terhubung tanpa kesalahan, aktifkan backup otomatis. Antrean dan 100 permintaan terbaru terlihat pada dashboard. Cadangan pertama yang berhasil memberi tautan berkas. Pemasangan trigger dan izin Google diperlukan; deployment frontend saja belum mengaktifkan pengiriman.
+
+Antrean diproses sekitar setiap menit; keterlambatan, kuota Apps Script/Firestore/Drive, kapasitas folder, atau gangguan akses dapat menunda/gagalkan pemrosesan. Menonaktifkan backup menghentikan permintaan baru dan menunda pemrosesan antrean. Database saat ini memiliki retensi versi satu jam tanpa PITR; snapshot yang belum berhasil diekspor selama lebih dari satu jam ditandai **kedaluwarsa**, tanpa menggantinya diam-diam dengan data terbaru. Cadangan yang sudah tersimpan tetap tersedia di Drive. Gunakan Backup Data untuk cadangan keadaan saat ini jika pemroses terputus, dan periksa statusnya sebelum menghapus data. Batas pembacaan historis mengikuti [Firestore REST readTime](https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.documents/list); trigger berjalan di akun pemasang sesuai [dokumentasi Apps Script](https://developers.google.com/apps-script/guides/triggers/installable).
 
 Jawaban lama yang sudah terimpor di Firebase tetap dipertahankan. Perubahan ini tidak memulihkan jawaban yang sebelumnya terhapus atau tertimpa.
 

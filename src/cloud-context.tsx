@@ -2,10 +2,11 @@ import { prepareStageSave } from './utils/journeyRevision';
 import { reviseJourney } from './utils/journeyRevision';
 import { collectDatabaseBackup } from './utils/databaseBackup';
 import { applyMaintenancePlan, makeDeletePlan, makeRestorePlan, sameDocument, validateDatabaseBackup } from './utils/databaseMaintenance';
+import { backupMilestone, driveFolderId, DriveBackupSettings, DriveBackupJob, DriveBackupWorker } from './utils/driveBackup';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createUserWithEmailAndPassword, deleteUser, EmailAuthProvider, GoogleAuthProvider, inMemoryPersistence, onAuthStateChanged, reauthenticateWithCredential, setPersistence, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signOut, updatePassword, User } from 'firebase/auth';
-import { collection, deleteDoc, doc, getDocFromServer, getDocsFromServer, onSnapshot, runTransaction, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
-import { AdminRole, AppContext, AppContextType, DEFAULT_DRIVE_FOLDER_URL, StaffAccount } from './context';
+import { collection, deleteDoc, doc, getDocFromServer, getDocsFromServer, onSnapshot, runTransaction, query, setDoc, updateDoc, where, writeBatch, serverTimestamp, orderBy, limit } from 'firebase/firestore';
+import { AdminRole, AppContext, AppContextType, StaffAccount } from './context';
 import { DEFAULT_CLASS_CONFIGS, STAGES_DATA } from './data';
 import { provisioningAuth, studentAuth, studentDb, teacherAuth, teacherDb } from './firebase';
 import { firebaseConfig, teacherEmail } from './firebase-config';
@@ -94,6 +95,9 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const maintenanceRunning = useRef(false);
   const [activeStudent, setActiveStudent] = useState<ActiveStudent | null>(null);
   const [appSettings, setAppSettings] = useState<AppSettings>(defaultSettings);
+  const [driveBackupSettings, setDriveBackupSettings] = useState<DriveBackupSettings>({ folderUrl: '', enabled: false });
+  const [driveBackupJobs, setDriveBackupJobs] = useState<DriveBackupJob[]>([]);
+  const [driveBackupWorker, setDriveBackupWorker] = useState<DriveBackupWorker | null>(null);
   const [cloudLoading, setCloudLoading] = useState(true);
   const [cloudError, setCloudError] = useState<string | null>(null);
   const storageError = false;
@@ -114,6 +118,33 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     .map(([id, record]) => [id, record.journey])), [visibleRecords]);
 
   useEffect(() => { studentRecordsRef.current = studentRecords; }, [studentRecords]);
+
+  useEffect(() => {
+    if (!studentUid || !studentDb) return;
+    return onSnapshot(doc(studentDb, 'settings', 'driveBackup'), { includeMetadataChanges: true }, snapshot => {
+      if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;
+      const data = snapshot.data();
+      setDriveBackupSettings(data && driveFolderId(data.folderUrl) && typeof data.enabled === 'boolean'
+        ? { folderUrl: data.folderUrl, enabled: data.enabled } : { folderUrl: '', enabled: false });
+    }, () => { setDriveBackupSettings({ folderUrl: '', enabled: false }); });
+  }, [studentUid]);
+
+  useEffect(() => {
+    if (!isAdminLoggedIn || !teacherDb) { setDriveBackupJobs([]); setDriveBackupWorker(null); return; }
+    const unsubscribeJobs = onSnapshot(query(collection(teacherDb, 'driveBackupJobs'), orderBy('createdAt', 'desc'), limit(100)),
+      { includeMetadataChanges: true }, snapshot => {
+        if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;
+        setDriveBackupJobs(snapshot.docs.map(item => {
+          const data = item.data();
+          return { ...data, id: item.id, createdAt: data.createdAt?.toDate?.().toISOString() || '' } as DriveBackupJob;
+        }));
+      }, () => setDriveBackupJobs([]));
+    const unsubscribeWorker = onSnapshot(doc(teacherDb, 'settings', 'driveBackupWorker'), { includeMetadataChanges: true }, snapshot => {
+      if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;
+      setDriveBackupWorker(snapshot.exists() ? snapshot.data() as DriveBackupWorker : null);
+    }, error => setDriveBackupWorker({ checkedAt: '', error: readableError(error) }));
+    return () => { unsubscribeJobs(); unsubscribeWorker(); };
+  }, [isAdminLoggedIn]);
 
 
 
@@ -246,13 +277,24 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const saveStageAnswer: AppContextType['saveStageAnswer'] = async (studentId, stageId, answers, expectedStage) => {
     if (!studentUid || !studentDb || !studentReady) throw new Error('Koneksi Firebase belum siap. Jawaban belum disimpan.');
     const reference = doc(studentDb, studentCollection, studentId);
+    // A stable ID across transaction retries prevents duplicate requests for one save.
+    const backupJobId = crypto.randomUUID();
     await runTransaction(studentDb, async transaction => {
       const snapshot = await transaction.get(reference);
+      const backupConfig = driveBackupSettings.enabled && (stageId === 4 || stageId === 8)
+        ? await transaction.get(doc(studentDb!, 'settings', 'driveBackup')) : null;
       if (!snapshot.exists()) throw new Error('Data siswa sudah dihapus. Muat ulang halaman.');
       const latest = snapshot.data() as CloudStudentRecord;
       if (latest.ownerUid !== studentUid) throw new Error('Sesi siswa tidak cocok.');
       const journey = prepareStageSave(latest.journey, stageId, answers, expectedStage, new Date().toISOString());
       transaction.update(reference, { journey: JSON.parse(JSON.stringify(journey)) });
+      const milestone = backupMilestone(stageId, journey);
+      if (milestone && backupConfig?.data()?.enabled === true) {
+        transaction.set(doc(studentDb!, 'driveBackupJobs', backupJobId), {
+          ownerUid: studentUid, studentId, milestone, status: 'pending',
+          createdAt: serverTimestamp(), revision: journey.updatedAt,
+        });
+      }
     });
   };
 
@@ -480,7 +522,16 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } finally { maintenanceRunning.current = false; }
   };
 
-  const unavailable = () => ({ success: false, message: 'Fitur Google Drive tidak digunakan dalam mode Firebase.' });
+  const updateDriveBackupSettings: AppContextType['updateDriveBackupSettings'] = async settings => {
+    if (!isAdminLoggedIn || !teacherDb) return { success: false, message: 'Masuk sebagai guru atau admin.' };
+    const folderId = driveFolderId(settings.folderUrl);
+    if (!folderId || typeof settings.enabled !== 'boolean') return { success: false, message: 'Gunakan tautan folder https://drive.google.com/drive/folders/...' };
+    try {
+      await setDoc(doc(teacherDb, 'settings', 'driveBackup'), { folderUrl: `https://drive.google.com/drive/folders/${folderId}`, enabled: settings.enabled });
+      return { success: true, message: 'Pengaturan Drive tersimpan di Firebase dan berlaku untuk semua siswa. Pastikan pemroses backup sudah terpasang.' };
+    } catch (error) { return { success: false, message: readableError(error) }; }
+  };
+  const unavailable = () => ({ success: false, message: 'Gunakan pengaturan akun Firebase.' });
   const contextValue: AppContextType = {
     activeStudent, startStudentJourney, clearActiveStudent,
     isAdminLoggedIn, adminLogin, bootstrapLogin, bootstrapNeeded: rootLoaded && !rootAccount, adminLogout,
@@ -489,9 +540,8 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     updateAdminCredentials: unavailable,
     allStudents, journeys, saveStageAnswer, getStudentJourney, exportDatabaseBackup,
     prepareRestoreBackup, prepareDeleteAllStudents, applyDatabaseMaintenance,
-    retryDriveSync: () => {}, resetStudentProgress, deleteStudent,
-    driveFolderUrl: DEFAULT_DRIVE_FOLDER_URL, updateDriveFolderUrl: unavailable,
-    driveWebhookUrl: '', driveWebhookManagedByBuild: false, updateDriveWebhookUrl: unavailable,
+    resetStudentProgress, deleteStudent,
+    driveBackupSettings, driveBackupJobs, driveBackupWorker, updateDriveBackupSettings,
     appSettings, updateAppSettings, storageError, cloudLoading: cloudLoading || (isAdminLoggedIn && !teacherReady), cloudError,
   };
 

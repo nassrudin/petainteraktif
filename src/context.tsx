@@ -2,8 +2,7 @@ import { createContext, useContext } from 'react';
 import { ActiveStudent, StudentJourney, StageAnswer, AdminCredentials, Gender, AppSettings } from './types';
 import { DatabaseBackup } from './utils/databaseBackup';
 import { MaintenancePlan } from './utils/databaseMaintenance';
-
-export const DEFAULT_DRIVE_FOLDER_URL = '';
+import { DriveBackupSettings, DriveBackupJob, DriveBackupWorker } from './utils/driveBackup';
 
 export interface StaffAccount {
   uid: string;
@@ -42,14 +41,12 @@ export interface AppContextType {
   applyDatabaseMaintenance: (plan: MaintenancePlan, confirmation: string, onProgress?: (completed: number, total: number) => void) => Promise<number>;
   saveStageAnswer: (studentId: string, stageId: number, answers: Record<string, any>, expectedStage: StageAnswer | undefined) => void | Promise<void>;
   getStudentJourney: (studentId: string) => StudentJourney;
-  retryDriveSync: (studentId: string) => void;
   resetStudentProgress: (studentId: string) => void | Promise<void>;
   deleteStudent: (studentId: string) => void | Promise<void>;
-  driveFolderUrl: string;
-  updateDriveFolderUrl: (url: string) => { success: boolean; message: string };
-  driveWebhookUrl: string;
-  driveWebhookManagedByBuild: boolean;
-  updateDriveWebhookUrl: (url: string) => { success: boolean; message: string };
+  driveBackupSettings: DriveBackupSettings;
+  driveBackupJobs: DriveBackupJob[];
+  driveBackupWorker: DriveBackupWorker | null;
+  updateDriveBackupSettings: (settings: DriveBackupSettings) => Promise<{ success: boolean; message: string }>;
   appSettings: AppSettings;
   updateAppSettings: (settings: AppSettings) => { success: boolean; message: string } | Promise<{ success: boolean; message: string }>;
   storageError: boolean;

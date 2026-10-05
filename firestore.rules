@@ -90,6 +90,52 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // No credentials are stored here; students need this server setting for atomic enqueue.
+    match /settings/driveBackup {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create, update: if admin()
+        && request.resource.data.keys().hasOnly(['folderUrl', 'enabled'])
+        && request.resource.data.folderUrl is string
+        && request.resource.data.folderUrl.matches('https://drive[.]google[.]com/drive/folders/[A-Za-z0-9_-]{8,100}')
+        && request.resource.data.enabled is bool;
+      allow delete: if false;
+    }
+
+    match /settings/driveBackupWorker {
+      allow get: if admin();
+      allow list, create, update, delete: if false; // Written by the authorized Google server worker through IAM.
+    }
+
+    function completedThrough(journey, milestone) {
+      return journey.stages['1'].completed == true
+        && journey.stages['2'].completed == true
+        && journey.stages['3'].completed == true
+        && journey.stages['4'].completed == true
+        && (milestone == 4 || (journey.stages['5'].completed == true
+          && journey.stages['6'].completed == true
+          && journey.stages['7'].completed == true
+          && journey.stages['8'].completed == true));
+    }
+
+    match /driveBackupJobs/{jobId} {
+      allow get, list: if admin();
+      allow create: if signedIn()
+        && jobId.matches('[a-f0-9-]{36}')
+        && request.resource.data.keys().hasOnly(['ownerUid', 'studentId', 'milestone', 'status', 'createdAt', 'revision'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.studentId is string
+        && request.resource.data.milestone in [4, 8]
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && get(/databases/$(database)/documents/settings/driveBackup).data.enabled == true
+        && getAfter(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.ownerUid == request.auth.uid
+        && request.resource.data.revision == getAfter(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.journey.updatedAt
+        && get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.journey.updatedAt != request.resource.data.revision
+        && completedThrough(getAfter(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.journey, request.resource.data.milestone);
+      allow update, delete: if false; // Worker-only status; clients cannot claim a successful backup.
+    }
+
     match /students/{studentId} {
       allow get, list: if admin() ||
         (signedIn() && resource.data.ownerUid == request.auth.uid);

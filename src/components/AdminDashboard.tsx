@@ -1,4 +1,5 @@
 import { DatabaseMaintenancePanel } from './DatabaseMaintenancePanel';
+import { DriveBackupPanel } from './DriveBackupPanel';
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context';
 import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA, DEFAULT_CLASS_CONFIGS } from '../data';
@@ -26,15 +27,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     adminRole,
     updateAdminCredentials,
     adminLogout,
-    driveFolderUrl,
-    updateDriveFolderUrl,
-    driveWebhookUrl,
-    driveWebhookManagedByBuild,
-    updateDriveWebhookUrl,
     appSettings,
     updateAppSettings,
     deleteStudent,
-    retryDriveSync,
     exportDatabaseBackup,
   } = useApp();
 
@@ -53,12 +48,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authFeedback, setAuthFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  // Google Drive configuration state
-  const [driveInput, setDriveInput] = useState(driveFolderUrl);
-  const [driveFeedback, setDriveFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [webhookInput, setWebhookInput] = useState(driveWebhookUrl);
-  const [webhookFeedback, setWebhookFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Class settings state
   const [editClasses, setEditClasses] = useState(appSettings.classNames);
@@ -119,26 +108,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       setConfirmPassword('');
     } else {
       setAuthFeedback({ type: 'error', text: res.message });
-    }
-  };
-
-  const handleSaveDriveUrl = (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = updateDriveFolderUrl(driveInput);
-    if (res.success) {
-      setDriveFeedback({ type: 'success', text: res.message });
-    } else {
-      setDriveFeedback({ type: 'error', text: res.message });
-    }
-  };
-
-  const handleSaveWebhookUrl = (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = updateDriveWebhookUrl(webhookInput);
-    if (res.success) {
-      setWebhookFeedback({ type: 'success', text: res.message });
-    } else {
-      setWebhookFeedback({ type: 'error', text: res.message });
     }
   };
 
@@ -235,7 +204,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         j?.confidenceScore || 0,
         `${count}/8`,
         j?.updatedAt || s.startedAt,
-        firebaseEnabled ? 'Firebase' : count === 8 ? (j?.driveSyncStatus || 'Webhook belum diatur') : 'Belum Lengkap'
+        'Firebase'
       ];
     });
 
@@ -305,7 +274,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               <Clock3 className="w-3.5 h-3.5" />
               <span>Akses Pos</span>
             </button>
-            {!firebaseEnabled && <button
+            <button
               onClick={() => setActiveAdminTab('drive')}
               disabled={isMaintaining}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -316,7 +285,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             >
               <CloudUpload className="w-3.5 h-3.5" />
               <span>Pengaturan Drive</span>
-            </button>}
+            </button>
             <button
               onClick={() => setActiveAdminTab('security')}
               disabled={isMaintaining}
@@ -386,7 +355,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               </div>
               <p className="text-sm font-black text-emerald-700 mt-1 flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                 <span>{firebaseEnabled ? 'Aktif' : driveWebhookUrl ? 'Webhook diatur' : 'Belum diatur'}</span>
+                 <span>{firebaseEnabled ? 'Aktif' : 'Belum diatur'}</span>
               </p>
               <p className="text-[10px] text-slate-400 truncate mt-1">{firebaseEnabled ? 'Jawaban dibaca dari Firestore' : 'Pengiriman perlu dicek di Drive'}</p>
             </div>
@@ -519,13 +488,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                           </td>
                           <td className="px-5 py-4">
                             <div className="text-slate-600">
-                              {firebaseEnabled ? 'Firebase' : completedCount < 8 ? `${completedCount}/8 Pos` :
-                                j?.driveSyncStatus === 'pending' ? 'Sedang dikirim' :
-                                j?.driveSyncStatus === 'unverified' ? 'Dikirim, cek di Drive' :
-                                j?.driveSyncStatus === 'failed' ? 'Pengiriman gagal' : 'Webhook belum diatur'}
-                              {!firebaseEnabled && completedCount === 8 && driveWebhookUrl && j?.driveSyncStatus !== 'pending' && (
-                                <button onClick={() => retryDriveSync(student.id)} className="block text-teal-700 underline mt-1">Kirim ulang</button>
-                              )}
+                              Firebase
                             </div>
                           </td>
                           <td className="px-5 py-4 text-right">
@@ -731,161 +694,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         </div>
       )}
 
-      {/* DRIVE CONFIGURATION TAB */}
-      {activeAdminTab === 'drive' && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 max-w-2xl mx-auto space-y-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-            <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 shrink-0">
-              <CloudUpload className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">Referensi Folder Google Drive</h2>
-              <p className="text-xs text-slate-500">
-                 Link ini disimpan pada browser guru. Untuk mengirim jawaban, webhook harus diatur juga pada browser siswa; pastikan folder target di skrip cocok.
-              </p>
-            </div>
-          </div>
-
-          {driveFeedback && (
-            <div
-              className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-center gap-2 ${
-                driveFeedback.type === 'success'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                  : 'bg-red-50 border-red-200 text-red-700'
-              }`}
-            >
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{driveFeedback.text}</span>
-            </div>
-          )}
-
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">
-                Link Folder yang Ditampilkan:
-              </span>
-              <a
-                href={driveFolderUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-bold text-teal-700 hover:text-teal-900 underline flex items-center gap-1 cursor-pointer"
-              >
-                <span>Buka di Google Drive</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-            <p className="text-xs font-mono text-slate-800 bg-white p-2.5 rounded-xl border border-slate-200 break-all select-all">
-              {driveFolderUrl}
-            </p>
-          </div>
-
-          <form onSubmit={handleSaveDriveUrl} className="space-y-4">
-            <div className="space-y-1.5 text-left">
-              <label className="block text-xs font-bold text-slate-700">
-                Ubah Tautan Referensi Folder (URL):
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <LinkIcon className="w-4 h-4" />
-                </div>
-                <input
-                  type="url"
-                  value={driveInput}
-                  onChange={(e) => setDriveInput(e.target.value)}
-                  placeholder="https://drive.google.com/drive/folders/..."
-                  className="w-full text-xs sm:text-sm pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none transition-all font-mono"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setDriveInput('https://drive.google.com/drive/folders/1Slmi-qS--PbmWZh7KzFoMVG3iE5QqD_Z?usp=sharing')}
-                className="text-xs text-slate-500 hover:text-teal-700 font-semibold flex items-center gap-1 cursor-pointer"
-              >
-                <RefreshCw className="w-3 h-3" />
-                <span>Reset ke Link Bawaan</span>
-              </button>
-
-              <button
-                type="submit"
-                className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
-              >
-                Simpan Link Referensi
-              </button>
-            </div>
-          </form>
-
-          {/* GOOGLE APPS SCRIPT WEBHOOK SECTION */}
-          <div className="pt-4 border-t border-slate-200 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-slate-800">Koneksi Otomatis Upload Berkas (Google Apps Script)</h3>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  {driveWebhookManagedByBuild
-                    ? 'Webhook berlaku untuk semua perangkat melalui konfigurasi build GitHub Pages. Ubah variabel DRIVE_WEBHOOK_URL lalu deploy ulang untuk menggantinya.'
-                    : 'Pasang URL Webhook Web App di browser ini, atau atur DRIVE_WEBHOOK_URL saat build agar berlaku di semua perangkat siswa.'}
-                </p>
-              </div>
-            </div>
-
-            {webhookFeedback && (
-              <div
-                className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
-                  webhookFeedback.type === 'success'
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                    : 'bg-red-50 border-red-200 text-red-700'
-                }`}
-              >
-                {webhookFeedback.type === 'success' ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                )}
-                <span>{webhookFeedback.text}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveWebhookUrl} className="space-y-3">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <LinkIcon className="w-4 h-4" />
-                </div>
-                <input
-                  type="url"
-                  value={webhookInput}
-                  disabled={driveWebhookManagedByBuild}
-                  onChange={(e) => setWebhookInput(e.target.value)}
-                  placeholder="https://script.google.com/macros/s/.../exec"
-                  className="w-full text-xs sm:text-sm pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none transition-all font-mono"
-                />
-              </div>
-              <div className="flex justify-between items-center gap-2">
-                <span className="text-[10px] text-slate-400">Skrip: file google-apps-script-sync.js di proyek</span>
-                <button
-                  type="submit"
-                  disabled={driveWebhookManagedByBuild}
-                  className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition-all cursor-pointer"
-                >
-                  Simpan Webhook URL
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-emerald-950 space-y-1">
-            <p className="font-bold flex items-center gap-1.5 text-emerald-900">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Status pengiriman refleksi</span>
-            </p>
-            <p className="text-[11px] text-emerald-800 leading-relaxed">
-              Jawaban dikirim sebagai JSON bila webhook telah diatur di browser siswa. Karena respons Google Apps Script tidak dapat diperiksa dari halaman ini, buka folder Drive untuk memastikan berkas tersedia.
-            </p>
-          </div>
-        </div>
-      )}
+      {activeAdminTab === 'drive' && <DriveBackupPanel />}
 
       {/* CHANGE PASSWORD / SECURITY TAB */}
       {activeAdminTab === 'security' && (firebaseEnabled ? <StaffAccountsPanel /> : (
