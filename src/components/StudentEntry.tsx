@@ -13,7 +13,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
   const [name, setName] = useState('');
   const [gender, setGender] = useState<Gender>('L');
   const [studentClass, setStudentClass] = useState<string>(appSettings.classNames[0]?.className || '');
-  const [absentNumber, setAbsentNumber] = useState<number>(1);
+  const [absentNumber, setAbsentNumber] = useState<number>(appSettings.classNames[0]?.absentRangeMin ?? 1);
   const [error, setError] = useState<string | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,7 +21,6 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
   useEffect(() => {
     if (!appSettings.classNames.some((item) => item.className === studentClass)) {
       setStudentClass(appSettings.classNames[0]?.className || '');
-      setAbsentNumber(appSettings.classNames[0]?.absentRangeMin || 1);
     }
   }, [appSettings.classNames, studentClass]);
 
@@ -164,7 +163,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
                   <button
                     key={cls.className}
                     type="button"
-                    onClick={() => { setStudentClass(cls.className); setAbsentNumber(cls.absentRangeMin); }}
+                    onClick={() => setStudentClass(cls.className)}
                     aria-pressed={studentClass === cls.className}
                     className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                       studentClass === cls.className
