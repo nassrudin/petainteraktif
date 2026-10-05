@@ -10,6 +10,7 @@ import { StaffAccountsPanel } from './StaffAccountsPanel';
 import { backupFileName } from '../utils/databaseBackup';
 import { buildStudentCsv, studentCsvFileName } from '../utils/studentCsv';
 import { completedStageCount, nextStudentSort, sortStudents, StudentSort, StudentSortKey } from '../utils/studentSort';
+import { formatDashboardDate } from '../utils/displayDate';
 import { 
   Users, CheckCircle, BarChart3, 
   ExternalLink, Download, Search, Eye, Filter,
@@ -443,7 +444,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
                       return (
                         <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="px-5 py-4">
+                          <td className="px-5 py-4 min-w-[15rem]">
                             <div className="flex items-center gap-3">
                               <div className={`w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center shrink-0 ${
                                 student.gender === 'L' 
@@ -454,7 +455,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                               </div>
                               <div>
                                 <p className="font-bold text-slate-800">{student.name}</p>
-                                <p className="text-[10px] text-slate-400">Mulai: {student.startedAt}</p>
+                                <p className="text-[10px] text-slate-500 whitespace-nowrap">Mulai: {formatDashboardDate(student.startedAt)}</p>
                               </div>
                             </div>
                           </td>
@@ -800,7 +801,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                 <div>
                   <h3 className="font-bold text-lg">{selectedStudent.name}</h3>
                   <p className="text-xs text-teal-200">
-                    Kelas: {selectedStudent.class} • Mulai: {selectedStudent.startedAt}
+                    Kelas: {selectedStudent.class} • Mulai: {formatDashboardDate(selectedStudent.startedAt)}
                   </p>
                 </div>
               </div>
