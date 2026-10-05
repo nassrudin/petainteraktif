@@ -94,10 +94,14 @@ service cloud.firestore {
       allow get, list: if admin() ||
         (signedIn() && resource.data.ownerUid == request.auth.uid);
 
-      allow create: if signedIn()
+      // Teachers/admins may recreate student documents from an explicitly selected backup.
+      allow create: if ((signedIn()
         && request.auth.token.firebase.sign_in_provider == 'anonymous'
+        && request.resource.data.ownerUid == request.auth.uid) || admin())
         && request.resource.data.keys().hasOnly(['ownerUid', 'student', 'journey'])
-        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid is string
+        && request.resource.data.student is map
+        && request.resource.data.journey is map
         && request.resource.data.student.id == studentId
         && request.resource.data.journey.studentId == studentId;
 

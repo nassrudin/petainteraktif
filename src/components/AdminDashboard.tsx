@@ -1,3 +1,4 @@
+import { DatabaseMaintenancePanel } from './DatabaseMaintenancePanel';
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context';
 import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA, DEFAULT_CLASS_CONFIGS } from '../data';
@@ -41,6 +42,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   const [filterClass, setFilterClass] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isMaintaining, setIsMaintaining] = useState(false);
   const [backupFeedback, setBackupFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeAdminTab, setActiveAdminTab] = useState<'students' | 'drive' | 'security' | 'classsettings' | 'access'>('students');
   const [viewingStudentReport, setViewingStudentReport] = useState<ActiveStudent | null>(null);
@@ -177,6 +179,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   };
 
   const handleDeleteStudent = async (studentId: string) => {
+    if (isMaintaining) return;
     if (!confirm(firebaseEnabled
       ? 'Hapus siswa ini beserta seluruh jawabannya dari Firebase?'
       : 'Hapus siswa ini beserta seluruh jawabannya dari browser ini?')) return;
@@ -190,7 +193,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   };
 
   const handleBackup = async () => {
-    if (isBackingUp) return;
+    if (isBackingUp || isMaintaining) return;
     setIsBackingUp(true);
     setBackupFeedback(null);
     try {
@@ -268,6 +271,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
           <div className="flex flex-wrap items-center gap-2 bg-black/20 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 self-start md:self-center">
             <button
               onClick={() => setActiveAdminTab('students')}
+              disabled={isMaintaining}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeAdminTab === 'students'
                   ? 'bg-white text-teal-900 shadow-sm'
@@ -279,6 +283,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             </button>
             <button
               onClick={() => setActiveAdminTab('classsettings')}
+              disabled={isMaintaining}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeAdminTab === 'classsettings'
                   ? 'bg-white text-teal-900 shadow-sm'
@@ -290,6 +295,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             </button>
             <button
               onClick={() => setActiveAdminTab('access')}
+              disabled={isMaintaining}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeAdminTab === 'access'
                   ? 'bg-white text-teal-900 shadow-sm'
@@ -301,6 +307,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             </button>
             {!firebaseEnabled && <button
               onClick={() => setActiveAdminTab('drive')}
+              disabled={isMaintaining}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeAdminTab === 'drive'
                   ? 'bg-white text-teal-900 shadow-sm'
@@ -312,6 +319,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             </button>}
             <button
               onClick={() => setActiveAdminTab('security')}
+              disabled={isMaintaining}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeAdminTab === 'security'
                   ? 'bg-white text-teal-900 shadow-sm'
@@ -339,6 +347,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       {/* STUDENTS TAB */}
       {activeAdminTab === 'students' && (
         <>
+          <DatabaseMaintenancePanel backupBusy={isBackingUp} onBusyChange={setIsMaintaining} />
           {/* Analytics KPI Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -421,7 +430,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                 <button
                   type="button"
                   onClick={handleBackup}
-                  disabled={isBackingUp}
+                  disabled={isBackingUp || isMaintaining}
                   aria-busy={isBackingUp}
                   className="px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                   title="Backup semua siswa, seluruh jawaban, dan pengaturan kelas dari Firebase ke JSON"
@@ -539,6 +548,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                               </button>
                               <button
                                 onClick={() => handleDeleteStudent(student.id)}
+                                disabled={isMaintaining}
                                 className="px-3 py-1.5 rounded-xl border border-red-200 bg-white text-red-600 font-bold text-xs hover:bg-red-50 transition-all flex items-center gap-1.5 cursor-pointer"
                                 title="Hapus jawaban siswa ini"
                               >

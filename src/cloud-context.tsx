@@ -1,6 +1,7 @@
 import { prepareStageSave } from './utils/journeyRevision';
 import { reviseJourney } from './utils/journeyRevision';
 import { collectDatabaseBackup } from './utils/databaseBackup';
+import { applyMaintenancePlan, makeDeletePlan, makeRestorePlan, sameDocument, validateDatabaseBackup } from './utils/databaseMaintenance';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createUserWithEmailAndPassword, deleteUser, EmailAuthProvider, GoogleAuthProvider, inMemoryPersistence, onAuthStateChanged, reauthenticateWithCredential, setPersistence, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signOut, updatePassword, User } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDocFromServer, getDocsFromServer, onSnapshot, runTransaction, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
@@ -90,6 +91,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [studentRecords, setStudentRecords] = useState<Record<string, CloudStudentRecord>>({});
   const [teacherRecords, setTeacherRecords] = useState<Record<string, CloudStudentRecord>>({});
   const studentRecordsRef = useRef(studentRecords);
+  const maintenanceRunning = useRef(false);
   const [activeStudent, setActiveStudent] = useState<ActiveStudent | null>(null);
   const [appSettings, setAppSettings] = useState<AppSettings>(defaultSettings);
   const [cloudLoading, setCloudLoading] = useState(true);
@@ -438,6 +440,46 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
+  const prepareRestoreBackup: AppContextType['prepareRestoreBackup'] = async value => {
+    const backup = validateDatabaseBackup(value, firebaseConfig.projectId);
+    const current = await exportDatabaseBackup();
+    return makeRestorePlan(backup, current.documents);
+  };
+
+  const prepareDeleteAllStudents: AppContextType['prepareDeleteAllStudents'] = async () => {
+    const current = await exportDatabaseBackup();
+    return makeDeletePlan(current.documents.filter(item => item.path.startsWith('students/')));
+  };
+
+  const applyDatabaseMaintenance: AppContextType['applyDatabaseMaintenance'] = async (plan, confirmation, onProgress) => {
+    if (!isAdminLoggedIn || !teacherDb) throw new Error('Masuk sebagai guru atau admin untuk tindakan ini.');
+    if (confirmation !== (plan.kind === 'restore' ? 'RESTORE' : 'HAPUS SEMUA')) throw new Error('Konfirmasi belum sesuai.');
+    if (maintenanceRunning.current) throw new Error('Operasi lain sedang berjalan. Tunggu sampai selesai.');
+    maintenanceRunning.current = true;
+    const db = teacherDb;
+    try {
+      const result = await applyMaintenancePlan(plan, async operations => {
+        await runTransaction(db, async transaction => {
+          const snapshots = await Promise.all(operations.map(operation => transaction.get(doc(db, operation.path))));
+          for (let index = 0; index < operations.length; index++) {
+            const snapshot = snapshots[index];
+            const current = snapshot.exists() ? snapshot.data() : null;
+            if (!sameDocument(current, operations[index].expected)) {
+              throw new Error(`Data ${operations[index].path} berubah sejak ringkasan dibuat. Tindakan pada kelompok ini dibatalkan.`);
+            }
+          }
+          for (const operation of operations) {
+            const reference = doc(db, operation.path);
+            if (operation.data === null) transaction.delete(reference);
+            else transaction.set(reference, operation.data);
+          }
+        });
+      }, onProgress);
+      setActiveStudent(current => current && plan.kind === 'delete' && plan.operations.some(item => item.path === `students/${current.id}`) ? null : current);
+      return result;
+    } finally { maintenanceRunning.current = false; }
+  };
+
   const unavailable = () => ({ success: false, message: 'Fitur Google Drive tidak digunakan dalam mode Firebase.' });
   const contextValue: AppContextType = {
     activeStudent, startStudentJourney, clearActiveStudent,
@@ -446,6 +488,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     adminCredentials: { username: adminRole === 'admin' ? 'admin' : teacherAccount?.username || '', password: '' },
     updateAdminCredentials: unavailable,
     allStudents, journeys, saveStageAnswer, getStudentJourney, exportDatabaseBackup,
+    prepareRestoreBackup, prepareDeleteAllStudents, applyDatabaseMaintenance,
     retryDriveSync: () => {}, resetStudentProgress, deleteStudent,
     driveFolderUrl: DEFAULT_DRIVE_FOLDER_URL, updateDriveFolderUrl: unavailable,
     driveWebhookUrl: '', driveWebhookManagedByBuild: false, updateDriveWebhookUrl: unavailable,
