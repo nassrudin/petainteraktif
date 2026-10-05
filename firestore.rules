@@ -54,7 +54,7 @@ service cloud.firestore {
     // Secret codes grant access to one existing record, without changing its owner or answers.
     match /studentAccessKeys/{studentId} {
       allow get: if admin() || studentAccess(studentId);
-      allow list: if false;
+      allow list: if admin();
       allow create: if (admin() || studentAccess(studentId))
         && request.resource.data.keys().hasOnly(['code'])
         && request.resource.data.code.matches('[a-f0-9]{32}');
@@ -65,17 +65,22 @@ service cloud.firestore {
     }
 
     match /studentAccessCodes/{code} {
-      allow get: if signedIn()
+      allow get: if admin() || (signedIn()
         && code.matches('[a-f0-9]{32}')
         && exists(/databases/$(database)/documents/studentAccessKeys/$(resource.data.studentId))
-        && get(/databases/$(database)/documents/studentAccessKeys/$(resource.data.studentId)).data.code == code;
-      allow list: if false;
+        && get(/databases/$(database)/documents/studentAccessKeys/$(resource.data.studentId)).data.code == code);
+      allow list: if admin();
       allow create: if code.matches('[a-f0-9]{32}')
         && request.resource.data.keys().hasOnly(['studentId'])
         && request.resource.data.studentId is string
         && (admin() || studentAccess(request.resource.data.studentId))
         && getAfter(/databases/$(database)/documents/studentAccessKeys/$(request.resource.data.studentId)).data.code == code;
-      allow update: if false;
+      allow update: if admin()
+        && code.matches('[a-f0-9]{32}')
+        && request.resource.data.keys().hasOnly(['studentId'])
+        && request.resource.data.studentId is string
+        && request.resource.data.studentId == resource.data.studentId
+        && getAfter(/databases/$(database)/documents/studentAccessKeys/$(request.resource.data.studentId)).data.code == code;
       allow delete: if admin();
     }
 

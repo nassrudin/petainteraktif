@@ -66,10 +66,10 @@ function installBackupTrigger() {
   patchDocument('settings/driveBackupWorker', { checkedAt: new Date().toISOString(), error: '', scriptUrl: 'https://script.google.com/home/projects/' + ScriptApp.getScriptId() + '/edit' });
   processDriveBackups();
 }
-function listStudentsAt(readTime) {
+function listCollectionAt(collectionName, readTime) {
   var result = [], next = '';
   do {
-    var page = firestoreRequest('/students?pageSize=500&readTime=' + encodeURIComponent(readTime) + (next ? '&pageToken=' + encodeURIComponent(next) : ''));
+    var page = firestoreRequest('/' + collectionName + '?pageSize=500&readTime=' + encodeURIComponent(readTime) + (next ? '&pageToken=' + encodeURIComponent(next) : ''));
     result = result.concat((page.documents || []).map(decodeDocument));
     next = page.nextPageToken || '';
   } while (next);
@@ -77,15 +77,24 @@ function listStudentsAt(readTime) {
 }
 function buildSnapshotBackup(job, readTime) {
   var startedAt = new Date().toISOString();
-  var students = listStudentsAt(readTime);
+  var students = listCollectionAt('students', readTime);
   var settings = firestoreRequest('/settings/public?readTime=' + encodeURIComponent(readTime), 'get', undefined, true);
   var trigger = students.find(function(item) { return item.path === 'students/' + job.data.studentId; });
   if (!trigger || trigger.data.journey.updatedAt !== job.data.revision) throw new Error('Snapshot tidak cocok dengan penyimpanan pemicu; backup dibatalkan.');
+  var studentIds = new Set(students.map(function(item) { return item.path.slice('students/'.length); }));
+  var indexes = new Map(listCollectionAt('studentAccessCodes', readTime).map(function(item) { return [item.path.slice('studentAccessCodes/'.length), item]; }));
+  var keys = listCollectionAt('studentAccessKeys', readTime).filter(function(item) { return studentIds.has(item.path.slice('studentAccessKeys/'.length)); });
+  var access = [];
+  keys.forEach(function(item) {
+    var id = item.path.slice('studentAccessKeys/'.length), code = item.data.code, index = indexes.get(code);
+    if (!/^[a-f0-9]{32}$/.test(code) || !index || index.data.studentId !== id) throw new Error('Kode akses dalam snapshot tidak cocok; backup dibatalkan.');
+    access.push(item, index);
+  });
   return {
-    format: 'journey-map-database-backup', version: 1, startedAt: startedAt, exportedAt: new Date().toISOString(),
+    format: 'journey-map-database-backup', version: 2, startedAt: startedAt, exportedAt: new Date().toISOString(),
     source: { projectId: JM_PROJECT_ID, databaseId: '(default)', storage: 'firebase-server' },
-    scope: ['students', 'settings/public'], studentCount: students.length,
-    documents: students.concat(settings ? [decodeDocument(settings)] : []),
+    scope: ['students', 'settings/public', 'studentAccessKeys', 'studentAccessCodes'], studentCount: students.length, accessCodeCount: keys.length,
+    documents: students.concat(settings ? [decodeDocument(settings)] : [], access),
     stageDefinitions: JM_STAGE_DEFINITIONS, defaultSettings: JM_DEFAULT_SETTINGS,
     automatic: { jobId: job.path.split('/')[1], studentId: job.data.studentId, milestone: job.data.milestone, snapshotAt: readTime }
   };
@@ -103,7 +112,7 @@ function processBackupJob(job, folder) {
   if (files.hasNext()) {
     file = files.next();
     backup = JSON.parse(file.getBlob().getDataAsString());
-    if (backup.format !== 'journey-map-database-backup' || backup.version !== 1 || backup.source.projectId !== JM_PROJECT_ID ||
+    if (backup.format !== 'journey-map-database-backup' || ![1, 2].includes(backup.version) || backup.source.projectId !== JM_PROJECT_ID ||
         !backup.automatic || backup.automatic.jobId !== jobId || backup.automatic.snapshotAt !== readTime ||
         backup.studentCount !== backup.documents.filter(function(item) { return item.path.indexOf('students/') === 0; }).length) {
       throw new Error('Berkas dengan nama yang sama tidak cocok. Cadangan lama tidak ditimpa.');
@@ -117,7 +126,7 @@ function processBackupJob(job, folder) {
     backup = buildSnapshotBackup(job, readTime);
     file = folder.createFile(Utilities.newBlob(JSON.stringify(backup, null, 2) + '\n', 'application/json', fileName));
   }
-  patchDocument(job.path, { status: 'complete', error: '', completedAt: new Date().toISOString(), fileUrl: file.getUrl(), studentCount: backup.studentCount });
+  patchDocument(job.path, { status: 'complete', error: '', completedAt: new Date().toISOString(), fileUrl: file.getUrl(), studentCount: backup.studentCount, accessCodeCount: backup.accessCodeCount || 0 });
 }
 function processDriveBackups() {
   var lock = LockService.getScriptLock();
@@ -147,7 +156,7 @@ function processDriveBackups() {
     }
   } catch (error) { lastError = String(error.message || error).slice(0, 800); }
   finally {
-    try { patchDocument('settings/driveBackupWorker', { checkedAt: new Date().toISOString(), error: lastError }); }
+    try { patchDocument('settings/driveBackupWorker', { checkedAt: new Date().toISOString(), error: lastError, backupFormatVersion: 2 }); }
     finally { lock.releaseLock(); }
   }
   if (lastError) throw new Error(lastError);

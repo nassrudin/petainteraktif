@@ -79,3 +79,17 @@ test('empty database exports the full question headers and filename uses WIB', (
   assert.ok(rows[0].some(header => header.includes('[after_confidence_scale]')));
   assert.equal(studentCsvFileName('2026-10-04T18:03:04Z'), 'rekap_lengkap_peta_percaya_diri_2026-10-05_010304_WIB.csv');
 });
+
+test('CSV exports the issued code in the correct student row and labels missing codes', () => {
+  const code = 'abcd1234abcd1234abcd1234abcd1234';
+  const [headers, first, second] = parseCsv(buildStudentCsv(backup([
+    record('b', 'X-2'), record('a', 'X-1'), { path: 'studentAccessKeys/b', data: { code } },
+    { path: `studentAccessCodes/${code}`, data: { studentId: 'b' } },
+  ])));
+  const index = headers.indexOf('Kode Akses Siswa');
+  assert.ok(index >= 0);
+  assert.equal(first[index], 'Belum dibuat');
+  assert.equal(second[index], 'ABCD1234-ABCD1234-ABCD1234-ABCD1234');
+  assert.equal(first.length, headers.length);
+  assert.equal(second.length, headers.length);
+});

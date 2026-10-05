@@ -34,6 +34,8 @@ function fixture() {
       return { documents: [document('students/a', student('a'))], nextPageToken: 'next page' };
     }
     if (path.startsWith('/settings/public?')) return document('settings/public', settings);
+    if (path.startsWith('/studentAccessKeys?')) return { documents: [document('studentAccessKeys/a', { code: 'abcd1234abcd1234abcd1234abcd1234' })] };
+    if (path.startsWith('/studentAccessCodes?')) return { documents: [document('studentAccessCodes/abcd1234abcd1234abcd1234abcd1234', { studentId: 'a' })] };
     throw new Error(`Unexpected request ${path}`);
   };
   context.patchDocument = (path, values) => updates.push({ path, values: JSON.parse(JSON.stringify(values)) });
@@ -67,6 +69,9 @@ test('automatic backup includes every page and settings at the exact same server
   const contents = JSON.parse([...files.values()][0].getBlob().getDataAsString());
   const backup = validateDatabaseBackup(contents, 'test');
   assert.equal(backup.studentCount, 2);
+  assert.equal(backup.version, 2);
+  assert.equal(backup.accessCodeCount, 1);
+  assert.equal(backup.documents.find(item => item.path === 'studentAccessKeys/a').data.code, 'abcd1234abcd1234abcd1234abcd1234');
   assert.equal(backup.documents[0].data.ownerUid, 'owner-a');
   assert.equal(backup.documents[1].data.student.id, 'b');
   assert.equal(backup.documents[2].path, 'settings/public');
@@ -92,11 +97,11 @@ test('a failed acknowledgement retries the same immutable file without exporting
 });
 
 test('server read failure or mismatched snapshot creates no partial backup', () => {
-  for (const failure of ['page', 'settings', 'revision']) {
+  for (const failure of ['page', 'settings', 'revision', 'access']) {
     const { context, job, folder, files, updates } = fixture();
     const read = context.firestoreRequest;
     context.firestoreRequest = (path) => {
-      if ((failure === 'page' && path.includes('pageToken=')) || (failure === 'settings' && path.startsWith('/settings/'))) throw new Error('server failed');
+      if ((failure === 'page' && path.includes('pageToken=')) || (failure === 'settings' && path.startsWith('/settings/')) || (failure === 'access' && path.startsWith('/studentAccess'))) throw new Error('server failed');
       return read(path);
     };
     if (failure === 'revision') job.data.revision = 'changed';
@@ -104,6 +109,26 @@ test('server read failure or mismatched snapshot creates no partial backup', () 
     assert.equal(files.size, 0);
     assert.equal(updates.length, 0);
   }
+});
+
+test('a mismatched access code cancels the Drive file and existing version 1 backups remain retryable', () => {
+  const mismatch = fixture();
+  const read = mismatch.context.firestoreRequest;
+  mismatch.context.firestoreRequest = path => path.startsWith('/studentAccessCodes?')
+    ? { documents: [mismatch.document('studentAccessCodes/abcd1234abcd1234abcd1234abcd1234', { studentId: 'b' })] } : read(path);
+  assert.throws(() => mismatch.context.processBackupJob(mismatch.job, mismatch.folder), /Kode akses/);
+  assert.equal(mismatch.files.size, 0);
+  assert.equal(mismatch.updates.length, 0);
+  const legacy = fixture();
+  legacy.context.processBackupJob(legacy.job, legacy.folder);
+  const [fileName, file] = [...legacy.files.entries()][0];
+  const original = JSON.parse(file.getBlob().getDataAsString());
+  original.version = 1; delete original.accessCodeCount;
+  original.documents = original.documents.filter(item => !item.path.startsWith('studentAccess'));
+  legacy.files.set(fileName, { getBlob: () => ({ getDataAsString: () => JSON.stringify(original) }), getUrl: () => 'https://drive.google.com/file/d/backup-file/view' });
+  const before = legacy.reads.length;
+  legacy.context.processBackupJob(legacy.job, legacy.folder);
+  assert.equal(legacy.reads.length, before);
 });
 
 test('expired snapshots are reported without silently substituting current database data', () => {

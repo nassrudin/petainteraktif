@@ -2,6 +2,7 @@ import { STAGES_DATA } from '../data';
 import { ActiveStudent, StudentJourney } from '../types';
 import { DatabaseBackup, backupFileName } from './databaseBackup';
 import { reviseJourney } from './journeyRevision';
+import { formatStudentAccessCode } from './studentAccess';
 
 // Quote every cell, preserve line breaks/Unicode, and prevent answers being executed as spreadsheet formulas.
 export function csvCell(value: unknown): string {
@@ -17,6 +18,8 @@ export function studentCsvFileName(exportedAt: string): string {
 }
 
 export function buildStudentCsv(backup: DatabaseBackup): string {
+  const accessCodes = new Map(backup.documents.filter(item => item.path.startsWith('studentAccessKeys/'))
+    .map(item => [item.path.slice('studentAccessKeys/'.length), formatStudentAccessCode(String(item.data.code))]));
   const records = backup.documents.filter(document => document.path.startsWith('students/')).map(document => {
     const student = document.data.student as ActiveStudent;
     const original = document.data.journey as StudentJourney;
@@ -36,7 +39,7 @@ export function buildStudentCsv(backup: DatabaseBackup): string {
     ] };
   });
   const headers = [
-    'ID Siswa', 'Nama Siswa', 'Jenis Kelamin', 'Kelas', 'Nomor Absen', 'Mulai Mengisi',
+    'ID Siswa', 'Nama Siswa', 'Jenis Kelamin', 'Kelas', 'Nomor Absen', 'Kode Akses Siswa', 'Mulai Mengisi',
     'Skor Percaya Diri (0–100)', 'Jumlah Pos Selesai', 'Pos Aktif', 'Terakhir Update',
     'ID Pemilik Firebase', 'Dokumen Firebase', 'Penyimpanan', 'Waktu Ekspor',
     ...stageColumns.flatMap(({ stage, fields }) => [
@@ -46,7 +49,7 @@ export function buildStudentCsv(backup: DatabaseBackup): string {
     'Data Siswa Lengkap (JSON asli Firebase)',
   ];
   const rows = records.map(({ document, student, journey }) => [
-    student.id, student.name, student.gender, student.class, student.absentNumber, student.startedAt,
+    student.id, student.name, student.gender, student.class, student.absentNumber, accessCodes.get(student.id) || 'Belum dibuat', student.startedAt,
     journey.confidenceScore, Object.values(journey.stages).filter(stage => stage.completed).length,
     journey.lastActiveStage, journey.updatedAt, document.data.ownerUid, document.path, 'Firebase', backup.exportedAt,
     ...stageColumns.flatMap(({ stage, fields }) => {

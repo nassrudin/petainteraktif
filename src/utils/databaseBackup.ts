@@ -7,12 +7,13 @@ export interface BackupDocument {
 
 export interface DatabaseBackup {
   format: 'journey-map-database-backup';
-  version: 1;
+  version: 1 | 2;
   startedAt: string;
   exportedAt: string;
   source: { projectId: string; databaseId: '(default)'; storage: 'firebase-server' };
-  scope: ['students', 'settings/public'];
+  scope: string[];
   studentCount: number;
+  accessCodeCount?: number;
   documents: BackupDocument[];
   stageDefinitions: StageDefinition[];
   defaultSettings: AppSettings;
@@ -23,18 +24,21 @@ export async function collectDatabaseBackup(options: {
   projectId: string;
   readStudents: () => Promise<BackupDocument[]>;
   readSettings: () => Promise<BackupDocument | null>;
+  readAccess?: (students: BackupDocument[]) => Promise<BackupDocument[]>;
   stageDefinitions: StageDefinition[];
   defaultSettings: AppSettings;
 }): Promise<DatabaseBackup> {
   const startedAt = new Date().toISOString();
   const [students, settings] = await Promise.all([options.readStudents(), options.readSettings()]);
+  const access = options.readAccess ? await options.readAccess(students) : [];
+  const accessCodeCount = access.filter(item => item.path.startsWith('studentAccessKeys/')).length;
   return {
-    format: 'journey-map-database-backup', version: 1, startedAt,
+    format: 'journey-map-database-backup', version: 2, startedAt,
     exportedAt: new Date().toISOString(),
     source: { projectId: options.projectId, databaseId: '(default)', storage: 'firebase-server' },
-    scope: ['students', 'settings/public'], studentCount: students.length,
+    scope: ['students', 'settings/public', 'studentAccessKeys', 'studentAccessCodes'], studentCount: students.length, accessCodeCount,
     // Keep raw server fields and document IDs, including ownerUid and original stage numbers.
-    documents: [...students, ...(settings ? [settings] : [])],
+    documents: [...students, ...(settings ? [settings] : []), ...access],
     stageDefinitions: options.stageDefinitions, defaultSettings: options.defaultSettings,
   };
 }

@@ -560,7 +560,17 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const deleteStudent: AppContextType['deleteStudent'] = async (studentId) => {
     if (!isAdminLoggedIn || !teacherDb) throw new Error('Hanya guru yang boleh menghapus data siswa.');
-    await deleteDoc(doc(teacherDb, studentCollection, studentId));
+    const db = teacherDb;
+    await runTransaction(db, async transaction => {
+      const student = await transaction.get(doc(db, studentCollection, studentId));
+      const key = await transaction.get(doc(db, 'studentAccessKeys', studentId));
+      const code = key.exists() ? normalizeStudentAccessCode(key.data().code) : null;
+      const index = code ? await transaction.get(doc(db, 'studentAccessCodes', code)) : null;
+      if (!student.exists()) return;
+      transaction.delete(student.ref);
+      if (key.exists()) transaction.delete(key.ref);
+      if (index?.exists() && index.data().studentId === studentId) transaction.delete(index.ref);
+    });
     if (activeStudent?.id === studentId) setActiveStudent(null);
   };
 
@@ -601,18 +611,46 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
         return snapshot.exists() ? { path: snapshot.ref.path, data: snapshot.data() } : null;
       },
+      readAccess: async students => {
+        const [keys, codes] = await Promise.all([
+          getDocsFromServer(collection(db, 'studentAccessKeys')),
+          getDocsFromServer(collection(db, 'studentAccessCodes')),
+        ]);
+        if ([keys, codes].some(snapshot => snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites)) {
+          throw new Error('Kode akses belum terkonfirmasi dari Firebase. Coba ekspor lagi setelah tersimpan.');
+        }
+        const studentIds = new Set(students.map(item => item.path.slice('students/'.length)));
+        const indexes = new Map(codes.docs.map(item => [item.id, item]));
+        return keys.docs.filter(item => studentIds.has(item.id)).flatMap(item => {
+          const code = normalizeStudentAccessCode(item.data().code);
+          const index = indexes.get(code);
+          if (!index || index.data().studentId !== item.id) throw new Error('Kode akses berubah atau tidak cocok saat ekspor. Muat ulang dan coba lagi.');
+          return [{ path: item.ref.path, data: item.data() }, { path: index.ref.path, data: index.data() }];
+        });
+      },
     });
   };
 
   const prepareRestoreBackup: AppContextType['prepareRestoreBackup'] = async value => {
+    if (!isAdminLoggedIn || !teacherDb) throw new Error('Masuk sebagai guru atau admin untuk restore.');
     const backup = validateDatabaseBackup(value, firebaseConfig.projectId);
     const current = await exportDatabaseBackup();
-    return makeRestorePlan(backup, current.documents);
+    // Include orphan/stale credential metadata when checking the restore targets.
+    // Export excludes deleted students; their remaining keys must still be compared,
+    // and a code reserved by another record must never be reassigned silently.
+    const snapshots = await Promise.all([
+      getDocsFromServer(collection(teacherDb, 'studentAccessKeys')),
+      getDocsFromServer(collection(teacherDb, 'studentAccessCodes')),
+    ]);
+    if (snapshots.some(snapshot => snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites)) throw new Error('Metadata kode belum terkonfirmasi dari Firebase. Coba restore lagi setelah tersimpan.');
+    const documents = new Map(current.documents.map(item => [item.path, item]));
+    for (const snapshot of snapshots) for (const item of snapshot.docs) documents.set(item.ref.path, { path: item.ref.path, data: item.data() });
+    return makeRestorePlan(backup, [...documents.values()]);
   };
 
   const prepareDeleteAllStudents: AppContextType['prepareDeleteAllStudents'] = async () => {
     const current = await exportDatabaseBackup();
-    return makeDeletePlan(current.documents.filter(item => item.path.startsWith('students/')));
+    return makeDeletePlan(current.documents.filter(item => item.path !== 'settings/public'));
   };
 
   const applyDatabaseMaintenance: AppContextType['applyDatabaseMaintenance'] = async (plan, confirmation, onProgress) => {

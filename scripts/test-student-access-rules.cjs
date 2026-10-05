@@ -76,6 +76,11 @@ add('linked browser can queue the full backup with Pos 4 save', 'ALLOW', 'create
 add('unlinked browser cannot queue another student backup', 'DENY', 'create', jobPath, 'stranger', null, { ...job, ownerUid: 'stranger' }, driveSettings, { [studentPath]: completed }, time);
 add('revoked browser cannot queue a backup', 'DENY', 'create', jobPath, 'browser', null, job, { ...driveSettings, [`studentAccessKeys/${studentId}`]: { code: otherCode } }, { [studentPath]: completed }, time);
 add('original browser still queues backups', 'ALLOW', 'create', jobPath, 'owner', null, { ...job, ownerUid: 'owner' }, driveSettings, { [studentPath]: completed }, time);
+add('teacher can list keys for a complete backup', 'ALLOW', 'list', `studentAccessKeys/${studentId}`, 'teacher', { code });
+add('teacher can list code mappings for a complete backup', 'ALLOW', 'list', `studentAccessCodes/${code}`, 'teacher', { studentId });
+add('teacher can restore an existing mapping with the matching key', 'ALLOW', 'update', `studentAccessCodes/${code}`, 'teacher', { studentId }, { studentId });
+add('teacher cannot reassign an existing code to another student', 'DENY', 'update', `studentAccessCodes/${code}`, 'teacher', { studentId }, { studentId: 'student-other' }, { 'studentAccessKeys/student-other': { code } });
+add('student cannot overwrite a code mapping', 'DENY', 'update', `studentAccessCodes/${code}`, 'owner', { studentId }, { studentId });
 
 (async () => {
   const account = auth.getGlobalDefaultAccount();

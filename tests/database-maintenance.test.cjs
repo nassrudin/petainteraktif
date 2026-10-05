@@ -94,3 +94,94 @@ test('restore re-creates missing students while leaving existing unrelated stude
   assert.equal(server.get('students/missing').ownerUid, 'owner-original');
   assert.ok(server.has('students/unrelated'));
 });
+
+const access = (id, code) => [{ path: `studentAccessKeys/${id}`, data: { code } }, { path: `studentAccessCodes/${code}`, data: { studentId: id } }];
+const codeA = 'abcd1234abcd1234abcd1234abcd1234';
+const codeB = 'ffff1234abcd1234abcd1234abcd1234';
+function v2(documents) { return { ...backup(documents), version: 2, accessCodeCount: documents.filter(item => item.path.startsWith('studentAccessKeys/')).length }; }
+
+test('restore reinstates an original code and its answers atomically, removes the newer code, and preserves unrelated students', async () => {
+  const selected = validateDatabaseBackup(v2([student('a', 'Backup'), ...access('a', codeA)]), 'test');
+  const current = [student('a', 'Terbaru'), ...access('a', codeB), student('outside')];
+  const server = new Map(current.map(item => [item.path, item.data]));
+  const plan = makeRestorePlan(selected, current);
+  assert.equal(plan.accessCodeCount, 1);
+  let commits = 0;
+  await applyMaintenancePlan(plan, async operations => {
+    commits++;
+    for (const op of operations) assert.ok(sameDocument(server.get(op.path) ?? null, op.expected));
+    for (const op of operations) if (op.data === null) server.delete(op.path); else server.set(op.path, op.data);
+  });
+  assert.equal(commits, 1);
+  assert.equal(server.get(`studentAccessCodes/${codeA}`).studentId, 'a');
+  assert.equal(server.get('studentAccessKeys/a').code, codeA);
+  assert.equal(server.get('students/a').ownerUid, 'owner-original');
+  assert.equal(server.get('students/a').journey.stages[5].answers.received_criticism, 'Guru');
+  assert.ok(!server.has(`studentAccessCodes/${codeB}`));
+  assert.ok(server.has('students/outside'));
+});
+
+test('legacy backups preserve the current code and missing metadata is recreated by v2 restore', async () => {
+  const current = [student('a'), ...access('a', codeB)];
+  const oldPlan = makeRestorePlan(validateDatabaseBackup(backup([student('a')]), 'test'), current);
+  assert.equal(oldPlan.accessCodeCount, 0);
+  assert.ok(oldPlan.operations.every(item => item.path.startsWith('students/')));
+  const fresh = makeRestorePlan(validateDatabaseBackup(v2([student('a'), ...access('a', codeA)]), 'test'), []);
+  await applyMaintenancePlan(fresh, async operations => {
+    assert.equal(operations.length, 3);
+    assert.ok(operations.every(item => item.expected === null));
+  });
+});
+
+test('restore compares orphan keys left by older deletions instead of assuming metadata is absent', async () => {
+  const oldMetadata = access('a', codeB);
+  const plan = makeRestorePlan(validateDatabaseBackup(v2([student('a'), ...access('a', codeA)]), 'test'), oldMetadata);
+  const server = new Map(oldMetadata.map(item => [item.path, item.data]));
+  await applyMaintenancePlan(plan, async operations => {
+    for (const op of operations) assert.ok(sameDocument(server.get(op.path) ?? null, op.expected));
+    for (const op of operations) if (op.data === null) server.delete(op.path); else server.set(op.path, op.data);
+  });
+  assert.equal(server.get('studentAccessKeys/a').code, codeA);
+  assert.ok(server.has('students/a'));
+  assert.ok(!server.has(`studentAccessCodes/${codeB}`));
+});
+
+test('mismatched, duplicate, orphan, malformed, or conflicting credentials cannot change student access', () => {
+  const pair = access('a', codeA);
+  assert.throws(() => validateDatabaseBackup(v2([student('a'), pair[0]]), 'test'), /Kode akses/);
+  assert.throws(() => validateDatabaseBackup(v2([student('a'), pair[1]]), 'test'), /Pemetaan/);
+  assert.throws(() => validateDatabaseBackup(v2([student('b'), ...pair]), 'test'), /Kode akses/);
+  assert.throws(() => validateDatabaseBackup(v2([student('a'), { path: 'studentAccessKeys/a', data: { code: '../unsafe' } }]), 'test'), /tidak valid/);
+  assert.throws(() => validateDatabaseBackup({ ...v2([student('a'), ...pair]), accessCodeCount: 9 }, 'test'), /Jumlah kode/);
+  assert.throws(() => validateDatabaseBackup(v2([student('a'), ...pair, pair[0]]), 'test'), /duplikat/);
+  const selected = validateDatabaseBackup(v2([student('a'), ...pair]), 'test');
+  assert.throws(() => makeRestorePlan(selected, [student('outside'), ...access('outside', codeA)]), /siswa lain/);
+});
+
+test('large restore batches never split student documents from their code credentials', async () => {
+  const documents = Array.from({ length: 40 }, (_, i) => [student(String(i)), ...access(String(i), i.toString(16).padStart(32, '0'))]).flat();
+  const plan = makeRestorePlan(validateDatabaseBackup(v2(documents), 'test'), []);
+  let commits = 0;
+  await applyMaintenancePlan(plan, async operations => {
+    commits++;
+    assert.ok(operations.length <= 50);
+    for (const op of operations.filter(item => item.path.startsWith('studentAccessKeys/'))) {
+      const id = op.path.slice('studentAccessKeys/'.length);
+      assert.ok(operations.some(item => item.path === `students/${id}`));
+      assert.ok(operations.some(item => item.path === `studentAccessCodes/${op.data.code}`));
+    }
+  });
+  assert.equal(commits, 3);
+});
+
+test('deletion includes keys and mappings while forged code removal is rejected before writes', async () => {
+  const plan = makeDeletePlan([student('a'), ...access('a', codeA)]);
+  assert.equal(plan.studentCount, 1);
+  assert.equal(plan.accessCodeCount, 1);
+  await applyMaintenancePlan(plan, async operations => assert.equal(operations.length, 3));
+  const restore = makeRestorePlan(validateDatabaseBackup(v2([student('a'), ...access('a', codeA)]), 'test'), []);
+  restore.operations.push({ path: `studentAccessCodes/${codeB}`, expected: { studentId: 'outside' }, data: null, group: 'students/a' });
+  let commits = 0;
+  await assert.rejects(applyMaintenancePlan(restore, async () => commits++), /tidak sesuai/);
+  assert.equal(commits, 0);
+});

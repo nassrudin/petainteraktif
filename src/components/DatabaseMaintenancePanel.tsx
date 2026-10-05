@@ -60,8 +60,8 @@ export function DatabaseMaintenancePanel({ backupBusy, exportBusy, onBackup, onB
     try {
       const count = await applyDatabaseMaintenance(plan, confirmation, (completed, total) => setProgress({ completed, total }));
       setFeedback({ error: false, text: plan.kind === 'restore'
-        ? `Restore selesai: ${plan.studentCount} siswa dipulihkan${plan.restoresSettings ? ' beserta pengaturan kelas' : ''} (${count} dokumen).`
-        : `${plan.studentCount} data siswa dan seluruh jawabannya berhasil dihapus. Akun dan pengaturan kelas tetap tersedia.` });
+        ? `Restore selesai: ${plan.studentCount} siswa dan ${plan.accessCodeCount} kode akses dipulihkan${plan.restoresSettings ? ' beserta pengaturan kelas' : ''} (${count} dokumen).`
+        : `${plan.studentCount} data siswa, seluruh jawaban, dan ${plan.accessCodeCount} kode akses berhasil dihapus. Akun dan pengaturan kelas tetap tersedia.` });
     } catch (error) { setFeedback({ error: true, text: message(error) }); }
     finally { setPlan(null); setConfirmation(''); setWorking(false); }
   };
@@ -70,7 +70,7 @@ export function DatabaseMaintenancePanel({ backupBusy, exportBusy, onBackup, onB
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h2 className="font-bold text-sm text-slate-800">Pemulihan &amp; Penghapusan Data</h2>
-        <p className="text-xs text-slate-500 mt-1">Berlaku untuk semua kelas. Gunakan Backup Data untuk menyimpan cadangan sebelum mengganti atau menghapus data.</p>
+        <p className="text-xs text-slate-500 mt-1">Backup dan CSV mencakup kode akses yang sudah dibuat. Gunakan Backup Data sebelum mengganti atau menghapus data. Berlaku untuk semua kelas.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <button
@@ -79,7 +79,7 @@ export function DatabaseMaintenancePanel({ backupBusy, exportBusy, onBackup, onB
           disabled={disabled}
           aria-busy={backupBusy}
           className="px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
-          title="Backup semua siswa, seluruh jawaban, dan pengaturan kelas dari Firebase ke JSON"
+          title="Backup semua siswa, seluruh jawaban, kode akses, dan pengaturan kelas dari Firebase ke JSON"
         >
           <Download className="w-4 h-4" />
           <span>{backupBusy ? 'Membuat Backup...' : 'Backup Data'}</span>
@@ -93,6 +93,7 @@ export function DatabaseMaintenancePanel({ backupBusy, exportBusy, onBackup, onB
         </button>
       </div>
     </div>
+    <p className="text-xs text-slate-500">Jika kode belum dibuat, buka Kode Akses pada baris siswa. Simpan backup dan CSV untuk pengelola; berkas memuat kode yang dapat membuka jawaban siswa.</p>
     {busy && <p role="status" className="text-xs text-blue-800">
       {progress ? `Memproses ${progress.completed} / ${progress.total} dokumen. Jangan tutup halaman sampai selesai.` : 'Memeriksa data server Firebase...'}
     </p>}
@@ -100,8 +101,8 @@ export function DatabaseMaintenancePanel({ backupBusy, exportBusy, onBackup, onB
       <h3 className="font-bold text-sm">{plan.kind === 'restore' ? 'Konfirmasi Restore Backup' : 'Konfirmasi Hapus Semua Data Siswa'}</h3>
       <p className="text-xs leading-relaxed break-words">
         {plan.kind === 'restore'
-          ? `${fileName}: ${plan.studentCount} siswa — ${plan.added} ditambahkan, ${plan.replaced} diganti dengan isi backup.${plan.restoresSettings ? ' Pengaturan kelas dan akses pos juga dipulihkan.' : ' Pengaturan kelas tetap memakai data saat ini.'} Siswa lain tetap tersedia.`
-          : `${plan.studentCount} siswa di semua kelas beserta seluruh jawaban dan progresnya akan dihapus dari Firebase. Filter dashboard tidak membatasi penghapusan. Akun guru/admin dan pengaturan kelas tetap tersedia. Siswa yang baru masuk setelah ringkasan ini tidak ikut dihapus.`}
+          ? `${fileName}: ${plan.studentCount} siswa — ${plan.added} ditambahkan, ${plan.replaced} diganti dengan isi backup. ${plan.accessCodeCount ? `${plan.accessCodeCount} kode akses dari backup dipulihkan dan menggantikan kode terbaru pada siswa tersebut; pemegang kode cadangan dapat membuka jawaban kembali.` : 'Backup tidak memuat kode akses; kode yang masih ada di Firebase dipertahankan.'}${plan.restoresSettings ? ' Pengaturan kelas dan akses pos juga dipulihkan.' : ' Pengaturan kelas tetap memakai data saat ini.'} Siswa lain tetap tersedia.`
+          : `${plan.studentCount} siswa di semua kelas beserta seluruh jawaban, progres, dan ${plan.accessCodeCount} kode aksesnya akan dihapus dari Firebase. Filter dashboard tidak membatasi penghapusan. Akun guru/admin dan pengaturan kelas tetap tersedia. Siswa yang baru masuk setelah ringkasan ini tidak ikut dihapus.`}
       </p>
       <label className="block text-xs font-semibold">
         Ketik <strong>{plan.kind === 'restore' ? 'RESTORE' : 'HAPUS SEMUA'}</strong> untuk mengonfirmasi:

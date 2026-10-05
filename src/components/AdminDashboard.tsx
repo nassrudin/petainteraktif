@@ -170,7 +170,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   const handleDeleteStudent = async (studentId: string) => {
     if (isMaintaining) return;
     if (!confirm(firebaseEnabled
-      ? 'Hapus siswa ini beserta seluruh jawabannya dari Firebase?'
+      ? 'Hapus siswa ini beserta seluruh jawaban dan kode aksesnya dari Firebase?'
       : 'Hapus siswa ini beserta seluruh jawabannya dari browser ini?')) return;
     try { await deleteStudent(studentId); }
     catch (error) { alert(error instanceof Error ? error.message : 'Gagal menghapus data siswa.'); }
@@ -199,7 +199,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       }
-      setBackupFeedback({ type: 'success', text: `Unduhan ${fileName} dimulai. Backup berisi ${backup.studentCount} siswa beserta seluruh jawaban dan pengaturan kelas. Simpan berkas ini sebagai cadangan.` });
+      setBackupFeedback({ type: 'success', text: `Unduhan ${fileName} dimulai. Backup berisi ${backup.studentCount} siswa, seluruh jawaban, ${backup.accessCodeCount || 0} kode akses, dan pengaturan kelas. Simpan berkas ini sebagai cadangan.` });
     } catch (error) {
       setBackupFeedback({ type: 'error', text: `Backup gagal; tidak ada berkas backup yang dibuat. ${error instanceof Error ? error.message : 'Periksa koneksi dan coba kembali.'}` });
     } finally {
@@ -226,7 +226,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         link.remove();
         setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
       }
-      setBackupFeedback({ type: 'success', text: `Unduhan CSV lengkap dimulai: ${backup.studentCount} siswa dari semua kelas, identitas, progres, tanggal, dan seluruh jawaban Pos 1–8. Filter dashboard tidak membatasi unduhan.` });
+      setBackupFeedback({ type: 'success', text: `Unduhan CSV lengkap dimulai: ${backup.studentCount} siswa dari semua kelas, identitas, ${backup.accessCodeCount || 0} kode akses, progres, tanggal, dan seluruh jawaban Pos 1–8. Filter dashboard tidak membatasi unduhan.` });
     } catch (error) {
       setBackupFeedback({ type: 'error', text: `CSV gagal dibuat. ${error instanceof Error ? error.message : 'Periksa koneksi Firebase dan coba kembali.'}` });
     } finally { setIsExportingCsv(false); }
@@ -406,7 +406,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                   disabled={isExportingCsv || isBackingUp || isMaintaining}
                   aria-busy={isExportingCsv}
                   className="px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
-                  title="Unduh semua siswa dari Firebase beserta identitas, progres, dan seluruh jawaban Pos 1–8"
+                  title="Unduh semua siswa dari Firebase beserta identitas, kode akses, progres, dan seluruh jawaban Pos 1–8"
                 >
                   <Download className="w-3.5 h-3.5 text-slate-600" />
                   <span>{isExportingCsv ? 'Membuat CSV...' : 'Unduh CSV'}</span>

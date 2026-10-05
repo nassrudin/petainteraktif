@@ -19,6 +19,30 @@ export function isStudentPath(path: string): boolean {
   return /^students\/[^/]+$/.test(path) && !path.slice(9).includes('..') && path.length <= 1509;
 }
 
+const safeId = (value: unknown): value is string => text(value) && !value.includes('/') && !value.includes('..') && value.length <= 1400;
+export const isAccessKeyPath = (path: string) => path.startsWith('studentAccessKeys/') && safeId(path.slice('studentAccessKeys/'.length));
+export const isAccessCodePath = (path: string) => /^studentAccessCodes\/[a-f0-9]{32}$/.test(path);
+const validAccessData = (path: string, data: Record<string, any>) => isAccessKeyPath(path)
+  ? Object.keys(data).length === 1 && typeof data.code === 'string' && /^[a-f0-9]{32}$/.test(data.code)
+  : isAccessCodePath(path) && Object.keys(data).length === 1 && safeId(data.studentId);
+
+function checkAccessPairs(documents: BackupDocument[]): number {
+  const entries = new Map(documents.map(item => [item.path, item.data]));
+  let count = 0;
+  for (const item of documents) {
+    if (isAccessKeyPath(item.path)) {
+      const id = item.path.slice('studentAccessKeys/'.length);
+      if (!entries.has(`students/${id}`) || entries.get(`studentAccessCodes/${item.data.code}`)?.studentId !== id) {
+        throw new Error('Kode akses tidak cocok dengan siswa atau pemetaan kode dalam backup.');
+      }
+      count++;
+    } else if (isAccessCodePath(item.path) && entries.get(`studentAccessKeys/${item.data.studentId}`)?.code !== item.path.slice('studentAccessCodes/'.length)) {
+      throw new Error('Pemetaan kode akses tidak cocok dengan kunci siswa dalam backup.');
+    }
+  }
+  return count;
+}
+
 function validSettings(data: Record<string, any>): boolean {
   if (Object.keys(data).some(key => !['classNames', 'allowEarlyPhaseTwo'].includes(key))) return false;
   if (typeof data.allowEarlyPhaseTwo !== 'boolean' || !Array.isArray(data.classNames) || !data.classNames.length) return false;
@@ -46,7 +70,7 @@ function validStudent(path: string, data: Record<string, any>): boolean {
 }
 
 export function validateDatabaseBackup(value: unknown, projectId: string): DatabaseBackup {
-  if (!object(value) || value.format !== 'journey-map-database-backup' || value.version !== 1 ||
+  if (!object(value) || value.format !== 'journey-map-database-backup' || ![1, 2].includes(value.version) ||
       !object(value.source) || value.source.projectId !== projectId || value.source.databaseId !== '(default)' ||
       value.source.storage !== 'firebase-server' || !date(value.exportedAt) ||
       !Array.isArray(value.documents) || !Array.isArray(value.stageDefinitions) || !safeJson(value)) {
@@ -62,11 +86,15 @@ export function validateDatabaseBackup(value: unknown, projectId: string): Datab
     if (isStudentPath(entry.path)) {
       if (!validStudent(entry.path, entry.data)) throw new Error(`Data siswa tidak valid: ${entry.path}`);
       count++;
+    } else if ((isAccessKeyPath(entry.path) || isAccessCodePath(entry.path)) && value.version === 2) {
+      if (!validAccessData(entry.path, entry.data)) throw new Error('Data kode akses tidak valid.');
     } else if (entry.path !== 'settings/public' || !validSettings(entry.data)) {
       throw new Error('Backup berisi dokumen di luar data siswa/pengaturan atau pengaturan tidak valid.');
     }
   }
   if (count !== value.studentCount) throw new Error('Jumlah siswa tidak cocok dengan isi backup.');
+  const accessCodeCount = checkAccessPairs(value.documents);
+  if (value.version === 2 && accessCodeCount !== value.accessCodeCount) throw new Error('Jumlah kode akses tidak cocok dengan isi backup.');
   return value as DatabaseBackup;
 }
 
@@ -74,6 +102,7 @@ export interface MaintenanceOperation {
   path: string;
   expected: Record<string, unknown> | null;
   data: Record<string, unknown> | null; // null means delete
+  group?: string; // A student's answers, key and code index must commit together.
 }
 
 export interface MaintenancePlan {
@@ -82,6 +111,7 @@ export interface MaintenancePlan {
   added: number;
   replaced: number;
   restoresSettings: boolean;
+  accessCodeCount: number;
   operations: MaintenanceOperation[];
 }
 
@@ -89,17 +119,46 @@ export function makeRestorePlan(backup: DatabaseBackup, current: BackupDocument[
   const existing = new Map(current.map(item => [item.path, item.data]));
   const students = backup.documents.filter(item => isStudentPath(item.path));
   const added = students.filter(item => !existing.has(item.path)).length;
+  const incoming = new Map(backup.documents.map(item => [item.path, item.data]));
+  const operations: MaintenanceOperation[] = [];
+  const operation = (path: string, data: Record<string, unknown> | null, group?: string): MaintenanceOperation =>
+    ({ path, expected: existing.get(path) ?? null, data, ...(group ? { group } : {}) });
+  for (const student of students) {
+    const id = student.path.slice('students/'.length);
+    const keyPath = `studentAccessKeys/${id}`;
+    const key = incoming.get(keyPath);
+    operations.push(operation(student.path, student.data, student.path));
+    if (!key) continue; // A version 1 backup preserves the current code.
+    const indexPath = `studentAccessCodes/${key.code}`;
+    const occupied = existing.get(indexPath);
+    if (occupied && occupied.studentId !== id) throw new Error('Kode dalam backup sudah dipakai siswa lain. Restore dibatalkan agar akses tidak tertukar.');
+    const oldCode = existing.get(keyPath)?.code;
+    if (typeof oldCode === 'string' && oldCode !== key.code) {
+      const oldPath = `studentAccessCodes/${oldCode}`;
+      if (existing.get(oldPath)?.studentId === id) operations.push(operation(oldPath, null, student.path));
+    }
+    operations.push(operation(keyPath, key, student.path), operation(indexPath, incoming.get(indexPath)!, student.path));
+  }
+  const settings = incoming.get('settings/public');
+  if (settings) operations.push(operation('settings/public', settings));
   return {
     kind: 'restore', studentCount: students.length, added, replaced: students.length - added,
     restoresSettings: backup.documents.some(item => item.path === 'settings/public'),
-    operations: backup.documents.map(item => ({ path: item.path, expected: existing.get(item.path) ?? null, data: item.data })),
+    accessCodeCount: checkAccessPairs(backup.documents), operations,
   };
 }
 
 export function makeDeletePlan(current: BackupDocument[]): MaintenancePlan {
-  if (current.some(item => !isStudentPath(item.path))) throw new Error('Penghapusan hanya boleh mencakup data siswa.');
-  return { kind: 'delete', studentCount: current.length, added: 0, replaced: 0, restoresSettings: false,
-    operations: current.map(item => ({ path: item.path, expected: item.data, data: null })) };
+  if (current.some(item => !isStudentPath(item.path) && !isAccessKeyPath(item.path) && !isAccessCodePath(item.path))) throw new Error('Penghapusan hanya boleh mencakup data siswa dan kode aksesnya.');
+  const accessCodeCount = checkAccessPairs(current);
+  const operations: MaintenanceOperation[] = [];
+  for (const student of current.filter(item => isStudentPath(item.path))) {
+    const id = student.path.slice('students/'.length);
+    const related = current.filter(item => item.path === student.path || item.path === `studentAccessKeys/${id}` ||
+      (isAccessCodePath(item.path) && item.data.studentId === id));
+    operations.push(...related.map(item => ({ path: item.path, expected: item.data, data: null, group: student.path })));
+  }
+  return { kind: 'delete', studentCount: current.filter(item => isStudentPath(item.path)).length, added: 0, replaced: 0, restoresSettings: false, accessCodeCount, operations };
 }
 
 export function sameDocument(a: unknown, b: unknown): boolean {
@@ -118,18 +177,38 @@ export async function applyMaintenancePlan(plan: MaintenancePlan,
   const chunks: MaintenanceOperation[][] = [];
   let chunk: MaintenanceOperation[] = [];
   let bytes = 0;
+  const units: MaintenanceOperation[][] = [];
   for (const operation of plan.operations) {
-    if ((!isStudentPath(operation.path) && operation.path !== 'settings/public') ||
-        (plan.kind === 'delete' && (!isStudentPath(operation.path) || operation.data !== null)) ||
-        (plan.kind === 'restore' && (!object(operation.data) ||
-          !(isStudentPath(operation.path) ? validStudent(operation.path, operation.data) : validSettings(operation.data))))) {
+    const access = isAccessKeyPath(operation.path) || isAccessCodePath(operation.path);
+    const removesOldCode = plan.kind === 'restore' && isAccessCodePath(operation.path) && operation.data === null && Boolean(operation.group);
+    if ((!isStudentPath(operation.path) && operation.path !== 'settings/public' && !access) ||
+        (plan.kind === 'delete' && ((!isStudentPath(operation.path) && !access) || operation.data !== null)) ||
+        (plan.kind === 'restore' && !removesOldCode && (!object(operation.data) ||
+          !(isStudentPath(operation.path) ? validStudent(operation.path, operation.data) : access ? validAccessData(operation.path, operation.data) : validSettings(operation.data))))) {
       throw new Error('Rencana operasi berisi dokumen di luar cakupan.');
     }
-    const size = new TextEncoder().encode(JSON.stringify(operation)).length;
-    if (chunk.length && (chunk.length >= 50 || bytes + size > 2 * 1024 * 1024)) {
+    const previous = units[units.length - 1];
+    if (operation.group && previous?.[0].group === operation.group) previous.push(operation);
+    else units.push([operation]);
+  }
+  // Validate associated credentials before any transaction is sent to Firebase.
+  for (const unit of units) {
+    if (!unit.some(item => isAccessKeyPath(item.path) || isAccessCodePath(item.path))) continue;
+    const student = unit.find(item => isStudentPath(item.path));
+    if (!student || !unit.every(item => item.group === student.path)) throw new Error('Kode akses harus diproses bersama rekaman siswa.');
+    if (plan.kind === 'restore') checkAccessPairs(unit.filter(item => item.data !== null).map(item => ({ path: item.path, data: item.data! })));
+    else checkAccessPairs(unit.map(item => ({ path: item.path, data: item.expected! })));
+    for (const item of unit.filter(item => item.data === null && isAccessCodePath(item.path))) {
+      if (item.expected?.studentId !== student.path.slice('students/'.length)) throw new Error('Penghapusan kode akses tidak sesuai dengan siswa.');
+    }
+  }
+  for (const unit of units) {
+    const size = new TextEncoder().encode(JSON.stringify(unit)).length;
+    if (unit.length > 50 || size > 2 * 1024 * 1024) throw new Error('Data satu siswa melebihi batas transaksi.');
+    if (chunk.length && (chunk.length + unit.length > 50 || bytes + size > 2 * 1024 * 1024)) {
       chunks.push(chunk); chunk = []; bytes = 0;
     }
-    chunk.push(operation); bytes += size;
+    chunk.push(...unit); bytes += size;
   }
   if (chunk.length) chunks.push(chunk);
   for (const operations of chunks) {

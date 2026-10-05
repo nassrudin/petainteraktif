@@ -10,8 +10,9 @@ export interface DriveBackupJob {
   completedAt?: string;
   fileUrl?: string;
   error?: string;
+  accessCodeCount?: number;
 }
-export interface DriveBackupWorker { checkedAt: string; error: string; scriptUrl?: string }
+export interface DriveBackupWorker { checkedAt: string; error: string; scriptUrl?: string; backupFormatVersion?: number }
 
 export const DEFAULT_BACKUP_FOLDER_URL = 'https://drive.google.com/drive/folders/1Slmi-qS--PbmWZh7KzFoMVG3iE5QqD_Z';
 export function driveFolderId(value: string): string | null {

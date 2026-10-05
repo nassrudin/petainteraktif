@@ -24,7 +24,7 @@ export function DriveBackupPanel() {
   return <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 max-w-3xl mx-auto space-y-5">
     <div>
       <h2 className="text-lg font-bold text-slate-800">Backup Otomatis ke Google Drive</h2>
-      <p className="text-xs text-slate-600 mt-2 leading-relaxed">Setelah siswa menyelesaikan Pos 1–4 atau Pos 1–8, seluruh data siswa dari semua kelas dan pengaturan aplikasi dicadangkan ke JSON. Setiap penyimpanan ulang Pos 4 atau Pos 8 juga membuat cadangan baru. Berkas dapat dipakai melalui Restore Backup.</p>
+      <p className="text-xs text-slate-600 mt-2 leading-relaxed">Setelah siswa menyelesaikan Pos 1–4 atau Pos 1–8, seluruh data siswa dari semua kelas, kode akses yang sudah dibuat, dan pengaturan aplikasi dicadangkan ke JSON. Setiap penyimpanan ulang Pos 4 atau Pos 8 juga membuat cadangan baru. Berkas dapat dipakai melalui Restore Backup.</p>
     </div>
     <form onSubmit={save} className="space-y-3">
       <label className="block text-xs font-bold text-slate-700">Folder tujuan Google Drive
@@ -41,11 +41,12 @@ export function DriveBackupPanel() {
       <p className="font-bold">{driveBackupSettings.enabled ? 'Backup otomatis diaktifkan' : 'Backup otomatis belum diaktifkan'}</p>
       <p className="font-bold">{!workerActive ? 'Pemroses backup belum terhubung atau tidak aktif' : driveBackupWorker?.error ? 'Pemroses aktif, tetapi ada kesalahan' : 'Pemroses backup terhubung'}</p>
       <p>Pemeriksaan terakhir: {showDate(driveBackupWorker?.checkedAt || '')}</p>
+      {driveBackupWorker && driveBackupWorker.backupFormatVersion !== 2 && <p className="text-amber-800">Pemroses lama belum mencadangkan kode akses. Unduh skrip backup terbaru di Pengaturan awal, ganti Code.gs di Apps Script, lalu jalankan installBackupTrigger.</p>}
       {driveBackupWorker?.error && <p role="alert" className="text-red-700 break-words">{driveBackupWorker.error}</p>}
       <p>Antrean tersimpan di Firebase dan diproses sekitar setiap menit. Status berhasil muncul setelah berkas tersimpan di Drive. Jika pemrosesan tertunda lebih dari satu jam, snapshot lama ditandai kedaluwarsa; unduh Backup Data untuk membuat cadangan keadaan saat ini.</p>
     </div>
     <details className="rounded-xl border border-slate-200 p-4 text-xs space-y-3">
-      <summary className="font-bold cursor-pointer">Pengaturan awal pemroses Google Drive</summary>
+      <summary className="font-bold cursor-pointer">Pengaturan awal / pembaruan pemroses Google Drive</summary>
       <ol className="list-decimal ml-5 mt-3 space-y-2 leading-relaxed">
         <li>Simpan folder tujuan di atas. Gunakan akun Google yang dapat mengelola proyek Firebase dan menulis ke folder tersebut.</li>
         <li>Buka <a href="https://script.google.com/home/start" target="_blank" rel="noopener noreferrer" className="text-teal-700 underline">Google Apps Script</a>. Salin <a href={`${import.meta.env.BASE_URL}drive-backup-worker.gs`} download className="text-teal-700 underline">skrip backup</a> ke Code.gs.</li>
@@ -62,6 +63,7 @@ export function DriveBackupPanel() {
           <td className="py-3 pr-3 whitespace-nowrap">{showDate(job.createdAt)}</td>
           <td className="py-3">{job.status === 'complete' ? 'Berhasil' : job.status === 'expired' ? 'Snapshot kedaluwarsa' : job.error ? 'Gagal, menunggu percobaan ulang' : 'Menunggu'}
             {job.status === 'complete' && /^https:\/\/drive\.google\.com\/file\/d\/[A-Za-z0-9_-]+/.test(job.fileUrl || '') && <a href={job.fileUrl} target="_blank" rel="noopener noreferrer" className="block text-teal-700 underline mt-1">Buka Backup</a>}
+            {job.status === 'complete' && <p className="mt-1">{job.accessCodeCount === undefined ? 'Backup lama: kode akses belum dicadangkan' : `${job.accessCodeCount} kode akses dicadangkan`}</p>}
             {job.error && <p className="text-red-700 mt-1 break-words">{job.error}</p>}
           </td>
         </tr>)}{!driveBackupJobs.length && <tr><td colSpan={3} className="py-4 text-slate-500">Belum ada permintaan backup yang ditampilkan.</td></tr>}</tbody>

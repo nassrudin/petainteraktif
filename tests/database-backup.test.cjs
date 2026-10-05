@@ -20,7 +20,7 @@ test('backup JSON retains all records, ownership, incomplete answers, original n
   assert.deepEqual(restored.documents, [...students, settings]);
   assert.equal(restored.source.projectId, 'test-project');
   assert.equal(restored.source.storage, 'firebase-server');
-  assert.equal(restored.version, 1);
+  assert.equal(restored.version, 2);
   assert.ok(Date.parse(restored.exportedAt) >= Date.parse(restored.startedAt));
 });
 
@@ -39,4 +39,16 @@ test('empty database is exported without fabricating a settings document', async
 
 test('backup filename uses Jakarta date and time across UTC midnight', () => {
   assert.equal(backupFileName('2026-10-04T18:03:04Z'), 'backup_peta_percaya_diri_2026-10-05_010304_WIB.json');
+});
+
+test('backup includes issued access keys and mappings, and fails if their server read fails', async () => {
+  const students = [{ path: 'students/a', data: { ownerUid: 'original', student: { id: 'a' } } }];
+  const code = 'abcd1234abcd1234abcd1234abcd1234';
+  const credentials = [{ path: 'studentAccessKeys/a', data: { code } }, { path: `studentAccessCodes/${code}`, data: { studentId: 'a' } }];
+  const options = { projectId: 'test', readStudents: async () => students, readSettings: async () => null, stageDefinitions: [], defaultSettings: defaults };
+  const backup = await collectDatabaseBackup({ ...options, readAccess: async supplied => { assert.deepEqual(supplied, students); return credentials; } });
+  assert.equal(backup.accessCodeCount, 1);
+  assert.deepEqual(backup.documents, [...students, ...credentials]);
+  assert.equal(backup.studentCount, 1);
+  await assert.rejects(collectDatabaseBackup({ ...options, readAccess: async () => { throw new Error('access read failed'); } }), /access read failed/);
 });
