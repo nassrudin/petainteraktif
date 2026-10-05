@@ -39,6 +39,10 @@ Data siswa dan pengaturan hanya dibaca dari Firebase. Impor otomatis data browse
 
 ## Hasil dan Google Drive
 
+Pada dashboard guru/admin, buka **Rekap Siswa → Backup Data** untuk mengunduh backup JSON. Data dibaca ulang dari server Firebase dan mencakup semua siswa (termasuk yang tidak sesuai filter), identitas, seluruh jawaban, progres, tanggal, ID dokumen, `ownerUid`, dan pengaturan `settings/public`. Berkas juga memuat versi format, proyek asal, waktu ekspor, serta definisi pertanyaan. Nama berkas memakai tanggal dan waktu WIB. Jika pembacaan siswa atau pengaturan gagal, tidak ada backup sebagian yang dibuat.
+
+Backup ini mencadangkan data siswa dan pengaturan aplikasi, bukan akun/kata sandi Firebase Authentication, konfigurasi akun staf, atau Firestore Rules. Dokumen disimpan sesuai isi asli server, sehingga penomoran pos lama tetap dapat dipetakan saat dipulihkan. Dokumen pengaturan yang belum ada tidak dibuat saat backup; nilai pengaturan bawaan dicatat terpisah. Backup tidak mengubah database dan tidak otomatis mengimpor data. Pemulihan dari JSON memerlukan proses restore terpisah; tombol ini hanya membuat cadangan. Pembacaan siswa dan pengaturan dilakukan selama proses ekspor, sehingga jika data sedang diubah keduanya bisa berasal dari waktu pembacaan yang berbeda.
+
 Siswa dan guru dapat memilih **Cetak / Simpan PDF** pada halaman hasil. Browser membuka dialog cetak; pilih tujuan **Save as PDF**. Hasil berisi sampul dan hanya pos yang sudah selesai diisi. Jawaban panjang dapat menambah halaman PDF agar teks tidak terpotong.
 
 PDF dibuat di browser dari jawaban Firebase yang sudah dimuat dan tidak diunggah ke Firebase. Sinkronisasi data lokal ke Google Drive sudah tidak digunakan.

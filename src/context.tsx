@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import { ActiveStudent, StudentJourney, StageAnswer, AdminCredentials, Gender, AppSettings } from './types';
+import { DatabaseBackup } from './utils/databaseBackup';
 
 export const DEFAULT_DRIVE_FOLDER_URL = '';
 
@@ -34,6 +35,7 @@ export interface AppContextType {
   ) => { success: boolean; message: string };
   allStudents: ActiveStudent[];
   journeys: Record<string, StudentJourney>;
+  exportDatabaseBackup: () => Promise<DatabaseBackup>;
   saveStageAnswer: (studentId: string, stageId: number, answers: Record<string, any>, expectedStage: StageAnswer | undefined) => void | Promise<void>;
   getStudentJourney: (studentId: string) => StudentJourney;
   retryDriveSync: (studentId: string) => void;

@@ -5,6 +5,7 @@ import { ActiveStudent } from '../types';
 import { ResultView } from './ResultView';
 import { firebaseEnabled } from '../firebase-config';
 import { StaffAccountsPanel } from './StaffAccountsPanel';
+import { backupFileName } from '../utils/databaseBackup';
 import { 
   Users, CheckCircle, BarChart3, 
   ExternalLink, Download, Search, Eye, Filter,
@@ -33,11 +34,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     updateAppSettings,
     deleteStudent,
     retryDriveSync,
+    exportDatabaseBackup,
   } = useApp();
 
   const [selectedStudent, setSelectedStudent] = useState<ActiveStudent | null>(null);
   const [filterClass, setFilterClass] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [backupFeedback, setBackupFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeAdminTab, setActiveAdminTab] = useState<'students' | 'drive' | 'security' | 'classsettings' | 'access'>('students');
   const [viewingStudentReport, setViewingStudentReport] = useState<ActiveStudent | null>(null);
 
@@ -185,6 +189,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     alert(`Download fitur untuk ${name} akan segera tersedia.`);
   };
 
+  const handleBackup = async () => {
+    if (isBackingUp) return;
+    setIsBackingUp(true);
+    setBackupFeedback(null);
+    try {
+      const backup = await exportDatabaseBackup();
+      const fileName = backupFileName(backup.exportedAt);
+      const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2) + '\n'], { type: 'application/json;charset=utf-8' }));
+      const link = document.createElement('a');
+      try {
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+      } finally {
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+      setBackupFeedback({ type: 'success', text: `Unduhan ${fileName} dimulai. Backup berisi ${backup.studentCount} siswa beserta seluruh jawaban dan pengaturan kelas. Simpan berkas ini sebagai cadangan.` });
+    } catch (error) {
+      setBackupFeedback({ type: 'error', text: `Backup gagal; tidak ada berkas backup yang dibuat. ${error instanceof Error ? error.message : 'Periksa koneksi dan coba kembali.'}` });
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+
   const handleExportCSV = () => {
     const headers = ['Nama Siswa', 'Kelas', 'Skor Keyakinan', 'Jumlah Tahap Selesai', 'Terakhir Update', firebaseEnabled ? 'Penyimpanan' : 'Status Google Drive'];
     const csvCell = (value: string | number) => {
@@ -300,6 +331,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
           : 'Rekap ini hanya berisi data yang tersimpan di browser ini. Jawaban dari perangkat siswa lain tidak muncul otomatis.'}
       </p>
 
+      {backupFeedback && <p role={backupFeedback.type === 'error' ? 'alert' : 'status'} className={`rounded-2xl border px-5 py-3 text-xs break-words ${backupFeedback.type === 'error' ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-200 bg-emerald-50 text-emerald-900'}`}>
+        {backupFeedback.text}
+      </p>}
+
+
       {/* STUDENTS TAB */}
       {activeAdminTab === 'students' && (
         <>
@@ -381,6 +417,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                 >
                   <Download className="w-3.5 h-3.5 text-slate-600" />
                   <span>Unduh CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBackup}
+                  disabled={isBackingUp}
+                  aria-busy={isBackingUp}
+                  className="px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                  title="Backup semua siswa, seluruh jawaban, dan pengaturan kelas dari Firebase ke JSON"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{isBackingUp ? 'Membuat Backup...' : 'Backup Data'}</span>
                 </button>
               </div>
 

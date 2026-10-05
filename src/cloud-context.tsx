@@ -1,10 +1,11 @@
 import { prepareStageSave } from './utils/journeyRevision';
 import { reviseJourney } from './utils/journeyRevision';
+import { collectDatabaseBackup } from './utils/databaseBackup';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createUserWithEmailAndPassword, deleteUser, EmailAuthProvider, GoogleAuthProvider, inMemoryPersistence, onAuthStateChanged, reauthenticateWithCredential, setPersistence, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signOut, updatePassword, User } from 'firebase/auth';
-import { collection, deleteDoc, doc, getDocFromServer, onSnapshot, runTransaction, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocFromServer, getDocsFromServer, onSnapshot, runTransaction, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { AdminRole, AppContext, AppContextType, DEFAULT_DRIVE_FOLDER_URL, StaffAccount } from './context';
-import { DEFAULT_CLASS_CONFIGS } from './data';
+import { DEFAULT_CLASS_CONFIGS, STAGES_DATA } from './data';
 import { provisioningAuth, studentAuth, studentDb, teacherAuth, teacherDb } from './firebase';
 import { firebaseConfig, teacherEmail } from './firebase-config';
 import { ActiveStudent, AppSettings, Gender, StudentJourney } from './types';
@@ -413,6 +414,30 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (error) { return { success: false, message: readableError(error) }; }
   };
 
+  const exportDatabaseBackup: AppContextType['exportDatabaseBackup'] = async () => {
+    if (!isAdminLoggedIn || !teacherDb) throw new Error('Masuk sebagai guru atau admin untuk membuat backup.');
+    const db = teacherDb;
+    return collectDatabaseBackup({
+      projectId: firebaseConfig.projectId,
+      stageDefinitions: STAGES_DATA,
+      defaultSettings,
+      readStudents: async () => {
+        const snapshot = await getDocsFromServer(collection(db, studentCollection));
+        if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) {
+          throw new Error('Data server belum terkonfirmasi. Tunggu sampai penyimpanan selesai lalu coba backup lagi.');
+        }
+        return snapshot.docs.map(item => ({ path: item.ref.path, data: item.data() }));
+      },
+      readSettings: async () => {
+        const snapshot = await getDocFromServer(doc(db, 'settings', 'public'));
+        if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) {
+          throw new Error('Pengaturan server belum terkonfirmasi. Coba backup lagi setelah tersimpan.');
+        }
+        return snapshot.exists() ? { path: snapshot.ref.path, data: snapshot.data() } : null;
+      },
+    });
+  };
+
   const unavailable = () => ({ success: false, message: 'Fitur Google Drive tidak digunakan dalam mode Firebase.' });
   const contextValue: AppContextType = {
     activeStudent, startStudentJourney, clearActiveStudent,
@@ -420,7 +445,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     adminRole, staffAccounts, createAdmin, createTeacherAccount, setTeacherActive, changeOwnPassword,
     adminCredentials: { username: adminRole === 'admin' ? 'admin' : teacherAccount?.username || '', password: '' },
     updateAdminCredentials: unavailable,
-    allStudents, journeys, saveStageAnswer, getStudentJourney,
+    allStudents, journeys, saveStageAnswer, getStudentJourney, exportDatabaseBackup,
     retryDriveSync: () => {}, resetStudentProgress, deleteStudent,
     driveFolderUrl: DEFAULT_DRIVE_FOLDER_URL, updateDriveFolderUrl: unavailable,
     driveWebhookUrl: '', driveWebhookManagedByBuild: false, updateDriveWebhookUrl: unavailable,
