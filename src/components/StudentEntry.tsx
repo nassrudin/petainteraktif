@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context';
-import { Compass, Shield, User, BookOpen, CheckCircle2 } from 'lucide-react';
+import { Compass, KeyRound, User, BookOpen, CheckCircle2 } from 'lucide-react';
 import { Gender } from '../types';
 import { firebaseEnabled } from '../firebase-config';
 
@@ -10,6 +10,7 @@ interface StudentEntryProps {
 
 export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
   const { startStudentJourney, resumeStudentJourney, appSettings } = useApp();
+  const [loginMode, setLoginMode] = useState<'new' | 'access'>('new');
   const [accessCode, setAccessCode] = useState('');
   const [resuming, setResuming] = useState(false);
   const [resumeError, setResumeError] = useState('');
@@ -88,8 +89,19 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
             </p>
           </div>
 
+          <nav aria-label="Pilihan login siswa" className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1.5">
+            <button type="button" onClick={() => setLoginMode('new')} aria-pressed={loginMode === 'new'} disabled={isSubmitting || resuming}
+              className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold cursor-pointer transition-all focus-visible:outline-2 focus-visible:outline-emerald-600 focus-visible:outline-offset-2 disabled:opacity-50 ${loginMode === 'new' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:bg-white/60'}`}>
+              <User className="w-4 h-4" /> Login Baru
+            </button>
+            <button type="button" onClick={() => setLoginMode('access')} aria-pressed={loginMode === 'access'} disabled={isSubmitting || resuming}
+              className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold cursor-pointer transition-all focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2 disabled:opacity-50 ${loginMode === 'access' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:bg-white/60'}`}>
+              <KeyRound className="w-4 h-4" /> Kode Akses
+            </button>
+          </nav>
+
           {/* Cara Mengisi Callout Box */}
-          <div className="mt-5 p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-200/90 flex gap-3 text-left">
+          {loginMode === 'new' && <div className="mt-5 p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-200/90 flex gap-3 text-left">
             <Compass className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="text-xs font-extrabold uppercase tracking-wide text-amber-900">
@@ -103,21 +115,21 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
                 Tidak ada jawaban benar atau salah, tulis sejujurnya tentang dirimu.
               </p>
             </div>
-          </div>
+          </div>}
 
-          <form onSubmit={handleResume} className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+          {loginMode === 'access' && <form onSubmit={handleResume} className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 space-y-3">
             <h2 className="text-sm font-bold text-blue-900">Lanjutkan dengan kode akses</h2>
             <p className="text-xs text-blue-900">Sudah pernah mengisi di browser lain? Masukkan kode dari halaman siswa atau minta kode rekaman lama kepada guru. Jawaban dan hasil sebelumnya akan dibuka kembali.</p>
             <label htmlFor="student-access-code" className="block text-xs font-bold text-blue-900">Kode akses siswa</label>
-            <input id="student-access-code" value={accessCode} onChange={event => setAccessCode(event.target.value)} required autoComplete="off" spellCheck={false} placeholder="Tempel kode akses siswa" className="w-full rounded-xl border border-blue-200 bg-white p-3 text-xs font-mono" />
+            <input id="student-access-code" value={accessCode} onChange={event => setAccessCode(event.target.value)} required autoFocus autoComplete="off" spellCheck={false} placeholder="Tempel kode akses siswa" className="w-full rounded-xl border border-blue-200 bg-white p-3 text-xs font-mono" />
             <button type="submit" disabled={resuming || isSubmitting} className="w-full rounded-xl bg-blue-700 text-white py-2.5 text-xs font-bold cursor-pointer disabled:opacity-50">{resuming ? 'Membuka jawaban...' : 'Buka Jawaban Sebelumnya'}</button>
             {resumeError && <p role="alert" className="text-xs text-red-700">{resumeError}</p>}
-          </form>
+          </form>}
 
           {/* Entry Form */}
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-800">Mulai atau lanjutkan di browser ini</h2>
-            <p className="text-xs text-slate-500">Untuk pindah browser, gunakan kode akses di atas agar tidak membuat rekaman baru.</p>
+          {loginMode === 'new' && <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <h2 className="text-sm font-bold text-slate-800">Login Baru</h2>
+            <p className="text-xs text-slate-500">Isi identitasmu untuk memulai petualangan. Jika sudah pernah mengisi di browser lain, pilih Kode Akses untuk membuka jawaban sebelumnya.</p>
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-semibold flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
@@ -209,7 +221,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
               <span>{isSubmitting ? 'Menyimpan...' : 'Mulai Petualangan Refleksi'}</span>
               <BookOpen className="w-4 h-4" />
             </button>
-          </form>
+          </form>}
 
           {/* Guidance note */}
           <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-500">
