@@ -399,6 +399,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
       {/* Stage Detail / Reflection Form Modal */}
       {selectedStage && (
         <StageModal
+          key={selectedStage.id}
           stage={selectedStage}
           initialData={journey.stages[selectedStage.id]}
           onClose={() => setSelectedStage(null)}

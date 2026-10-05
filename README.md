@@ -15,7 +15,7 @@ Website Vite diterbitkan melalui GitHub Pages di `.github/workflows/deploy.yml`.
 
 ## Mengaktifkan Firebase
 
-Tanpa konfigurasi Firebase, aplikasi tetap berjalan dalam mode lokal lama untuk uji coba. Mode lokal tidak cocok untuk mengumpulkan jawaban pribadi seluruh kelas karena data dan login guru hanya ada pada browser tersebut.
+Firebase wajib dikonfigurasi, termasuk saat menjalankan localhost. Jika konfigurasi tidak tersedia, aplikasi berhenti dengan pesan konfigurasi; tidak ada mode data lokal.
 
 1. Buat proyek paket Spark di [Firebase Console](https://console.firebase.google.com/), lalu daftarkan aplikasi Web. Salin `apiKey`, `authDomain`, `projectId`, dan `appId` dari konfigurasi Web ke `.env` lokal berdasarkan [.env.example](.env.example).
 2. Di **Authentication → Sign-in method**, aktifkan **Anonymous** untuk siswa dan **Email/Password** untuk akun staf. Biarkan **Google** aktif sementara untuk pembuatan akun admin pertama memakai akun lama `andy.wbowo@gmail.com`. Domain `nassrudin.github.io` tetap ada di **Authentication → Settings → Authorized domains** untuk tahap awal ini.
@@ -26,30 +26,30 @@ Tanpa konfigurasi Firebase, aplikasi tetap berjalan dalam mode lokal lama untuk 
 
 Alamat email internal acak dibuat otomatis oleh aplikasi untuk Firebase Authentication; pengguna tidak memasukkan atau menerima email. Kata sandi tidak disimpan di Firestore maupun kode situs. Guru dapat mengganti kata sandinya sendiri dengan kata sandi saat ini. Jika guru lupa kata sandi, admin menonaktifkan akun lama lalu membuat akun pengganti. Jika admin lupa kata sandi, pemilik proyek Firebase perlu memulihkannya secara manual lewat administrasi Firebase; tidak ada tautan reset email. Menonaktifkan guru mencabut akses data, tetapi akun Authentication-nya tetap tercatat karena penghapusan akun orang lain memerlukan Admin SDK di server.
 
-Saat Firebase pertama kali aktif di suatu browser, data siswa lama yang tersimpan di browser itu dicoba diimpor satu kali tanpa menghapus salinan lokal. Perangkat lain perlu membuka situs lagi agar data lokalnya ikut diimpor. Siswa memakai sesi anonim yang melekat pada browser/perangkat; jika penyimpanan browser dihapus atau perangkat diganti, siswa tidak dapat melanjutkan jawaban lama. Nama, kelas, dan nomor absen yang diketik siswa bukan bukti identitas, sehingga guru perlu memeriksa entri ganda.
+Data siswa dan pengaturan hanya dibaca dari Firebase. Impor otomatis data browser dan pembacaan draf lokal sudah dihapus. Sesi login anonim Firebase tetap melekat pada browser/perangkat; menghapus sesi login atau mengganti perangkat dapat membuat siswa kehilangan akses ke jawabannya, tetapi tidak menghapus jawaban di server. Nama, kelas, dan nomor absen bukan bukti identitas.
 
 ## Cara kerja data
 
-- Urutan Etape 2: Pos 5 **Melihat kembali usaha saya**, Pos 6 **Saat saya dikritik**, Pos 7 **Belajar dari orang lain**, dan Pos 8 **Komitmen dan target saya**. Jawaban serta draf lama dikenali berdasarkan pertanyaannya agar tetap masuk ke pos yang sesuai.
+- Urutan Etape 2: Pos 5 **Melihat kembali usaha saya**, Pos 6 **Saat saya dikritik**, Pos 7 **Belajar dari orang lain**, dan Pos 8 **Komitmen dan target saya**. Jawaban lama yang sudah ada di Firebase dikenali berdasarkan pertanyaannya agar tetap masuk ke pos yang sesuai.
 - Pos 8 memisahkan skala percaya diri sesudah layanan dari skala keyakinan terhadap perubahan diri ke depan. Jawaban lama tidak otomatis mengisi skala baru; siswa dapat melengkapinya dengan membuka kembali Pos 8.
-- Dalam mode Firebase, identitas siswa, jawaban, serta pengaturan kelas dan akses pos disimpan di Firestore. Draf yang belum dikirim dan penanda siswa aktif tetap disimpan di browser.
+- Identitas, jawaban, pengaturan kelas, dan akses pos berasal dari server Firestore. Snapshot dari cache tidak digunakan sebagai sumber data. Formulir yang belum disimpan hanya berada dalam memori halaman; tekan Simpan & Tuntaskan sebelum menutupnya.
 - Dashboard guru membaca jawaban dari semua perangkat melalui Firestore. Guru dan admin masuk dengan nama pengguna serta kata sandi; di belakang layar Firebase Authentication memakai alamat internal acak. Firestore Rules membatasi akses sesuai peran.
 - Opsi **Akses Pos** berlaku untuk semua perangkat. Standarnya Pos 5 terbuka tujuh hari setelah Pos 4; guru dapat mengizinkan akses lebih awal.
-- Dalam mode lokal tanpa Firebase, data dan kredensial guru tetap disimpan di `localStorage` seperti versi sebelumnya. Dashboard lokal hanya melihat data di browser itu.
+- Penyimpanan jawaban memakai transaksi yang membaca dokumen terbaru di server. Perubahan pos lain dipertahankan; jika pos yang sama berubah sejak formulir dibuka, penyimpanan ditolak agar jawaban terbaru tidak tertimpa.
 
 ## Hasil dan Google Drive
 
 Siswa dan guru dapat memilih **Cetak / Simpan PDF** pada halaman hasil. Browser membuka dialog cetak; pilih tujuan **Save as PDF**. Hasil berisi sampul dan hanya pos yang sudah selesai diisi. Jawaban panjang dapat menambah halaman PDF agar teks tidak terpotong.
 
-PDF dibuat di browser dan tidak diunggah ke Firebase. Dalam mode Firebase, jawaban tersimpan dan dibaca dari Firestore sehingga fitur sinkronisasi Google Drive disembunyikan. Dalam mode lokal lama, `google-apps-script-sync.js` masih dapat dipakai sebagai opsi pengiriman ke Drive.
+PDF dibuat di browser dari jawaban Firebase yang sudah dimuat dan tidak diunggah ke Firebase. Sinkronisasi data lokal ke Google Drive sudah tidak digunakan.
 
-Jangan menerbitkan data refleksi pribadi siswa dengan hanya mengandalkan login lokal. Aktifkan Firebase dan terapkan aturan akses sebelum penggunaan kelas.
+Jawaban lama yang sudah terimpor di Firebase tetap dipertahankan. Perubahan ini tidak memulihkan jawaban yang sebelumnya terhapus atau tertimpa.
 
 ## Struktur
 
 - `src/data.ts`: definisi pertanyaan delapan pos.
-- `src/context.tsx`: state dan penyimpanan lokal.
-- `src/cloud-context.tsx`: sesi anonim siswa, akun staf, migrasi data lama, dan sinkronisasi Firestore.
+- `src/context.tsx`: kontrak context bersama tanpa penyimpanan lokal.
+- `src/cloud-context.tsx`: sesi anonim siswa, akun staf, pembacaan server, dan transaksi Firestore.
 - `src/components/StaffAccountsPanel.tsx`: pembuatan admin, pembuatan akun guru, serta pengaturan akses dan kata sandi staf.
 - `src/firebase.ts`, `src/firebase-config.ts`, dan `firestore.rules`: koneksi serta aturan akses Firebase.
 - `src/components/StudentEntry.tsx`: formulir identitas.

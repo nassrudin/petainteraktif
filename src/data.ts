@@ -1,4 +1,4 @@
-import { StageDefinition, AdminCredentials, ClassConfig } from './types';
+import { StageDefinition, ClassConfig } from './types';
 
 export const PEGANGAN_DI_SEPANJANG_JALAN =
   'Percaya diri bukan bakat yang dimiliki sejak lahir. Ia tumbuh setiap kali kamu berani mencoba sekali lagi.';
@@ -420,11 +420,4 @@ export const STAGES_DATA: StageDefinition[] = [
     ],
   },
 ];
-
-// Login ini hanya berlaku untuk browser lokal. Frontend statis tidak dapat melindungi kredensial.
-export const DEFAULT_ADMIN: AdminCredentials = {
-  username: 'admin_bk_growth2026',
-  password: 'SecureBK$GrowthMindset2026!',
-  name: 'Guru Pembimbing BK',
-};
 

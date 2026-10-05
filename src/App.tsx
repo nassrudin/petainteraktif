@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppProvider as LocalAppProvider, useApp } from './context';
+import { useApp } from './context';
 import { firebaseConfigIncomplete, firebaseEnabled } from './firebase-config';
 import { Navbar } from './components/Navbar';
 import { JourneyMap } from './components/JourneyMap';
@@ -13,11 +13,7 @@ const MainLayout: React.FC = () => {
   const { activeStudent, isAdminLoggedIn, storageError, cloudLoading, cloudError } = useApp();
   const [activeTab, setActiveTab] = useState<'map' | 'result' | 'admin'>('map');
   const [showAdminModal, setShowAdminModal] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Load theme preference from localStorage
-    try { return localStorage.getItem('gm_theme_preference') === 'true'; }
-    catch { return false; }
-  });
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const htmlElement = document.getElementById('app');
 
@@ -29,9 +25,8 @@ const MainLayout: React.FC = () => {
     }
   }, [isAdminLoggedIn]);
 
-  // Save theme preference and apply to document - FIX DARK MODE
+  // Apply the selected theme for this page session
   React.useEffect(() => {
-    try { localStorage.setItem('gm_theme_preference', String(isDarkMode)); } catch { /* storage warning shown below */ }
     
     // Apply dark class to the app element
     if (htmlElement) {
@@ -104,14 +99,14 @@ const MainLayout: React.FC = () => {
 };
 
 export default function App() {
-  if (firebaseConfigIncomplete) return <div role="alert" className="m-6 rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800">
-    Konfigurasi Firebase belum lengkap. Isi API key, auth domain, project ID, dan app ID sebelum menggunakan situs.
+  if (!firebaseEnabled || firebaseConfigIncomplete) return <div role="alert" className="m-6 rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800">
+    Firebase wajib dikonfigurasi. Data siswa hanya diambil dari server Firebase. Isi API key, auth domain, project ID, dan app ID sebelum menggunakan situs.
   </div>;
-  return firebaseEnabled ? (
+  return (
     <React.Suspense fallback={<div role="status" className="p-6 text-center">Memuat Firebase...</div>}>
       <CloudAppProvider><MainLayout /></CloudAppProvider>
     </React.Suspense>
-  ) : <LocalAppProvider><MainLayout /></LocalAppProvider>;
+  );
 }
 
 const CloudAppProvider = React.lazy(() => import('./cloud-context').then((module) => ({ default: module.CloudAppProvider })));

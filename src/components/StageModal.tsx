@@ -1,5 +1,4 @@
-import { readRevisedDraft } from '../utils/journeyRevision';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
   import { StageDefinition, StageAnswer } from '../types';
   import { useApp } from '../context';
   import { 
@@ -21,18 +20,12 @@ import React, { useState, useEffect } from 'react';
     onCompletedNext,
   }) => {
      const { activeStudent, saveStageAnswer, appSettings } = useApp();
-     const draftKey = activeStudent ? `gm_stage_draft_v3_${activeStudent.id}_${stage.id}` : '';
     
     // Initialize formData from initialData answers or empty object
-    const [formData, setFormData] = useState<Record<string, any>>({});
+    const [formData, setFormData] = useState<Record<string, any>>(() => initialData?.answers || {});
     
-     // Sync formData with initialData when initialData changes
-     useEffect(() => {
-       try {
-         const draft = draftKey ? localStorage.getItem(draftKey) : null;
-         setFormData(draft ? JSON.parse(draft) : initialData?.answers || (activeStudent ? readRevisedDraft(localStorage, activeStudent.id, stage.id) : null) || {});
-       } catch { setFormData(initialData?.answers || {}); }
-     }, [initialData, draftKey]);
+     const [expectedStage] = useState(initialData);
+
 
      const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,9 +33,7 @@ import React, { useState, useEffect } from 'react';
   const handleInputChange = (fieldId: string, value: any) => {
     const next = { ...formData, [fieldId]: value };
     setFormData(next);
-    if (draftKey) {
-      try { localStorage.setItem(draftKey, JSON.stringify(next)); } catch { /* storage unavailable */ }
-    }
+
     setErrorMsg(null);
   };
 
@@ -83,8 +74,7 @@ import React, { useState, useEffect } from 'react';
     try {
       await new Promise((resolve) => setTimeout(resolve, 400));
       if (!activeStudent) throw new Error('Sesi siswa tidak ditemukan.');
-      await saveStageAnswer(activeStudent.id, stage.id, formData);
-      try { localStorage.removeItem(draftKey); } catch { /* storage unavailable */ }
+      await saveStageAnswer(activeStudent.id, stage.id, formData, expectedStage);
       onClose();
        if (stage.id === 4) {
          window.alert(appSettings.allowEarlyPhaseTwo
@@ -297,6 +287,7 @@ import React, { useState, useEffect } from 'react';
           </form>
         </div>
 
+        <p className="px-4 py-2 text-xs text-slate-500">Tekan Simpan &amp; Tuntaskan untuk menyimpan jawaban. Jawaban yang belum disimpan akan hilang jika halaman ditutup atau dimuat ulang.</p>
         {/* Modal Footer */}
         <div className="flex items-center justify-between p-4 sm:px-6 bg-slate-50 border-t border-slate-200 shrink-0">
           <button

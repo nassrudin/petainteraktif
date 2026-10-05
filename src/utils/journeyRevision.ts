@@ -1,4 +1,23 @@
-import { StudentJourney } from '../types';
+import { StudentJourney, StageAnswer } from '../types';
+
+function stageVersion(stage?: StageAnswer): string {
+  if (!stage) return '';
+  return JSON.stringify([stage.completed, stage.completedAt ?? '',
+    Object.entries(stage.answers || {}).sort(([a], [b]) => a.localeCompare(b))]);
+}
+
+// The caller reads the latest server document inside a Firestore transaction.
+export function prepareStageSave(latest: StudentJourney, stageId: number, answers: Record<string, unknown>, expectedStage: StageAnswer | undefined, now: string): StudentJourney {
+  if (!Number.isInteger(stageId) || stageId < 1 || stageId > 8) throw new Error('Pos tidak valid.');
+  const journey = reviseJourney(latest);
+  if (stageVersion(journey.stages[stageId]) !== stageVersion(expectedStage)) {
+    throw new Error('Jawaban pos ini berubah atau direset sejak formulir dibuka. Tutup formulir dan buka kembali untuk memuat jawaban terbaru sebelum menyimpan.');
+  }
+  const stages = { ...journey.stages, [stageId]: {
+    completed: true, completedAt: journey.stages[stageId]?.completedAt || now, answers,
+  } };
+  return { ...reviseJourney({ ...journey, stages }), updatedAt: now };
+}
 
 export function getJourneyConfidenceScore(stages: StudentJourney['stages']): number {
   const answer = stages[8]?.answers?.after_confidence_scale ?? stages[1]?.answers?.confidence_scale;
@@ -21,15 +40,4 @@ export function reviseJourney(journey: StudentJourney): StudentJourney {
   }
   return { ...journey, stages, confidenceScore: getJourneyConfidenceScore(stages), lastActiveStage: Array.from({ length: 8 }, (_, i) => i + 1)
     .find(id => !stages[id]?.completed) ?? 8 };
-}
-
-export function readRevisedDraft(storage: Pick<Storage, 'getItem'>, studentId: string, stageId: number): Record<string, unknown> | null {
-  for (const id of stageId >= 5 && stageId <= 7 ? [stageId, ...[5, 6, 7].filter(n => n !== stageId)] : [stageId]) {
-    const raw = storage.getItem(`gm_stage_draft_${studentId}_${id}`);
-    if (!raw) continue;
-    let answers;
-    try { answers = JSON.parse(raw); } catch { continue; }
-    if (answers && typeof answers === 'object' && !Array.isArray(answers) && revisedStageId(id, answers) === stageId) return answers;
-  }
-  return null;
 }

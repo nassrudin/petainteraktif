@@ -1,8 +1,8 @@
-import { getJourneyConfidenceScore } from './utils/journeyRevision';
+import { prepareStageSave } from './utils/journeyRevision';
 import { reviseJourney } from './utils/journeyRevision';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createUserWithEmailAndPassword, deleteUser, EmailAuthProvider, GoogleAuthProvider, inMemoryPersistence, onAuthStateChanged, reauthenticateWithCredential, setPersistence, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signOut, updatePassword, User } from 'firebase/auth';
-import { collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocFromServer, onSnapshot, runTransaction, query, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { AdminRole, AppContext, AppContextType, DEFAULT_DRIVE_FOLDER_URL, StaffAccount } from './context';
 import { DEFAULT_CLASS_CONFIGS } from './data';
 import { provisioningAuth, studentAuth, studentDb, teacherAuth, teacherDb } from './firebase';
@@ -35,7 +35,7 @@ interface TeacherAccount {
 
 const defaultSettings: AppSettings = { classNames: DEFAULT_CLASS_CONFIGS, allowEarlyPhaseTwo: false };
 const studentCollection = 'students';
-const activeStudentKey = 'gm_active_student_v2';
+
 const validUsername = /^[a-z][a-z0-9._-]{2,31}$/;
 let anonymousSignIn: Promise<unknown> | null = null;
 
@@ -45,28 +45,6 @@ function internalEmail(): string {
 
 function hasPasswordProvider(user: User | null): boolean {
   return Boolean(user?.providerData.some((provider) => provider.providerId === 'password'));
-}
-
-function readLegacyStudents(): ActiveStudent[] {
-  try {
-    const value = JSON.parse(localStorage.getItem('gm_all_students_v2') || '[]');
-    return Array.isArray(value) ? value.filter((student) => student && typeof student.id === 'string' &&
-      typeof student.name === 'string' && typeof student.class === 'string') : [];
-  } catch { return []; }
-}
-
-function readLegacyJourneys(): Record<string, StudentJourney> {
-  try {
-    const value = JSON.parse(localStorage.getItem('gm_journeys_v2') || '{}');
-    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-  } catch { return {}; }
-}
-
-function readActiveStudent(): ActiveStudent | null {
-  try {
-    const value = JSON.parse(localStorage.getItem(activeStudentKey) || 'null');
-    return value && typeof value.id === 'string' && typeof value.name === 'string' ? value : null;
-  } catch { return null; }
 }
 
 function makeJourney(student: ActiveStudent): StudentJourney {
@@ -81,10 +59,6 @@ function makeJourney(student: ActiveStudent): StudentJourney {
     lastActiveStage: 1,
     updatedAt: new Date().toISOString(),
   };
-}
-
-function confidenceScore(stages: StudentJourney['stages']): number {
-  return getJourneyConfidenceScore(stages);
 }
 
 function isLegacyTeacher(user: User | null): boolean {
@@ -115,11 +89,12 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [studentRecords, setStudentRecords] = useState<Record<string, CloudStudentRecord>>({});
   const [teacherRecords, setTeacherRecords] = useState<Record<string, CloudStudentRecord>>({});
   const studentRecordsRef = useRef(studentRecords);
-  const [activeStudent, setActiveStudent] = useState<ActiveStudent | null>(readActiveStudent);
+  const [activeStudent, setActiveStudent] = useState<ActiveStudent | null>(null);
   const [appSettings, setAppSettings] = useState<AppSettings>(defaultSettings);
   const [cloudLoading, setCloudLoading] = useState(true);
   const [cloudError, setCloudError] = useState<string | null>(null);
-  const [storageError, setStorageError] = useState(false);
+  const storageError = false;
+  const [teacherReady, setTeacherReady] = useState(false);
   const [studentReady, setStudentReady] = useState(false);
 
   const adminRole: AdminRole = !rootLoaded || !teacherUser ? null
@@ -137,12 +112,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => { studentRecordsRef.current = studentRecords; }, [studentRecords]);
 
-  useEffect(() => {
-    try {
-      if (activeStudent) localStorage.setItem(activeStudentKey, JSON.stringify(activeStudent));
-      else localStorage.removeItem(activeStudentKey);
-    } catch { setStorageError(true); }
-  }, [activeStudent]);
+
 
   useEffect(() => {
     if (!studentAuth || !teacherAuth) return;
@@ -150,6 +120,9 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const unsubscribeStudent = onAuthStateChanged(auth, (user) => {
       if (user) setStudentUid(user.uid);
       else {
+        setStudentUid(null);
+        setStudentReady(false);
+        setActiveStudent(null);
         if (!anonymousSignIn) {
           anonymousSignIn = signInAnonymously(auth).finally(() => { anonymousSignIn = null; });
         }
@@ -163,7 +136,8 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     if (!teacherDb) return;
-    return onSnapshot(doc(teacherDb, 'config', 'adminRoot'), (snapshot) => {
+    return onSnapshot(doc(teacherDb, 'config', 'adminRoot'), { includeMetadataChanges: true }, (snapshot) => {
+      if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;
       setRootAccount(snapshot.exists() ? snapshot.data() as RootAccount : null);
       setRootLoaded(true);
     }, (error) => { setCloudError(readableError(error)); setRootLoaded(true); });
@@ -174,7 +148,8 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setTeacherAccount(null);
       return;
     }
-    return onSnapshot(doc(teacherDb, 'staff', teacherUser.uid), (snapshot) => {
+    return onSnapshot(doc(teacherDb, 'staff', teacherUser.uid), { includeMetadataChanges: true }, (snapshot) => {
+      if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;
       setTeacherAccount(snapshot.exists() ? snapshot.data() as TeacherAccount : null);
     }, (error) => { setTeacherAccount(null); setCloudError(readableError(error)); });
   }, [teacherUser]);
@@ -184,7 +159,8 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setStaffAccounts([]);
       return;
     }
-    return onSnapshot(collection(teacherDb, 'staff'), (snapshot) => {
+    return onSnapshot(collection(teacherDb, 'staff'), { includeMetadataChanges: true }, (snapshot) => {
+      if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;
       setStaffAccounts(snapshot.docs.map((item) => ({
         uid: item.id,
         username: String(item.data().username || ''),
@@ -195,7 +171,8 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     if (!studentDb) return;
-    return onSnapshot(doc(studentDb, 'settings', 'public'), (snapshot) => {
+    return onSnapshot(doc(studentDb, 'settings', 'public'), { includeMetadataChanges: true }, (snapshot) => {
+      if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;
       if (!snapshot.exists()) { setAppSettings(defaultSettings); return; }
       const data = snapshot.data();
       if (Array.isArray(data.classNames) && data.classNames.length && typeof data.allowEarlyPhaseTwo === 'boolean') {
@@ -207,67 +184,36 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     if (!studentUid || !studentDb) return;
     const db = studentDb;
-    let cancelled = false;
-    let unsubscribe = () => {};
-    const connect = async () => {
-      try {
-        let migrationFailures = 0;
-        // One-time, non-destructive migration of data already saved in this browser.
-        const migrationKey = `gm_firebase_migrated_${firebaseConfig.projectId}_${studentUid}`;
-        let alreadyMigrated = false;
-        try { alreadyMigrated = localStorage.getItem(migrationKey) === 'true'; }
-        catch { setStorageError(true); }
-        if (!alreadyMigrated) {
-          const existing = await getDocs(query(collection(db, studentCollection), where('ownerUid', '==', studentUid)));
-          const existingIds = new Set(existing.docs.map((item) => item.id));
-          const legacyJourneys = readLegacyJourneys();
-          for (const student of readLegacyStudents()) {
-            if (cancelled) return;
-            if (existingIds.has(student.id)) continue;
-            const legacy = legacyJourneys[student.id];
-            const journey = legacy ? { ...makeJourney(student), ...legacy, stages: legacy.stages || {} } : makeJourney(student);
-            try {
-              await setDoc(doc(db, studentCollection, student.id), JSON.parse(JSON.stringify({ ownerUid: studentUid, student, journey })));
-            } catch { migrationFailures++; }
-          }
-          if (migrationFailures === 0) {
-            try { localStorage.setItem(migrationKey, 'true'); } catch { setStorageError(true); }
-          }
+    setStudentReady(false);
+    setCloudLoading(true);
+    studentRecordsRef.current = {};
+    setStudentRecords({});
+    return onSnapshot(query(collection(db, studentCollection), where('ownerUid', '==', studentUid)),
+      { includeMetadataChanges: true }, (snapshot) => {
+        if (snapshot.metadata.hasPendingWrites) return;
+        if (snapshot.metadata.fromCache) {
+          setStudentReady(false);
+          setCloudError('Menunggu koneksi Firebase. Data belum diperbarui dari server; jawaban yang sedang diketik belum disimpan.');
+          return;
         }
-        if (cancelled) return;
-        unsubscribe = onSnapshot(query(collection(db, studentCollection), where('ownerUid', '==', studentUid)),
-          (snapshot) => {
-            const records = Object.fromEntries(snapshot.docs.map((item) => [item.id, reviseRecord(item.data() as CloudStudentRecord)]));
-            studentRecordsRef.current = records;
-            setStudentRecords(records);
-            setActiveStudent((current) => current && !records[current.id] ? null : current);
-            setStudentReady(true);
-            setCloudError(migrationFailures ? `${migrationFailures} data lama belum berhasil dipindahkan ke Firebase. Salinan lokal masih ada di browser ini.` : null);
-            setCloudLoading(false);
-          },
-          (error) => { setCloudError(readableError(error)); setCloudLoading(false); });
-      } catch (error) { if (!cancelled) { setCloudError(readableError(error)); setCloudLoading(false); } }
-    };
-    void connect();
-    return () => { cancelled = true; unsubscribe(); };
+        const records = Object.fromEntries(snapshot.docs.map(item => [item.id, reviseRecord(item.data() as CloudStudentRecord)]));
+        studentRecordsRef.current = records;
+        setStudentRecords(records);
+        setActiveStudent(current => current ? records[current.id]?.student ?? null : null);
+        setStudentReady(true);
+        setCloudLoading(false);
+        setCloudError(null);
+      }, error => { setStudentReady(false); setCloudError(readableError(error)); setCloudLoading(false); });
   }, [studentUid]);
 
   useEffect(() => {
     if (!isAdminLoggedIn || !teacherDb) { setTeacherRecords({}); return; }
     const db = teacherDb;
-    const migrateSettings = async () => {
-      try {
-        const reference = doc(db, 'settings', 'public');
-        if ((await getDoc(reference)).exists()) return;
-        const saved = JSON.parse(localStorage.getItem('gm_app_settings_v2') || 'null');
-        if (saved && Array.isArray(saved.classNames) && saved.classNames.length &&
-          typeof saved.allowEarlyPhaseTwo === 'boolean') {
-          await setDoc(reference, { classNames: saved.classNames, allowEarlyPhaseTwo: saved.allowEarlyPhaseTwo });
-        }
-      } catch (error) { setCloudError(readableError(error)); }
-    };
-    void migrateSettings();
-    return onSnapshot(collection(db, studentCollection), (snapshot) => {
+    setTeacherReady(false);
+    return onSnapshot(collection(db, studentCollection), { includeMetadataChanges: true }, (snapshot) => {
+      if (snapshot.metadata.hasPendingWrites) return;
+      if (snapshot.metadata.fromCache) { setTeacherReady(false); return; }
+      setTeacherReady(true);
       setTeacherRecords(Object.fromEntries(snapshot.docs.map((item) => [item.id, reviseRecord(item.data() as CloudStudentRecord)])));
       setCloudError(null);
     }, (error) => setCloudError(readableError(error)));
@@ -294,19 +240,17 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setActiveStudent(student);
   };
 
-  const saveStageAnswer: AppContextType['saveStageAnswer'] = async (studentId, stageId, answers) => {
-    const record = studentRecordsRef.current[studentId];
-    if (!record || record.ownerUid !== studentUid || !studentDb) throw new Error('Sesi siswa tidak cocok. Masuk kembali pada perangkat ini.');
-    const now = new Date().toISOString();
-    const stages = { ...record.journey.stages, [stageId]: { completed: true, completedAt: now, answers } };
-    const journey: StudentJourney = {
-      ...record.journey, stages, lastActiveStage: Array.from({ length: 8 }, (_, i) => i + 1).find(id => !stages[id]?.completed) ?? 8,
-      confidenceScore: confidenceScore(stages), updatedAt: now,
-    };
-    await updateDoc(doc(studentDb, studentCollection, studentId), { journey: JSON.parse(JSON.stringify(journey)) });
-    const updated = { ...record, journey };
-    studentRecordsRef.current = { ...studentRecordsRef.current, [studentId]: updated };
-    setStudentRecords(studentRecordsRef.current);
+  const saveStageAnswer: AppContextType['saveStageAnswer'] = async (studentId, stageId, answers, expectedStage) => {
+    if (!studentUid || !studentDb || !studentReady) throw new Error('Koneksi Firebase belum siap. Jawaban belum disimpan.');
+    const reference = doc(studentDb, studentCollection, studentId);
+    await runTransaction(studentDb, async transaction => {
+      const snapshot = await transaction.get(reference);
+      if (!snapshot.exists()) throw new Error('Data siswa sudah dihapus. Muat ulang halaman.');
+      const latest = snapshot.data() as CloudStudentRecord;
+      if (latest.ownerUid !== studentUid) throw new Error('Sesi siswa tidak cocok.');
+      const journey = prepareStageSave(latest.journey, stageId, answers, expectedStage, new Date().toISOString());
+      transaction.update(reference, { journey: JSON.parse(JSON.stringify(journey)) });
+    });
   };
 
   const adminLogin: AppContextType['adminLogin'] = async (username, password) => {
@@ -318,15 +262,15 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
     try {
       const account = normalized === 'admin'
-        ? await getDoc(doc(teacherDb, 'config', 'adminRoot'))
-        : await getDoc(doc(teacherDb, 'staffUsernames', normalized));
+        ? await getDocFromServer(doc(teacherDb, 'config', 'adminRoot'))
+        : await getDocFromServer(doc(teacherDb, 'staffUsernames', normalized));
       if (!account.exists()) throw new Error('Nama pengguna atau kata sandi salah.');
       const email = account.data().email;
       if (typeof email !== 'string') throw new Error('Akun belum siap. Hubungi admin.');
       const { user } = await signInWithEmailAndPassword(teacherAuth, email, password);
-      const currentRoot = await getDoc(doc(teacherDb, 'config', 'adminRoot'));
+      const currentRoot = await getDocFromServer(doc(teacherDb, 'config', 'adminRoot'));
       const isRoot = normalized === 'admin' && currentRoot.exists() && currentRoot.data().uid === user.uid;
-      const staff = isRoot ? null : await getDoc(doc(teacherDb, 'staff', user.uid));
+      const staff = isRoot ? null : await getDocFromServer(doc(teacherDb, 'staff', user.uid));
       const isActiveTeacher = staff?.exists() && staff.data().role === 'teacher' &&
         staff.data().active === true && staff.data().username === normalized;
       if (!isRoot && !isActiveTeacher) {
@@ -346,7 +290,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!teacherAuth || rootAccount) return false;
     try {
       const { user } = await signInWithPopup(teacherAuth, new GoogleAuthProvider());
-      if (isLegacyTeacher(user) && !(await getDoc(doc(teacherDb!, 'config', 'adminRoot'))).exists()) {
+      if (isLegacyTeacher(user) && !(await getDocFromServer(doc(teacherDb!, 'config', 'adminRoot'))).exists()) {
         setCloudError(null);
         return true;
       }
@@ -369,7 +313,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     let rootSaved = false;
     try {
       const reference = doc(teacherDb, 'config', 'adminRoot');
-      if ((await getDoc(reference)).exists()) throw new Error('Akun admin sudah dibuat. Muat ulang halaman.');
+      if ((await getDocFromServer(reference)).exists()) throw new Error('Akun admin sudah dibuat. Muat ulang halaman.');
       await setPersistence(provisioningAuth, inMemoryPersistence);
       const email = internalEmail();
       createdUser = (await createUserWithEmailAndPassword(provisioningAuth, email, password)).user;
@@ -395,7 +339,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (password.length < 12) return { success: false, message: 'Kata sandi minimal 12 karakter.' };
     let createdUser: User | null = null;
     try {
-      if ((await getDoc(doc(teacherDb, 'staffUsernames', normalized))).exists()) {
+      if ((await getDocFromServer(doc(teacherDb, 'staffUsernames', normalized))).exists()) {
         throw new Error('Nama pengguna sudah digunakan.');
       }
       await setPersistence(provisioningAuth, inMemoryPersistence);
@@ -444,9 +388,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const db = isAdminLoggedIn ? teacherDb : studentDb;
     if (!record || !db || (!isAdminLoggedIn && record.ownerUid !== studentUid)) throw new Error('Akses ditolak.');
     await updateDoc(doc(db, studentCollection, studentId), { journey: makeJourney(record.student) });
-    for (let stageId = 1; stageId <= 8; stageId++) {
-      try { localStorage.removeItem(`gm_stage_draft_${studentId}_${stageId}`); localStorage.removeItem(`gm_stage_draft_v3_${studentId}_${stageId}`); } catch { setStorageError(true); }
-    }
+
   };
 
   const deleteStudent: AppContextType['deleteStudent'] = async (studentId) => {
@@ -482,7 +424,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     retryDriveSync: () => {}, resetStudentProgress, deleteStudent,
     driveFolderUrl: DEFAULT_DRIVE_FOLDER_URL, updateDriveFolderUrl: unavailable,
     driveWebhookUrl: '', driveWebhookManagedByBuild: false, updateDriveWebhookUrl: unavailable,
-    appSettings, updateAppSettings, storageError, cloudLoading, cloudError,
+    appSettings, updateAppSettings, storageError, cloudLoading: cloudLoading || (isAdminLoggedIn && !teacherReady), cloudError,
   };
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
