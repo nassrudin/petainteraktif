@@ -23,7 +23,8 @@ function fixture() {
     Utilities: { formatDate: () => '2026-10-05_070000', newBlob: (content, type, name) => ({ content, type, name }) } });
   vm.runInContext(fs.readFileSync('google-apps-script-sync.js', 'utf8'), context);
   const createdAt = new Date(Date.now() - 1000).toISOString().replace('Z', '123Z');
-  const job = { path: 'driveBackupJobs/00000000-0000-4000-8000-000000000001', data: { studentId: 'a', milestone: 4, createdAt, revision } };
+  const job = { path: 'driveBackupJobs/00000000-0000-4000-8000-000000000001', snapshotAt: createdAt,
+    data: { studentId: 'a', milestone: 4, createdAt: new Date(Date.now() - 3000).toISOString(), revision } };
   const reads = [], updates = [], files = new Map();
   const document = (path, data) => ({ name: `projects/test/databases/(default)/documents/${path}`, fields: context.encodeFirestore(data).mapValue.fields });
   context.firestoreRequest = (path) => {
@@ -69,8 +70,9 @@ test('automatic backup includes every page and settings at the exact same server
   assert.equal(backup.documents[0].data.ownerUid, 'owner-a');
   assert.equal(backup.documents[1].data.student.id, 'b');
   assert.equal(backup.documents[2].path, 'settings/public');
-  assert.equal(contents.automatic.snapshotAt, job.data.createdAt);
-  assert.ok(reads.every(path => path.includes(`readTime=${encodeURIComponent(job.data.createdAt)}`)));
+  assert.equal(contents.automatic.snapshotAt, job.snapshotAt);
+  assert.notEqual(contents.automatic.snapshotAt, job.data.createdAt);
+  assert.ok(reads.every(path => path.includes(`readTime=${encodeURIComponent(job.snapshotAt)}`)));
   assert.ok(reads[1].includes('pageToken=next%20page'));
   assert.equal(makeRestorePlan(backup, []).added, 2);
   assert.equal(updates[0].values.status, 'complete');
@@ -106,7 +108,7 @@ test('server read failure or mismatched snapshot creates no partial backup', () 
 
 test('expired snapshots are reported without silently substituting current database data', () => {
   const { context, job, folder, reads, files, updates } = fixture();
-  job.data.createdAt = new Date(Date.now() - 61 * 60000).toISOString();
+  job.snapshotAt = new Date(Date.now() - 61 * 60000).toISOString();
   context.processBackupJob(job, folder);
   assert.equal(updates[0].values.status, 'expired');
   assert.equal(reads.length, 0);
@@ -118,4 +120,16 @@ test('failed uploads do not mark a job successful', () => {
   folder.createFile = () => { throw new Error('Drive full'); };
   assert.throws(() => context.processBackupJob(job, folder), /Drive full/);
   assert.equal(updates.length, 0);
+});
+
+test('the queue processor reads the commit time from Firestore metadata rather than the rounded createdAt field', () => {
+  const { context, job, document, folder } = fixture();
+  let processed;
+  context.LockService = { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) };
+  context.readBackupConfig = () => ({ enabled: true, folder: { ...folder, getName: () => 'Backup' } });
+  context.firestoreRequest = () => [{ document: { ...document(job.path, job.data), createTime: job.snapshotAt } }];
+  context.processBackupJob = value => { processed = value; };
+  context.processDriveBackups();
+  assert.equal(processed.snapshotAt, job.snapshotAt);
+  assert.notEqual(processed.snapshotAt, processed.data.createdAt);
 });

@@ -91,7 +91,9 @@ function buildSnapshotBackup(job, readTime) {
   };
 }
 function processBackupJob(job, folder) {
-  var readTime = job.data.createdAt;
+  // Document createTime is the exact commit timestamp. The REQUEST_TIME field may
+  // have millisecond precision and precede the commit, so it must never be readTime.
+  var readTime = job.snapshotAt;
   var age = Date.now() - Date.parse(readTime);
   var jobId = job.path.split('/')[1];
   if (!/^[a-f0-9-]{36}$/.test(jobId) || ![4, 8].includes(job.data.milestone) || !isFinite(age)) throw new Error('Permintaan backup tidak valid.');
@@ -130,7 +132,11 @@ function processDriveBackups() {
         where: { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'pending' } } },
         orderBy: [{ field: { fieldPath: 'createdAt' }, direction: 'ASCENDING' }], limit: 100
       } });
-      var jobs = rows.filter(function(row) { return row.document; }).map(function(row) { return decodeDocument(row.document); });
+      var jobs = rows.filter(function(row) { return row.document; }).map(function(row) {
+        var job = decodeDocument(row.document);
+        job.snapshotAt = row.document.createTime;
+        return job;
+      });
       for (var i = 0; i < jobs.length && Date.now() - started < 240000; i++) {
         try { processBackupJob(jobs[i], config.folder); }
         catch (error) {

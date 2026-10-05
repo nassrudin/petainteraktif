@@ -281,7 +281,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const backupJobId = crypto.randomUUID();
     await runTransaction(studentDb, async transaction => {
       const snapshot = await transaction.get(reference);
-      const backupConfig = driveBackupSettings.enabled && (stageId === 4 || stageId === 8)
+      const backupConfig = stageId === 4 || stageId === 8
         ? await transaction.get(doc(studentDb!, 'settings', 'driveBackup')) : null;
       if (!snapshot.exists()) throw new Error('Data siswa sudah dihapus. Muat ulang halaman.');
       const latest = snapshot.data() as CloudStudentRecord;

@@ -38,7 +38,8 @@ export function DriveBackupPanel() {
     </form>
     {feedback && <p role={feedback.success ? 'status' : 'alert'} className={`text-xs ${feedback.success ? 'text-emerald-700' : 'text-red-700'}`}>{feedback.message}</p>}
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs space-y-2">
-      <p className="font-bold">{!driveBackupSettings.enabled ? 'Backup otomatis belum diaktifkan' : !workerActive ? 'Pemroses backup belum terhubung atau tidak aktif' : driveBackupWorker?.error ? 'Pemroses aktif, tetapi ada kesalahan' : 'Pemroses backup terhubung'}</p>
+      <p className="font-bold">{driveBackupSettings.enabled ? 'Backup otomatis diaktifkan' : 'Backup otomatis belum diaktifkan'}</p>
+      <p className="font-bold">{!workerActive ? 'Pemroses backup belum terhubung atau tidak aktif' : driveBackupWorker?.error ? 'Pemroses aktif, tetapi ada kesalahan' : 'Pemroses backup terhubung'}</p>
       <p>Pemeriksaan terakhir: {showDate(driveBackupWorker?.checkedAt || '')}</p>
       {driveBackupWorker?.error && <p role="alert" className="text-red-700 break-words">{driveBackupWorker.error}</p>}
       <p>Antrean tersimpan di Firebase dan diproses sekitar setiap menit. Status berhasil muncul setelah berkas tersimpan di Drive. Jika pemrosesan tertunda lebih dari satu jam, snapshot lama ditandai kedaluwarsa; unduh Backup Data untuk membuat cadangan keadaan saat ini.</p>
