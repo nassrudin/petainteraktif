@@ -11,6 +11,7 @@ import { backupFileName } from '../utils/databaseBackup';
 import { buildStudentCsv, studentCsvFileName } from '../utils/studentCsv';
 import { completedStageCount, nextStudentSort, sortStudents, StudentSort, StudentSortKey } from '../utils/studentSort';
 import { formatDashboardDate } from '../utils/displayDate';
+import { StudentAccessPanel } from './StudentAccessPanel';
 import { 
   Users, CheckCircle, BarChart3, 
   ExternalLink, Download, Search, Eye, Filter,
@@ -37,6 +38,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   } = useApp();
 
   const [selectedStudent, setSelectedStudent] = useState<ActiveStudent | null>(null);
+  const [accessStudent, setAccessStudent] = useState<ActiveStudent | null>(null);
   const [filterClass, setFilterClass] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [studentSort, setStudentSort] = useState<StudentSort | null>(null);
@@ -495,6 +497,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                           </td>
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
+                              <button type="button" onClick={() => setAccessStudent(student)} disabled={isMaintaining} className="px-3 py-1.5 rounded-xl border border-blue-200 bg-white text-blue-700 font-bold text-xs hover:bg-blue-50 flex items-center gap-1.5 cursor-pointer">
+                                <KeyRound className="w-3.5 h-3.5" /> Kode Akses
+                              </button>
                               <button
                                 onClick={() => setViewingStudentReport(student)}
                                 className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-emerald-500 bg-white text-emerald-700 font-bold text-xs hover:bg-emerald-50 transition-all flex items-center gap-1.5 cursor-pointer"
@@ -533,6 +538,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       )}
 
       {/* STAGE ACCESS SETTINGS TAB */}
+      {accessStudent && <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setAccessStudent(null)}>
+        <div role="dialog" aria-modal="true" aria-labelledby="access-student-title" className="bg-white rounded-2xl p-5 w-full max-w-xl space-y-4" onClick={event => event.stopPropagation()}>
+          <div className="flex justify-between items-center gap-3"><h2 id="access-student-title" className="font-bold text-slate-800">{accessStudent.name} · {accessStudent.class} · Absen {accessStudent.absentNumber}</h2><button type="button" onClick={() => setAccessStudent(null)} aria-label="Tutup kode akses" className="p-2 cursor-pointer"><X className="w-5 h-5" /></button></div>
+          <p className="text-xs text-slate-600">Kode ini membuka rekaman yang dipilih ({completedStageCount(journeys[accessStudent.id])}/8 pos). Jika ada rekaman ganda, pilih rekaman dengan jawaban lama yang lengkap.</p>
+          <StudentAccessPanel key={accessStudent.id} studentId={accessStudent.id} />
+        </div>
+      </div>}
       {activeAdminTab === 'access' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 max-w-3xl mx-auto space-y-5">
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100">

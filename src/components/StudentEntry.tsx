@@ -9,7 +9,10 @@ interface StudentEntryProps {
 }
 
 export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
-  const { startStudentJourney, appSettings } = useApp();
+  const { startStudentJourney, resumeStudentJourney, appSettings } = useApp();
+  const [accessCode, setAccessCode] = useState('');
+  const [resuming, setResuming] = useState(false);
+  const [resumeError, setResumeError] = useState('');
   const [name, setName] = useState('');
   const [gender, setGender] = useState<Gender>('L');
   const [studentClass, setStudentClass] = useState<string>(appSettings.classNames[0]?.className || '');
@@ -26,6 +29,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || resuming) return;
     if (!name.trim()) {
       setError('Harap masukkan nama lengkapmu terlebih dahulu.');
       return;
@@ -51,6 +55,15 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
   };
 
   const selectedConfig = appSettings.classNames.find(c => c.className === studentClass);
+
+  const handleResume = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (resuming || isSubmitting) return;
+    setResuming(true); setResumeError('');
+    try { await resumeStudentJourney(accessCode); }
+    catch (error) { setResumeError(error instanceof Error ? error.message : 'Gagal membuka jawaban. Periksa koneksi dan coba lagi.'); }
+    finally { setResuming(false); }
+  };
 
   return (
     <div className="min-h-[85vh] flex flex-col justify-center items-center py-6 px-4">
@@ -92,8 +105,19 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
             </div>
           </div>
 
+          <form onSubmit={handleResume} className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+            <h2 className="text-sm font-bold text-blue-900">Lanjutkan dengan kode akses</h2>
+            <p className="text-xs text-blue-900">Sudah pernah mengisi di browser lain? Masukkan kode dari halaman siswa atau minta kode rekaman lama kepada guru. Jawaban dan hasil sebelumnya akan dibuka kembali.</p>
+            <label htmlFor="student-access-code" className="block text-xs font-bold text-blue-900">Kode akses siswa</label>
+            <input id="student-access-code" value={accessCode} onChange={event => setAccessCode(event.target.value)} required autoComplete="off" spellCheck={false} placeholder="Tempel kode akses siswa" className="w-full rounded-xl border border-blue-200 bg-white p-3 text-xs font-mono" />
+            <button type="submit" disabled={resuming || isSubmitting} className="w-full rounded-xl bg-blue-700 text-white py-2.5 text-xs font-bold cursor-pointer disabled:opacity-50">{resuming ? 'Membuka jawaban...' : 'Buka Jawaban Sebelumnya'}</button>
+            {resumeError && <p role="alert" className="text-xs text-red-700">{resumeError}</p>}
+          </form>
+
           {/* Entry Form */}
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <h2 className="text-sm font-bold text-slate-800">Mulai atau lanjutkan di browser ini</h2>
+            <p className="text-xs text-slate-500">Untuk pindah browser, gunakan kode akses di atas agar tidak membuat rekaman baru.</p>
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-semibold flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
@@ -179,7 +203,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || resuming}
               className="w-full mt-6 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
             >
               <span>{isSubmitting ? 'Menyimpan...' : 'Mulai Petualangan Refleksi'}</span>
@@ -190,7 +214,7 @@ export const StudentEntry: React.FC<StudentEntryProps> = ({ onAdminClick }) => {
           {/* Guidance note */}
           <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-500">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-            <span>{firebaseEnabled ? 'Jawaban tersimpan di Firebase; lanjutkan di browser perangkat ini.' : 'Data petualangan tersimpan otomatis di perangkat ini'}</span>
+            <span>{firebaseEnabled ? 'Jawaban tersimpan di Firebase; gunakan kode akses untuk pindah browser.' : 'Firebase belum dikonfigurasi.'}</span>
           </div>
         </div>
       </div>

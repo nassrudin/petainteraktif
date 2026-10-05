@@ -4,6 +4,7 @@ import { STAGES_DATA, PEGANGAN_DI_SEPANJANG_JALAN, PESAN_UNTUK_DIRI_SAYA } from 
 import { StageDefinition } from '../types';
 import { firebaseEnabled } from '../firebase-config';
 import { getPhaseTwoStart } from '../utils/phaseAccess';
+import { StudentAccessPanel } from './StudentAccessPanel';
   import { StageModal } from './StageModal';
   import { 
     Sparkles, Award, Lock, CheckCircle2,
@@ -84,6 +85,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
 
   return (
     <div className="space-y-6">
+      <StudentAccessPanel studentId={activeStudent.id} />
       {/* Top Banner: Student Details & Gamification Level */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">

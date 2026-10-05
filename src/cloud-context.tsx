@@ -13,6 +13,7 @@ import { firebaseConfig, teacherEmail } from './firebase-config';
 import { ActiveStudent, AppSettings, Gender, StudentJourney } from './types';
 import { sanitizeTextInput } from './utils/security';
 import { findExistingStudent } from './utils/studentIdentity';
+import { normalizeStudentAccessCode, openStudentWithAccess } from './utils/studentAccess';
 
 interface CloudStudentRecord {
   ownerUid: string;
@@ -93,6 +94,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [studentRecords, setStudentRecords] = useState<Record<string, CloudStudentRecord>>({});
   const [teacherRecords, setTeacherRecords] = useState<Record<string, CloudStudentRecord>>({});
   const studentRecordsRef = useRef(studentRecords);
+  const studentLinkedIds = useRef(new Set<string>());
   const maintenanceRunning = useRef(false);
   const [activeStudent, setActiveStudent] = useState<ActiveStudent | null>(null);
   const [appSettings, setAppSettings] = useState<AppSettings>(defaultSettings);
@@ -219,11 +221,29 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     if (!studentUid || !studentDb) return;
     const db = studentDb;
+    let ownRecords: Record<string, CloudStudentRecord> = {};
+    const linkedRecords: Record<string, CloudStudentRecord> = {};
+    const linkedListeners = new Map<string, { code: string; waiting: boolean; unsubscribe: () => void }>();
+    let disposed = false;
+    const publish = () => {
+      if (disposed) return;
+      const records = { ...linkedRecords, ...ownRecords };
+      for (const [id, listener] of linkedListeners) {
+        if (listener.waiting && studentLinkedIds.current.has(id) && !records[id] && studentRecordsRef.current[id]) {
+          records[id] = studentRecordsRef.current[id];
+        }
+      }
+      studentRecordsRef.current = records;
+      setStudentRecords(records);
+      setActiveStudent(current => current ? records[current.id]?.student ??
+        (studentLinkedIds.current.has(current.id) ? current : null) : null);
+    };
     setStudentReady(false);
     setCloudLoading(true);
     studentRecordsRef.current = {};
+    studentLinkedIds.current = new Set();
     setStudentRecords({});
-    return onSnapshot(query(collection(db, studentCollection), where('ownerUid', '==', studentUid)),
+    const unsubscribeOwn = onSnapshot(query(collection(db, studentCollection), where('ownerUid', '==', studentUid)),
       { includeMetadataChanges: true }, (snapshot) => {
         if (snapshot.metadata.hasPendingWrites) return;
         if (snapshot.metadata.fromCache) {
@@ -231,14 +251,47 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           setCloudError('Menunggu koneksi Firebase. Data belum diperbarui dari server; jawaban yang sedang diketik belum disimpan.');
           return;
         }
-        const records = Object.fromEntries(snapshot.docs.map(item => [item.id, reviseRecord(item.data() as CloudStudentRecord)]));
-        studentRecordsRef.current = records;
-        setStudentRecords(records);
-        setActiveStudent(current => current ? records[current.id]?.student ?? null : null);
+        ownRecords = Object.fromEntries(snapshot.docs.map(item => [item.id, reviseRecord(item.data() as CloudStudentRecord)]));
+        publish();
         setStudentReady(true);
         setCloudLoading(false);
         setCloudError(null);
       }, error => { setStudentReady(false); setCloudError(readableError(error)); setCloudLoading(false); });
+    const unsubscribeLinks = onSnapshot(collection(db, 'studentBrowserAccess', studentUid, 'students'),
+      { includeMetadataChanges: true }, snapshot => {
+        if (disposed) return;
+        if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;
+        const ids = new Set(snapshot.docs.map(item => item.id));
+        studentLinkedIds.current = ids;
+        for (const [id, listener] of linkedListeners) {
+          if (!ids.has(id)) { listener.unsubscribe(); linkedListeners.delete(id); delete linkedRecords[id]; }
+        }
+        for (const grant of snapshot.docs) {
+          const id = grant.id;
+          const code = String(grant.data().code);
+          const previous = linkedListeners.get(id);
+          if (previous?.code === code) continue;
+          previous?.unsubscribe();
+          const unsubscribe = onSnapshot(doc(db, studentCollection, id), { includeMetadataChanges: true }, item => {
+            if (disposed || linkedListeners.get(id)?.code !== code) return;
+            if (item.metadata.fromCache || item.metadata.hasPendingWrites) return;
+            linkedListeners.get(id)!.waiting = false;
+            if (item.exists()) linkedRecords[id] = reviseRecord(item.data() as CloudStudentRecord);
+            else { delete linkedRecords[id]; setActiveStudent(current => current?.id === id ? null : current); }
+            publish();
+          }, () => {
+            if (disposed || linkedListeners.get(id)?.code !== code) return;
+            linkedListeners.get(id)!.waiting = false;
+            delete linkedRecords[id]; setActiveStudent(current => current?.id === id ? null : current); publish();
+          });
+          linkedListeners.set(id, { code, waiting: true, unsubscribe });
+        }
+        publish();
+      }, error => { setCloudError(readableError(error)); });
+    return () => {
+      disposed = true; unsubscribeOwn(); unsubscribeLinks();
+      for (const listener of linkedListeners.values()) listener.unsubscribe();
+    };
   }, [studentUid]);
 
   useEffect(() => {
@@ -266,7 +319,14 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const snapshot = await getDocsFromServer(query(collection(studentDb, studentCollection), where('ownerUid', '==', studentUid)));
     if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) throw new Error('Data siswa belum terkonfirmasi dari Firebase. Coba masuk kembali setelah tersambung.');
     if (studentAuth?.currentUser?.uid !== studentUid) throw new Error('Sesi login berubah. Muat ulang halaman sebelum melanjutkan.');
-    const records = snapshot.docs.map(item => reviseRecord(item.data() as CloudStudentRecord));
+    const links = await getDocsFromServer(collection(studentDb, 'studentBrowserAccess', studentUid, 'students'));
+    const linkedSnapshots = await Promise.all(links.docs.map(item => getDocFromServer(doc(studentDb!, studentCollection, item.id))));
+    if (links.metadata.fromCache || links.metadata.hasPendingWrites || linkedSnapshots.some(item => item.metadata.fromCache || item.metadata.hasPendingWrites)) {
+      throw new Error('Jawaban siswa belum terkonfirmasi dari Firebase. Tunggu penyimpanan selesai lalu coba lagi.');
+    }
+    if (studentAuth?.currentUser?.uid !== studentUid) throw new Error('Sesi login berubah. Muat ulang halaman sebelum melanjutkan.');
+    const records = [...snapshot.docs, ...linkedSnapshots.filter(item => item.exists())]
+      .map(item => reviseRecord(item.data() as CloudStudentRecord));
     const existing = findExistingStudent(records, cleanName, cleanClass, absentNumber);
     if (existing) {
       studentRecordsRef.current = { ...studentRecordsRef.current, [existing.student.id]: existing };
@@ -285,6 +345,57 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setActiveStudent(student);
   };
 
+  const getStudentAccessCode: AppContextType['getStudentAccessCode'] = async (studentId, renew = false) => {
+    if (renew && !isAdminLoggedIn) throw new Error('Hanya guru yang boleh mengganti kode akses.');
+    const db = isAdminLoggedIn ? teacherDb : studentDb;
+    if (!db) throw new Error('Firebase belum siap.');
+    const key = doc(db, 'studentAccessKeys', studentId);
+    const newCode = crypto.randomUUID().replace(/-/g, '');
+    return runTransaction(db, async transaction => {
+      const student = await transaction.get(doc(db, studentCollection, studentId));
+      const existing = await transaction.get(key);
+      if (!student.exists()) throw new Error('Rekaman siswa sudah tidak tersedia.');
+      if (existing.exists() && !renew) return normalizeStudentAccessCode(existing.data().code);
+      if (existing.exists()) transaction.delete(doc(db, 'studentAccessCodes', normalizeStudentAccessCode(existing.data().code)));
+      transaction.set(key, { code: newCode });
+      transaction.set(doc(db, 'studentAccessCodes', newCode), { studentId });
+      return newCode;
+    });
+  };
+
+  const resumeStudentJourney: AppContextType['resumeStudentJourney'] = async value => {
+    if (!studentUid || !studentDb || !studentReady) throw new Error('Firebase belum siap. Tunggu sebentar lalu coba lagi.');
+    const uid = studentUid;
+    const db = studentDb;
+    try {
+      const { studentId, record } = await openStudentWithAccess(value, {
+        lookup: async code => {
+          const snapshot = await getDocFromServer(doc(db, 'studentAccessCodes', code));
+          if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) throw new Error('Kode akses belum terkonfirmasi dari Firebase. Coba lagi setelah tersambung.');
+          return snapshot.exists() ? snapshot.data().studentId : null;
+        },
+        grant: async (studentId, code) => { await setDoc(doc(db, 'studentBrowserAccess', uid, 'students', studentId), { code }); },
+        read: async studentId => {
+          const snapshot = await getDocFromServer(doc(db, studentCollection, studentId));
+          if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) throw new Error('Jawaban siswa belum terkonfirmasi dari Firebase. Coba lagi setelah tersambung.');
+          return snapshot.exists() ? reviseRecord(snapshot.data() as CloudStudentRecord) : null;
+        },
+        checkSession: () => {
+          if (studentAuth?.currentUser?.uid !== uid) throw new Error('Sesi login berubah. Muat ulang halaman sebelum melanjutkan.');
+        },
+      });
+      studentLinkedIds.current.add(studentId);
+      studentRecordsRef.current = { ...studentRecordsRef.current, [studentId]: record };
+      setStudentRecords(studentRecordsRef.current);
+      setActiveStudent(record.student);
+      setCloudError(null);
+    } catch (error) {
+      const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : '';
+      if (code === 'permission-denied') throw new Error('Kode akses tidak berlaku atau rekaman sudah dihapus. Minta kode kepada guru.');
+      throw error;
+    }
+  };
+
   const saveStageAnswer: AppContextType['saveStageAnswer'] = async (studentId, stageId, answers, expectedStage) => {
     if (!studentUid || !studentDb || !studentReady) throw new Error('Koneksi Firebase belum siap. Jawaban belum disimpan.');
     const reference = doc(studentDb, studentCollection, studentId);
@@ -296,7 +407,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         ? await transaction.get(doc(studentDb!, 'settings', 'driveBackup')) : null;
       if (!snapshot.exists()) throw new Error('Data siswa sudah dihapus. Muat ulang halaman.');
       const latest = snapshot.data() as CloudStudentRecord;
-      if (latest.ownerUid !== studentUid) throw new Error('Sesi siswa tidak cocok.');
+      if (latest.ownerUid !== studentUid && !studentLinkedIds.current.has(studentId)) throw new Error('Sesi siswa tidak cocok.');
       const journey = prepareStageSave(latest.journey, stageId, answers, expectedStage, new Date().toISOString());
       transaction.update(reference, { journey: JSON.parse(JSON.stringify(journey)) });
       const milestone = backupMilestone(stageId, journey);
@@ -442,7 +553,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const resetStudentProgress: AppContextType['resetStudentProgress'] = async (studentId) => {
     const record = visibleRecords[studentId];
     const db = isAdminLoggedIn ? teacherDb : studentDb;
-    if (!record || !db || (!isAdminLoggedIn && record.ownerUid !== studentUid)) throw new Error('Akses ditolak.');
+    if (!record || !db || (!isAdminLoggedIn && record.ownerUid !== studentUid && !studentLinkedIds.current.has(studentId))) throw new Error('Akses ditolak.');
     await updateDoc(doc(db, studentCollection, studentId), { journey: makeJourney(record.student) });
 
   };
@@ -544,7 +655,7 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
   const unavailable = () => ({ success: false, message: 'Gunakan pengaturan akun Firebase.' });
   const contextValue: AppContextType = {
-    activeStudent, startStudentJourney, clearActiveStudent,
+    activeStudent, startStudentJourney, getStudentAccessCode, resumeStudentJourney, clearActiveStudent,
     isAdminLoggedIn, adminLogin, bootstrapLogin, bootstrapNeeded: rootLoaded && !rootAccount, adminLogout,
     adminRole, staffAccounts, createAdmin, createTeacherAccount, setTeacherActive, changeOwnPassword,
     adminCredentials: { username: adminRole === 'admin' ? 'admin' : teacherAccount?.username || '', password: '' },

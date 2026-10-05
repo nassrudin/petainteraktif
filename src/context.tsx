@@ -15,6 +15,8 @@ export type AdminRole = 'legacy' | 'admin' | 'teacher' | null;
 export interface AppContextType {
   activeStudent: ActiveStudent | null;
   startStudentJourney: (name: string, gender: Gender, studentClass: string, absentNumber: number) => void | Promise<void>;
+  getStudentAccessCode: (studentId: string, renew?: boolean) => Promise<string>;
+  resumeStudentJourney: (code: string) => Promise<void>;
   clearActiveStudent: () => void;
   isAdminLoggedIn: boolean;
   adminLogin: (user: string, pass: string) => boolean | Promise<boolean>;

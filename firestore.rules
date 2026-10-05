@@ -40,6 +40,57 @@ service cloud.firestore {
       return legacyTeacher() || mainAdmin() || teacher();
     }
 
+    function linkedStudent(studentId) {
+      let grant = /databases/$(database)/documents/studentBrowserAccess/$(request.auth.uid)/students/$(studentId);
+      let key = /databases/$(database)/documents/studentAccessKeys/$(studentId);
+      return exists(grant) && exists(key) && get(grant).data.code == get(key).data.code;
+    }
+
+    function studentAccess(studentId) {
+      return signedIn() && (get(/databases/$(database)/documents/students/$(studentId)).data.ownerUid == request.auth.uid
+        || linkedStudent(studentId));
+    }
+
+    // Secret codes grant access to one existing record, without changing its owner or answers.
+    match /studentAccessKeys/{studentId} {
+      allow get: if admin() || studentAccess(studentId);
+      allow list: if false;
+      allow create: if (admin() || studentAccess(studentId))
+        && request.resource.data.keys().hasOnly(['code'])
+        && request.resource.data.code.matches('[a-f0-9]{32}');
+      allow update: if admin()
+        && request.resource.data.keys().hasOnly(['code'])
+        && request.resource.data.code.matches('[a-f0-9]{32}');
+      allow delete: if admin();
+    }
+
+    match /studentAccessCodes/{code} {
+      allow get: if signedIn()
+        && code.matches('[a-f0-9]{32}')
+        && exists(/databases/$(database)/documents/studentAccessKeys/$(resource.data.studentId))
+        && get(/databases/$(database)/documents/studentAccessKeys/$(resource.data.studentId)).data.code == code;
+      allow list: if false;
+      allow create: if code.matches('[a-f0-9]{32}')
+        && request.resource.data.keys().hasOnly(['studentId'])
+        && request.resource.data.studentId is string
+        && (admin() || studentAccess(request.resource.data.studentId))
+        && getAfter(/databases/$(database)/documents/studentAccessKeys/$(request.resource.data.studentId)).data.code == code;
+      allow update: if false;
+      allow delete: if admin();
+    }
+
+    match /studentBrowserAccess/{uid}/students/{studentId} {
+      allow get, list: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['code'])
+        && request.resource.data.code is string
+        && request.resource.data.code.matches('[a-f0-9]{32}')
+        && exists(/databases/$(database)/documents/students/$(studentId))
+        && get(/databases/$(database)/documents/studentAccessCodes/$(request.resource.data.code)).data.studentId == studentId
+        && get(/databases/$(database)/documents/studentAccessKeys/$(studentId)).data.code == request.resource.data.code;
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
     match /config/adminRoot {
       allow get: if true;
       allow list: if false;
@@ -129,7 +180,8 @@ service cloud.firestore {
         && request.resource.data.status == 'pending'
         && request.resource.data.createdAt == request.time
         && get(/databases/$(database)/documents/settings/driveBackup).data.enabled == true
-        && getAfter(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.ownerUid == request.auth.uid
+        && (getAfter(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.ownerUid == request.auth.uid
+          || linkedStudent(request.resource.data.studentId))
         && request.resource.data.revision == getAfter(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.journey.updatedAt
         && get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.journey.updatedAt != request.resource.data.revision
         && completedThrough(getAfter(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.journey, request.resource.data.milestone);
@@ -138,7 +190,7 @@ service cloud.firestore {
 
     match /students/{studentId} {
       allow get, list: if admin() ||
-        (signedIn() && resource.data.ownerUid == request.auth.uid);
+        (signedIn() && (resource.data.ownerUid == request.auth.uid || linkedStudent(studentId)));
 
       // Teachers/admins may recreate student documents from an explicitly selected backup.
       allow create: if ((signedIn()
@@ -153,8 +205,8 @@ service cloud.firestore {
 
       allow update: if admin() ||
         (signedIn()
-          && resource.data.ownerUid == request.auth.uid
-          && request.resource.data.ownerUid == request.auth.uid
+          && (resource.data.ownerUid == request.auth.uid || linkedStudent(studentId))
+          && request.resource.data.ownerUid == resource.data.ownerUid
           && request.resource.data.student == resource.data.student
           && request.resource.data.journey.studentId == studentId);
 
