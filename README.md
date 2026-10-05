@@ -28,6 +28,8 @@ Alamat email internal acak dibuat otomatis oleh aplikasi untuk Firebase Authenti
 
 Data siswa dan pengaturan hanya dibaca dari Firebase. Impor otomatis data browser dan pembacaan draf lokal sudah dihapus. Sesi login anonim Firebase tetap melekat pada browser/perangkat; menghapus sesi login atau mengganti perangkat dapat membuat siswa kehilangan akses ke jawabannya, tetapi tidak menghapus jawaban di server. Nama, kelas, dan nomor absen bukan bukti identitas.
 
+Saat masuk, aplikasi membaca ulang dokumen milik sesi login siswa dari server. Pencocokan nama/kelas mengabaikan kapitalisasi, spasi berlebih, serta variasi Unicode. Jika ada rekaman duplikat dalam sesi yang sama, aplikasi memilih rekaman dengan pos selesai paling banyak, kemudian jawaban terisi paling banyak, kemudian pembaruan terbaru. Kegagalan pencarian server tidak membuat rekaman pengganti kosong. Batas akses ownerUid tetap berlaku; pencarian ini tidak memulihkan akses dari sesi anonim lain.
+
 ## Cara kerja data
 
 - Urutan Etape 2: Pos 5 **Melihat kembali usaha saya**, Pos 6 **Saat saya dikritik**, Pos 7 **Belajar dari orang lain**, dan Pos 8 **Komitmen dan target saya**. Jawaban lama yang sudah ada di Firebase dikenali berdasarkan pertanyaannya agar tetap masuk ke pos yang sesuai.

@@ -12,6 +12,7 @@ import { provisioningAuth, studentAuth, studentDb, teacherAuth, teacherDb } from
 import { firebaseConfig, teacherEmail } from './firebase-config';
 import { ActiveStudent, AppSettings, Gender, StudentJourney } from './types';
 import { sanitizeTextInput } from './utils/security';
+import { findExistingStudent } from './utils/studentIdentity';
 
 interface CloudStudentRecord {
   ownerUid: string;
@@ -255,14 +256,24 @@ export const CloudAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const startStudentJourney: AppContextType['startStudentJourney'] = async (name, gender, studentClass, absentNumber) => {
     if (!studentUid || !studentDb || !studentReady) throw new Error('Firebase belum siap. Tunggu sebentar lalu coba lagi.');
-    const cleanName = sanitizeTextInput(name).trim();
+    const cleanName = sanitizeTextInput(name).normalize('NFKC').trim().replace(/\s+/g, ' ');
     const cleanClass = sanitizeTextInput(studentClass).trim();
     const config = appSettings.classNames.find((item) => item.className === cleanClass);
     if (!cleanName || !config || !Number.isInteger(absentNumber) ||
       absentNumber < config.absentRangeMin || absentNumber > config.absentRangeMax) throw new Error('Identitas siswa tidak valid.');
-    const existing = Object.values(studentRecordsRef.current).find(({ student }) =>
-      student.name.toLowerCase() === cleanName.toLowerCase() && student.class === cleanClass && student.absentNumber === absentNumber);
-    if (existing) { setActiveStudent(existing.student); return; }
+    // Recheck the server when entering, rather than relying on a previously received snapshot.
+    // A failed lookup must not create an empty replacement record.
+    const snapshot = await getDocsFromServer(query(collection(studentDb, studentCollection), where('ownerUid', '==', studentUid)));
+    if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) throw new Error('Data siswa belum terkonfirmasi dari Firebase. Coba masuk kembali setelah tersambung.');
+    if (studentAuth?.currentUser?.uid !== studentUid) throw new Error('Sesi login berubah. Muat ulang halaman sebelum melanjutkan.');
+    const records = snapshot.docs.map(item => reviseRecord(item.data() as CloudStudentRecord));
+    const existing = findExistingStudent(records, cleanName, cleanClass, absentNumber);
+    if (existing) {
+      studentRecordsRef.current = { ...studentRecordsRef.current, [existing.student.id]: existing };
+      setStudentRecords(studentRecordsRef.current);
+      setActiveStudent(existing.student);
+      return;
+    }
     const student: ActiveStudent = {
       id: `student-${crypto.randomUUID()}`, name: cleanName, gender,
       class: cleanClass, absentNumber, startedAt: new Date().toISOString(),
