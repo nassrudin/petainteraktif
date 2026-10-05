@@ -9,11 +9,12 @@ import { firebaseEnabled } from '../firebase-config';
 import { StaffAccountsPanel } from './StaffAccountsPanel';
 import { backupFileName } from '../utils/databaseBackup';
 import { buildStudentCsv, studentCsvFileName } from '../utils/studentCsv';
+import { completedStageCount, nextStudentSort, sortStudents, StudentSort, StudentSortKey } from '../utils/studentSort';
 import { 
   Users, CheckCircle, BarChart3, 
   ExternalLink, Download, Search, Eye, Filter,
   KeyRound, CheckCircle2, AlertCircle, RefreshCw,
-  CloudUpload, Link as LinkIcon, Plus, Trash2, Save, X, MonitorPlay, Clock3
+  CloudUpload, Link as LinkIcon, Plus, Trash2, Save, X, MonitorPlay, Clock3, ArrowUp, ArrowDown, ArrowUpDown
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -37,6 +38,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   const [selectedStudent, setSelectedStudent] = useState<ActiveStudent | null>(null);
   const [filterClass, setFilterClass] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [studentSort, setStudentSort] = useState<StudentSort | null>(null);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isExportingCsv, setIsExportingCsv] = useState(false);
   const [isMaintaining, setIsMaintaining] = useState(false);
@@ -61,11 +63,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   const classList = Array.from(new Set(allStudents.map((s) => s.class))).sort();
 
   // Filtered students
-  const filteredStudents = allStudents.filter((s) => {
+  const filteredStudents = sortStudents(allStudents.filter((s) => {
     const matchesClass = filterClass === 'all' || s.class === filterClass;
     const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesClass && matchesSearch;
-  });
+  }), journeys, studentSort);
+
+  const sortHeader = (key: StudentSortKey, label: string) => {
+    const active = studentSort?.key === key;
+    const direction = active ? studentSort.direction : null;
+    const SortIcon = direction === 'asc' ? ArrowUp : direction === 'desc' ? ArrowDown : ArrowUpDown;
+    return <th key={key} scope="col" className="px-5 py-3.5" aria-sort={direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none'}>
+      <button type="button" onClick={() => setStudentSort(current => nextStudentSort(current, key))}
+        title={`Urutkan ${label}: ${direction === 'asc' ? 'menurun' : 'menaik'}`}
+        className={`flex items-center gap-1.5 uppercase tracking-wider font-bold text-left cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-emerald-600 focus-visible:outline-offset-4 hover:text-emerald-700 ${active ? 'text-emerald-700' : ''}`}>
+        {label}<SortIcon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+      </button>
+    </th>;
+  };
 
   // Analytics
   const totalStudents = allStudents.length;
@@ -76,7 +91,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
   allStudents.forEach((s) => {
     const j = journeys[s.id];
-    const completedStages = j ? Object.keys(j.stages).length : 0;
+    const completedStages = completedStageCount(j);
     if (completedStages === 8) completedAllCount++;
     if (j?.confidenceScore) { totalConfidenceSum += j.confidenceScore; scoredStudentsCount++; }
     totalStagesCompletedSum += completedStages;
@@ -405,11 +420,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
                   <tr>
-                    <th className="px-5 py-3.5">Nama Siswa</th>
-                    <th className="px-5 py-3.5">Kelas</th>
-                    <th className="px-5 py-3.5">Absen</th>
-                    <th className="px-5 py-3.5">Kemajuan Pos</th>
-                     <th className="px-5 py-3.5">Skala Keyakinan</th>
+                    {sortHeader('name', 'Nama Siswa')}
+                    {sortHeader('class', 'Kelas')}
+                    {sortHeader('absentNumber', 'Absen')}
+                    {sortHeader('progress', 'Kemajuan Pos')}
+                    {sortHeader('confidenceScore', 'Skala Keyakinan')}
                     <th className="px-5 py-3.5">{firebaseEnabled ? 'Penyimpanan' : 'Status Google Drive'}</th>
                     <th className="px-5 py-3.5 text-right">Aksi</th>
                   </tr>
@@ -424,7 +439,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                   ) : (
                     filteredStudents.map((student) => {
                       const j = journeys[student.id];
-                      const completedCount = j ? Object.keys(j.stages).length : 0;
+                      const completedCount = completedStageCount(j);
 
                       return (
                         <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
