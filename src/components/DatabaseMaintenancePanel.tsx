@@ -5,11 +5,12 @@ import { MaintenancePlan } from '../utils/databaseMaintenance';
 
 interface Props {
   backupBusy: boolean;
+  exportBusy: boolean;
   onBackup: () => Promise<void>;
   onBusyChange: (busy: boolean) => void;
 }
 
-export function DatabaseMaintenancePanel({ backupBusy, onBackup, onBusyChange }: Props) {
+export function DatabaseMaintenancePanel({ backupBusy, exportBusy, onBackup, onBusyChange }: Props) {
   const { prepareRestoreBackup, prepareDeleteAllStudents, applyDatabaseMaintenance } = useApp();
   const [plan, setPlan] = useState<MaintenancePlan | null>(null);
   const [fileName, setFileName] = useState('');
@@ -17,7 +18,7 @@ export function DatabaseMaintenancePanel({ backupBusy, onBackup, onBusyChange }:
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null);
   const [feedback, setFeedback] = useState<{ error: boolean; text: string } | null>(null);
-  const disabled = busy || backupBusy;
+  const disabled = busy || backupBusy || exportBusy;
   const setWorking = (value: boolean) => { setBusy(value); onBusyChange(value); };
   const message = (error: unknown) => error instanceof Error ? error.message : 'Periksa koneksi Firebase dan coba lagi.';
 

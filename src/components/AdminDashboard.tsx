@@ -8,6 +8,7 @@ import { ResultView } from './ResultView';
 import { firebaseEnabled } from '../firebase-config';
 import { StaffAccountsPanel } from './StaffAccountsPanel';
 import { backupFileName } from '../utils/databaseBackup';
+import { buildStudentCsv, studentCsvFileName } from '../utils/studentCsv';
 import { 
   Users, CheckCircle, BarChart3, 
   ExternalLink, Download, Search, Eye, Filter,
@@ -37,6 +38,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   const [filterClass, setFilterClass] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
   const [isMaintaining, setIsMaintaining] = useState(false);
   const [backupFeedback, setBackupFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeAdminTab, setActiveAdminTab] = useState<'students' | 'drive' | 'security' | 'classsettings' | 'access'>('students');
@@ -162,7 +164,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   };
 
   const handleBackup = async () => {
-    if (isBackingUp || isMaintaining) return;
+    if (isBackingUp || isExportingCsv || isMaintaining) return;
     setIsBackingUp(true);
     setBackupFeedback(null);
     try {
@@ -188,35 +190,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   };
 
 
-  const handleExportCSV = () => {
-    const headers = ['Nama Siswa', 'Kelas', 'Skor Keyakinan', 'Jumlah Tahap Selesai', 'Terakhir Update', firebaseEnabled ? 'Penyimpanan' : 'Status Google Drive'];
-    const csvCell = (value: string | number) => {
-      const text = String(value);
-      const safe = /^[\s]*[=+@-]/.test(text) ? `'${text}` : text;
-      return `"${safe.replace(/"/g, '""')}"`;
-    };
-    const rows = allStudents.map((s) => {
-      const j = journeys[s.id];
-      const count = j ? Object.keys(j.stages).length : 0;
-      return [
-        s.name,
-        s.class,
-        j?.confidenceScore || 0,
-        `${count}/8`,
-        j?.updatedAt || s.startedAt,
-        'Firebase'
-      ];
-    });
-
-    const csvContent = '\ufeff' + [headers.map(csvCell).join(','), ...rows.map((e) => e.map(csvCell).join(','))].join('\r\n');
-    const blobUrl = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8' }));
-    const link = document.createElement('a');
-    link.setAttribute('href', blobUrl);
-    link.setAttribute('download', `rekap_growth_mindset_kelas_X_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  const handleExportCSV = async () => {
+    if (isExportingCsv || isBackingUp || isMaintaining) return;
+    setIsExportingCsv(true);
+    setBackupFeedback(null);
+    try {
+      const backup = await exportDatabaseBackup();
+      const csvContent = buildStudentCsv(backup);
+      const blobUrl = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8' }));
+      const link = document.createElement('a');
+      try {
+        link.href = blobUrl;
+        link.download = studentCsvFileName(backup.exportedAt);
+        document.body.appendChild(link);
+        link.click();
+      } finally {
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      }
+      setBackupFeedback({ type: 'success', text: `Unduhan CSV lengkap dimulai: ${backup.studentCount} siswa dari semua kelas, identitas, progres, tanggal, dan seluruh jawaban Pos 1–8. Filter dashboard tidak membatasi unduhan.` });
+    } catch (error) {
+      setBackupFeedback({ type: 'error', text: `CSV gagal dibuat. ${error instanceof Error ? error.message : 'Periksa koneksi Firebase dan coba kembali.'}` });
+    } finally { setIsExportingCsv(false); }
   };
 
   return (
@@ -316,7 +311,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       {/* STUDENTS TAB */}
       {activeAdminTab === 'students' && (
         <>
-          <DatabaseMaintenancePanel backupBusy={isBackingUp} onBackup={handleBackup} onBusyChange={setIsMaintaining} />
+          <DatabaseMaintenancePanel backupBusy={isBackingUp} exportBusy={isExportingCsv} onBackup={handleBackup} onBusyChange={setIsMaintaining} />
           {/* Analytics KPI Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -390,11 +385,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
                 <button
                   onClick={handleExportCSV}
-                  className="px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                  title="Unduh Rekap CSV"
+                  disabled={isExportingCsv || isBackingUp || isMaintaining}
+                  aria-busy={isExportingCsv}
+                  className="px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                  title="Unduh semua siswa dari Firebase beserta identitas, progres, dan seluruh jawaban Pos 1–8"
                 >
                   <Download className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Unduh CSV</span>
+                  <span>{isExportingCsv ? 'Membuat CSV...' : 'Unduh CSV'}</span>
                 </button>
               </div>
 
